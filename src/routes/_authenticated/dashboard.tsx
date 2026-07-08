@@ -119,27 +119,31 @@ function Dashboard() {
             <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 icon={<Flame className="h-5 w-5" />}
-                label="Calorie target"
-                value={g.daily_calorie_target ?? 0}
+                label="Calories today"
+                value={Math.round(totals.calories)}
+                target={g.daily_calorie_target ?? 0}
                 unit="kcal"
                 accent="bg-gradient-accent"
               />
               <StatCard
                 icon={<Apple className="h-5 w-5" />}
                 label="Protein"
-                value={g.protein_g ?? 0}
+                value={Math.round(totals.protein)}
+                target={g.protein_g ?? 0}
                 unit="g"
               />
               <StatCard
                 icon={<Utensils className="h-5 w-5" />}
                 label="Carbs"
-                value={g.carbs_g ?? 0}
+                value={Math.round(totals.carbs)}
+                target={g.carbs_g ?? 0}
                 unit="g"
               />
               <StatCard
                 icon={<Droplets className="h-5 w-5" />}
-                label="Water goal"
-                value={g.water_target_ml ?? 0}
+                label="Water"
+                value={waterMl}
+                target={g.water_target_ml ?? 0}
                 unit="ml"
               />
             </section>
@@ -149,14 +153,14 @@ function Dashboard() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 font-display text-xl">
                     <Sparkles className="h-5 w-5 text-accent" />
-                    Today's macro plan
+                    Today's macros
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                  <MacroRow label="Protein" value={g.protein_g ?? 0} target={g.protein_g ?? 0} unit="g" />
-                  <MacroRow label="Carbohydrates" value={g.carbs_g ?? 0} target={g.carbs_g ?? 0} unit="g" />
-                  <MacroRow label="Healthy fats" value={g.fat_g ?? 0} target={g.fat_g ?? 0} unit="g" />
-                  <MacroRow label="Fiber" value={g.fiber_g ?? 0} target={g.fiber_g ?? 0} unit="g" />
+                  <MacroRow label="Protein" value={totals.protein} target={g.protein_g ?? 0} unit="g" />
+                  <MacroRow label="Carbohydrates" value={totals.carbs} target={g.carbs_g ?? 0} unit="g" />
+                  <MacroRow label="Healthy fats" value={totals.fat} target={g.fat_g ?? 0} unit="g" />
+                  <MacroRow label="Fiber" value={totals.fiber} target={g.fiber_g ?? 0} unit="g" />
                   <div className="rounded-2xl bg-secondary/60 p-4 text-sm">
                     <p className="font-medium text-foreground">Your maintenance is {g.tdee_kcal} kcal.</p>
                     <p className="mt-1 text-muted-foreground">
@@ -167,12 +171,20 @@ function Dashboard() {
               </Card>
 
               <div className="space-y-4">
-                <FeatureCard
-                  icon={<Utensils className="h-5 w-5" />}
-                  title="Log a meal"
-                  description="AI-powered food logging"
-                  soon
-                />
+                <Link to="/log" className="block">
+                  <FeatureCard
+                    icon={<Utensils className="h-5 w-5" />}
+                    title="Log a meal"
+                    description="AI-powered food logging"
+                  />
+                </Link>
+                <Link to="/log" className="block">
+                  <FeatureCard
+                    icon={<Droplets className="h-5 w-5" />}
+                    title="Log water"
+                    description="Stay hydrated all day"
+                  />
+                </Link>
                 <FeatureCard
                   icon={<Dumbbell className="h-5 w-5" />}
                   title="Today's workout"
