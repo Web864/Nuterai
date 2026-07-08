@@ -94,17 +94,24 @@ function Dashboard() {
           <div>
             <p className="text-sm text-muted-foreground">
               {new Date().toLocaleDateString(undefined, {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-          <h1 className="mt-1 font-display text-4xl text-foreground sm:text-5xl">
-            {greeting}, {firstName}.
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Here's your personalized plan for today.
-          </p>
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+            <h1 className="mt-1 font-display text-4xl text-foreground sm:text-5xl">
+              {greeting}, {firstName}.
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              Here's your personalized plan for today.
+            </p>
+          </div>
+          <Button asChild size="lg" className="rounded-full">
+            <Link to="/log">
+              <Plus className="mr-2 h-4 w-4" />
+              Log now
+            </Link>
+          </Button>
         </header>
 
         {g ? (
