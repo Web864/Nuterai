@@ -321,9 +321,6 @@ function StatCard({
     </Card>
   );
 }
-    </Card>
-  );
-}
 
 function MacroRow({ label, value, target, unit }: { label: string; value: number; target: number; unit: string }) {
   const pct = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
