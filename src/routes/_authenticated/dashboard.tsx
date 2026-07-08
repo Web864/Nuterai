@@ -49,6 +49,12 @@ function Dashboard() {
 
   const profile = useQuery(profileQueryOptions(userId));
   const goals = useQuery(goalsQueryOptions(userId));
+  const today = useMemo(() => todayISO(), []);
+  const meals = useQuery(mealsTodayQueryOptions(userId, today));
+  const water = useQuery(waterTodayQueryOptions(userId, today));
+
+  const totals = useMemo(() => sumMealTotals(meals.data ?? []), [meals.data]);
+  const waterMl = useMemo(() => sumWater(water.data ?? []), [water.data]);
 
   const needsOnboarding = profile.data && profile.data.onboarding_completed === false;
 
@@ -84,9 +90,10 @@ function Dashboard() {
       <TopBar onSignOut={handleSignOut} name={firstName} />
 
       <main className="mx-auto max-w-6xl px-4 pb-24 pt-8 sm:px-6 lg:px-8">
-        <header className="mb-8">
-          <p className="text-sm text-muted-foreground">
-            {new Date().toLocaleDateString(undefined, {
+        <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              {new Date().toLocaleDateString(undefined, {
               weekday: "long",
               month: "long",
               day: "numeric",
