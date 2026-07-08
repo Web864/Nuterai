@@ -1,7 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { profileQueryOptions, goalsQueryOptions } from "@/features/goals/queries";
+import {
+  mealsTodayQueryOptions,
+  waterTodayQueryOptions,
+  sumMealTotals,
+  sumWater,
+  todayISO,
+} from "@/features/logging/queries";
 import { Route as AuthedRoute } from "./route";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,12 +25,12 @@ import {
   Leaf,
   LogOut,
   Moon,
+  Plus,
   Settings,
   Sparkles,
   Utensils,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -42,6 +49,12 @@ function Dashboard() {
 
   const profile = useQuery(profileQueryOptions(userId));
   const goals = useQuery(goalsQueryOptions(userId));
+  const today = useMemo(() => todayISO(), []);
+  const meals = useQuery(mealsTodayQueryOptions(userId, today));
+  const water = useQuery(waterTodayQueryOptions(userId, today));
+
+  const totals = useMemo(() => sumMealTotals(meals.data ?? []), [meals.data]);
+  const waterMl = useMemo(() => sumWater(water.data ?? []), [water.data]);
 
   const needsOnboarding = profile.data && profile.data.onboarding_completed === false;
 
@@ -77,20 +90,28 @@ function Dashboard() {
       <TopBar onSignOut={handleSignOut} name={firstName} />
 
       <main className="mx-auto max-w-6xl px-4 pb-24 pt-8 sm:px-6 lg:px-8">
-        <header className="mb-8">
-          <p className="text-sm text-muted-foreground">
-            {new Date().toLocaleDateString(undefined, {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-          <h1 className="mt-1 font-display text-4xl text-foreground sm:text-5xl">
-            {greeting}, {firstName}.
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Here's your personalized plan for today.
-          </p>
+        <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              {new Date().toLocaleDateString(undefined, {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+            <h1 className="mt-1 font-display text-4xl text-foreground sm:text-5xl">
+              {greeting}, {firstName}.
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              Here's your personalized plan for today.
+            </p>
+          </div>
+          <Button asChild size="lg" className="rounded-full">
+            <Link to="/log">
+              <Plus className="mr-2 h-4 w-4" />
+              Log now
+            </Link>
+          </Button>
         </header>
 
         {g ? (
@@ -98,27 +119,31 @@ function Dashboard() {
             <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 icon={<Flame className="h-5 w-5" />}
-                label="Calorie target"
-                value={g.daily_calorie_target ?? 0}
+                label="Calories today"
+                value={Math.round(totals.calories)}
+                target={g.daily_calorie_target ?? 0}
                 unit="kcal"
                 accent="bg-gradient-accent"
               />
               <StatCard
                 icon={<Apple className="h-5 w-5" />}
                 label="Protein"
-                value={g.protein_g ?? 0}
+                value={Math.round(totals.protein)}
+                target={g.protein_g ?? 0}
                 unit="g"
               />
               <StatCard
                 icon={<Utensils className="h-5 w-5" />}
                 label="Carbs"
-                value={g.carbs_g ?? 0}
+                value={Math.round(totals.carbs)}
+                target={g.carbs_g ?? 0}
                 unit="g"
               />
               <StatCard
                 icon={<Droplets className="h-5 w-5" />}
-                label="Water goal"
-                value={g.water_target_ml ?? 0}
+                label="Water"
+                value={waterMl}
+                target={g.water_target_ml ?? 0}
                 unit="ml"
               />
             </section>
@@ -128,14 +153,14 @@ function Dashboard() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 font-display text-xl">
                     <Sparkles className="h-5 w-5 text-accent" />
-                    Today's macro plan
+                    Today's macros
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                  <MacroRow label="Protein" value={g.protein_g ?? 0} target={g.protein_g ?? 0} unit="g" />
-                  <MacroRow label="Carbohydrates" value={g.carbs_g ?? 0} target={g.carbs_g ?? 0} unit="g" />
-                  <MacroRow label="Healthy fats" value={g.fat_g ?? 0} target={g.fat_g ?? 0} unit="g" />
-                  <MacroRow label="Fiber" value={g.fiber_g ?? 0} target={g.fiber_g ?? 0} unit="g" />
+                  <MacroRow label="Protein" value={totals.protein} target={g.protein_g ?? 0} unit="g" />
+                  <MacroRow label="Carbohydrates" value={totals.carbs} target={g.carbs_g ?? 0} unit="g" />
+                  <MacroRow label="Healthy fats" value={totals.fat} target={g.fat_g ?? 0} unit="g" />
+                  <MacroRow label="Fiber" value={totals.fiber} target={g.fiber_g ?? 0} unit="g" />
                   <div className="rounded-2xl bg-secondary/60 p-4 text-sm">
                     <p className="font-medium text-foreground">Your maintenance is {g.tdee_kcal} kcal.</p>
                     <p className="mt-1 text-muted-foreground">
@@ -146,12 +171,20 @@ function Dashboard() {
               </Card>
 
               <div className="space-y-4">
-                <FeatureCard
-                  icon={<Utensils className="h-5 w-5" />}
-                  title="Log a meal"
-                  description="AI-powered food logging"
-                  soon
-                />
+                <Link to="/log" className="block">
+                  <FeatureCard
+                    icon={<Utensils className="h-5 w-5" />}
+                    title="Log a meal"
+                    description="AI-powered food logging"
+                  />
+                </Link>
+                <Link to="/log" className="block">
+                  <FeatureCard
+                    icon={<Droplets className="h-5 w-5" />}
+                    title="Log water"
+                    description="Stay hydrated all day"
+                  />
+                </Link>
                 <FeatureCard
                   icon={<Dumbbell className="h-5 w-5" />}
                   title="Today's workout"
@@ -254,15 +287,18 @@ function StatCard({
   icon,
   label,
   value,
+  target,
   unit,
   accent,
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
+  target?: number;
   unit: string;
   accent?: string;
 }) {
+  const pct = target && target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
   return (
     <Card className="rounded-3xl border-border/60 shadow-soft transition-organic hover:shadow-elevated">
       <CardContent className="p-5">
@@ -272,8 +308,15 @@ function StatCard({
         <p className="mt-4 text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
         <p className="mt-1 font-display text-3xl text-foreground">
           {value.toLocaleString()}
-          <span className="ml-1 text-sm font-sans font-normal text-muted-foreground">{unit}</span>
+          {target ? (
+            <span className="ml-1 text-sm font-sans font-normal text-muted-foreground">
+              / {target.toLocaleString()} {unit}
+            </span>
+          ) : (
+            <span className="ml-1 text-sm font-sans font-normal text-muted-foreground">{unit}</span>
+          )}
         </p>
+        {target ? <Progress value={pct} className="mt-3 h-1.5" /> : null}
       </CardContent>
     </Card>
   );
@@ -286,7 +329,7 @@ function MacroRow({ label, value, target, unit }: { label: string; value: number
       <div className="mb-1.5 flex items-baseline justify-between text-sm">
         <span className="font-medium text-foreground">{label}</span>
         <span className="text-muted-foreground">
-          <strong className="text-foreground">0</strong> / {target}
+          <strong className="text-foreground">{Math.round(value)}</strong> / {target}
           {unit}
         </span>
       </div>

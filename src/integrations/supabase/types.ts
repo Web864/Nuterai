@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      meal_entries: {
+        Row: {
+          ai_confidence: number | null
+          ai_model: string | null
+          ai_raw: Json | null
+          calories_kcal: number
+          carbs_g: number
+          created_at: string
+          description: string | null
+          fat_g: number
+          fiber_g: number
+          id: string
+          logged_at: string
+          logged_date: string
+          meal_type: Database["public"]["Enums"]["meal_type"]
+          name: string
+          protein_g: number
+          serving_qty: number
+          serving_unit: string | null
+          source: Database["public"]["Enums"]["meal_source"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_confidence?: number | null
+          ai_model?: string | null
+          ai_raw?: Json | null
+          calories_kcal?: number
+          carbs_g?: number
+          created_at?: string
+          description?: string | null
+          fat_g?: number
+          fiber_g?: number
+          id?: string
+          logged_at?: string
+          logged_date?: string
+          meal_type?: Database["public"]["Enums"]["meal_type"]
+          name: string
+          protein_g?: number
+          serving_qty?: number
+          serving_unit?: string | null
+          source?: Database["public"]["Enums"]["meal_source"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_confidence?: number | null
+          ai_model?: string | null
+          ai_raw?: Json | null
+          calories_kcal?: number
+          carbs_g?: number
+          created_at?: string
+          description?: string | null
+          fat_g?: number
+          fiber_g?: number
+          id?: string
+          logged_at?: string
+          logged_date?: string
+          meal_type?: Database["public"]["Enums"]["meal_type"]
+          name?: string
+          protein_g?: number
+          serving_qty?: number
+          serving_unit?: string | null
+          source?: Database["public"]["Enums"]["meal_source"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -225,6 +294,63 @@ export type Database = {
         }
         Relationships: []
       }
+      water_logs: {
+        Row: {
+          amount_ml: number
+          created_at: string
+          id: string
+          logged_at: string
+          logged_date: string
+          user_id: string
+        }
+        Insert: {
+          amount_ml: number
+          created_at?: string
+          id?: string
+          logged_at?: string
+          logged_date?: string
+          user_id: string
+        }
+        Update: {
+          amount_ml?: number
+          created_at?: string
+          id?: string
+          logged_at?: string
+          logged_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      weight_logs: {
+        Row: {
+          created_at: string
+          id: string
+          logged_at: string
+          logged_date: string
+          note: string | null
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logged_at?: string
+          logged_date?: string
+          note?: string | null
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logged_at?: string
+          logged_date?: string
+          note?: string | null
+          user_id?: string
+          weight_kg?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -266,6 +392,8 @@ export type Database = {
         | "improve_health"
         | "boost_energy"
       gym_access: "full_gym" | "home_gym" | "basic_equipment" | "no_equipment"
+      meal_source: "manual" | "ai_text" | "ai_photo" | "favorite"
+      meal_type: "breakfast" | "lunch" | "dinner" | "snack"
       sex_type: "male" | "female" | "other" | "prefer_not_to_say"
       unit_system: "metric" | "imperial"
       workout_experience: "none" | "beginner" | "intermediate" | "advanced"
@@ -426,6 +554,8 @@ export const Constants = {
         "boost_energy",
       ],
       gym_access: ["full_gym", "home_gym", "basic_equipment", "no_equipment"],
+      meal_source: ["manual", "ai_text", "ai_photo", "favorite"],
+      meal_type: ["breakfast", "lunch", "dinner", "snack"],
       sex_type: ["male", "female", "other", "prefer_not_to_say"],
       unit_system: ["metric", "imperial"],
       workout_experience: ["none", "beginner", "intermediate", "advanced"],
