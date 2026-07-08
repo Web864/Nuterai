@@ -1,7 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { profileQueryOptions, goalsQueryOptions } from "@/features/goals/queries";
+import {
+  mealsTodayQueryOptions,
+  waterTodayQueryOptions,
+  sumMealTotals,
+  sumWater,
+  todayISO,
+} from "@/features/logging/queries";
 import { Route as AuthedRoute } from "./route";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,12 +25,12 @@ import {
   Leaf,
   LogOut,
   Moon,
+  Plus,
   Settings,
   Sparkles,
   Utensils,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
