@@ -257,7 +257,7 @@ function MealLogger({ userId }: { userId: string }) {
           source: "ai_text",
           ai_model: (analysis as AnalyzedMeal & { model?: string }).model ?? null,
           ai_confidence: analysis.confidence,
-          ai_raw: analysis as unknown as Record<string, unknown>,
+          ai_raw: JSON.parse(JSON.stringify(analysis)),
         });
       }
       toast.success(`Logged ${analysis.items.length} item${analysis.items.length === 1 ? "" : "s"}.`);
