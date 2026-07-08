@@ -329,7 +329,7 @@ function MacroRow({ label, value, target, unit }: { label: string; value: number
       <div className="mb-1.5 flex items-baseline justify-between text-sm">
         <span className="font-medium text-foreground">{label}</span>
         <span className="text-muted-foreground">
-          <strong className="text-foreground">0</strong> / {target}
+          <strong className="text-foreground">{Math.round(value)}</strong> / {target}
           {unit}
         </span>
       </div>
