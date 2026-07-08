@@ -287,15 +287,18 @@ function StatCard({
   icon,
   label,
   value,
+  target,
   unit,
   accent,
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
+  target?: number;
   unit: string;
   accent?: string;
 }) {
+  const pct = target && target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
   return (
     <Card className="rounded-3xl border-border/60 shadow-soft transition-organic hover:shadow-elevated">
       <CardContent className="p-5">
@@ -305,9 +308,19 @@ function StatCard({
         <p className="mt-4 text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
         <p className="mt-1 font-display text-3xl text-foreground">
           {value.toLocaleString()}
-          <span className="ml-1 text-sm font-sans font-normal text-muted-foreground">{unit}</span>
+          {target ? (
+            <span className="ml-1 text-sm font-sans font-normal text-muted-foreground">
+              / {target.toLocaleString()} {unit}
+            </span>
+          ) : (
+            <span className="ml-1 text-sm font-sans font-normal text-muted-foreground">{unit}</span>
+          )}
         </p>
+        {target ? <Progress value={pct} className="mt-3 h-1.5" /> : null}
       </CardContent>
+    </Card>
+  );
+}
     </Card>
   );
 }
