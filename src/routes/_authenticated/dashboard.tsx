@@ -185,12 +185,13 @@ function Dashboard() {
                     description="Stay hydrated all day"
                   />
                 </Link>
-                <FeatureCard
-                  icon={<Dumbbell className="h-5 w-5" />}
-                  title="Today's workout"
-                  description="Personalized to your goal"
-                  soon
-                />
+                <Link to="/workout" className="block">
+                  <FeatureCard
+                    icon={<Dumbbell className="h-5 w-5" />}
+                    title="Today's workout"
+                    description="AI plans + session logger"
+                  />
+                </Link>
                 <FeatureCard
                   icon={<Moon className="h-5 w-5" />}
                   title="Sleep & recovery"

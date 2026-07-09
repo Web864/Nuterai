@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      exercise_logs: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          muscle_group: string | null
+          name: string
+          order_index: number
+          reps: number
+          session_id: string
+          sets: number
+          user_id: string
+          weight_kg: number | null
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          muscle_group?: string | null
+          name: string
+          order_index?: number
+          reps?: number
+          session_id: string
+          sets?: number
+          user_id: string
+          weight_kg?: number | null
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          muscle_group?: string | null
+          name?: string
+          order_index?: number
+          reps?: number
+          session_id?: string
+          sets?: number
+          user_id?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "workout_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_entries: {
         Row: {
           ai_confidence: number | null
@@ -351,6 +401,163 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_plan_days: {
+        Row: {
+          created_at: string
+          day_index: number
+          estimated_minutes: number
+          exercises: Json
+          focus: Database["public"]["Enums"]["workout_focus"]
+          id: string
+          plan_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_index: number
+          estimated_minutes?: number
+          exercises?: Json
+          focus?: Database["public"]["Enums"]["workout_focus"]
+          id?: string
+          plan_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_index?: number
+          estimated_minutes?: number
+          exercises?: Json
+          focus?: Database["public"]["Enums"]["workout_focus"]
+          id?: string
+          plan_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_plan_days_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "workout_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_plans: {
+        Row: {
+          ai_model: string | null
+          ai_raw: Json | null
+          created_at: string
+          days_per_week: number
+          difficulty: Database["public"]["Enums"]["workout_difficulty"]
+          duration_weeks: number
+          goal: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          source: Database["public"]["Enums"]["workout_source"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_model?: string | null
+          ai_raw?: Json | null
+          created_at?: string
+          days_per_week?: number
+          difficulty?: Database["public"]["Enums"]["workout_difficulty"]
+          duration_weeks?: number
+          goal?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          source?: Database["public"]["Enums"]["workout_source"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_model?: string | null
+          ai_raw?: Json | null
+          created_at?: string
+          days_per_week?: number
+          difficulty?: Database["public"]["Enums"]["workout_difficulty"]
+          duration_weeks?: number
+          goal?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          source?: Database["public"]["Enums"]["workout_source"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workout_sessions: {
+        Row: {
+          calories_kcal: number
+          created_at: string
+          duration_minutes: number
+          exercises: Json
+          focus: Database["public"]["Enums"]["workout_focus"]
+          id: string
+          logged_at: string
+          logged_date: string
+          name: string
+          notes: string | null
+          perceived_effort: number | null
+          plan_day_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calories_kcal?: number
+          created_at?: string
+          duration_minutes?: number
+          exercises?: Json
+          focus?: Database["public"]["Enums"]["workout_focus"]
+          id?: string
+          logged_at?: string
+          logged_date?: string
+          name: string
+          notes?: string | null
+          perceived_effort?: number | null
+          plan_day_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calories_kcal?: number
+          created_at?: string
+          duration_minutes?: number
+          exercises?: Json
+          focus?: Database["public"]["Enums"]["workout_focus"]
+          id?: string
+          logged_at?: string
+          logged_date?: string
+          name?: string
+          notes?: string | null
+          perceived_effort?: number | null
+          plan_day_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_sessions_plan_day_id_fkey"
+            columns: ["plan_day_id"]
+            isOneToOne: false
+            referencedRelation: "workout_plan_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -396,7 +603,22 @@ export type Database = {
       meal_type: "breakfast" | "lunch" | "dinner" | "snack"
       sex_type: "male" | "female" | "other" | "prefer_not_to_say"
       unit_system: "metric" | "imperial"
+      workout_difficulty: "beginner" | "intermediate" | "advanced"
       workout_experience: "none" | "beginner" | "intermediate" | "advanced"
+      workout_focus:
+        | "full_body"
+        | "upper"
+        | "lower"
+        | "push"
+        | "pull"
+        | "legs"
+        | "core"
+        | "cardio"
+        | "hiit"
+        | "mobility"
+        | "rest"
+        | "custom"
+      workout_source: "ai" | "manual" | "template"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -558,7 +780,23 @@ export const Constants = {
       meal_type: ["breakfast", "lunch", "dinner", "snack"],
       sex_type: ["male", "female", "other", "prefer_not_to_say"],
       unit_system: ["metric", "imperial"],
+      workout_difficulty: ["beginner", "intermediate", "advanced"],
       workout_experience: ["none", "beginner", "intermediate", "advanced"],
+      workout_focus: [
+        "full_body",
+        "upper",
+        "lower",
+        "push",
+        "pull",
+        "legs",
+        "core",
+        "cardio",
+        "hiit",
+        "mobility",
+        "rest",
+        "custom",
+      ],
+      workout_source: ["ai", "manual", "template"],
     },
   },
 } as const
