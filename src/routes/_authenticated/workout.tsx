@@ -677,11 +677,7 @@ function SessionHistory({
   sessions,
 }: {
   userId: string;
-  sessions: Awaited<ReturnType<typeof sessionsQueryOptions>["queryFn"]> extends infer T
-    ? T extends Array<infer S>
-      ? S[]
-      : never
-    : never;
+  sessions: WorkoutSession[];
 }) {
   const del = useDeleteSession(userId);
 
