@@ -45,13 +45,13 @@ async function buildUserContext(supabase: ReturnType<typeof createClient>, userI
     parts.push(`Daily targets: ${goals.daily_calorie_target ?? "?"} kcal · P:${goals.protein_g ?? "?"}g · C:${goals.carbs_g ?? "?"}g · F:${goals.fat_g ?? "?"}g · Fiber:${goals.fiber_g ?? "?"}g · Water:${goals.water_target_ml ?? "?"}ml · TDEE:${goals.tdee_kcal ?? "?"} kcal`);
   }
   if (weights.length) {
-    parts.push(`Recent weight (kg): ${weights.map((w) => `${w.weight_kg}@${w.logged_at?.slice(0, 10)}`).join(", ")}`);
+    parts.push(`Recent weight (kg): ${weights.map((w: { weight_kg: number | null; logged_at: string | null }) => `${w.weight_kg}@${w.logged_at?.slice(0, 10)}`).join(", ")}`);
   }
   if (meals.length) {
-    parts.push(`Recent meals: ${meals.slice(0, 5).map((m) => `${m.name} (${Math.round(m.calories_kcal ?? 0)}kcal, P${Math.round(m.protein_g ?? 0)}/C${Math.round(m.carbs_g ?? 0)}/F${Math.round(m.fat_g ?? 0)})`).join("; ")}`);
+    parts.push(`Recent meals: ${meals.slice(0, 5).map((m: { name: string; calories_kcal: number | null; protein_g: number | null; carbs_g: number | null; fat_g: number | null }) => `${m.name} (${Math.round(m.calories_kcal ?? 0)}kcal, P${Math.round(m.protein_g ?? 0)}/C${Math.round(m.carbs_g ?? 0)}/F${Math.round(m.fat_g ?? 0)})`).join("; ")}`);
   }
   if (workouts.length) {
-    parts.push(`Recent workouts: ${workouts.map((w) => `${w.name} (${Math.round((w.duration_seconds ?? 0) / 60)}min, ${w.calories_burned ?? 0}kcal)`).join("; ")}`);
+    parts.push(`Recent workouts: ${workouts.map((w: { name: string; duration_seconds: number | null; calories_burned: number | null }) => `${w.name} (${Math.round((w.duration_seconds ?? 0) / 60)}min, ${w.calories_burned ?? 0}kcal)`).join("; ")}`);
   }
   parts.push("=== END CONTEXT ===");
   return parts.join("\n");
