@@ -192,12 +192,13 @@ function Dashboard() {
                     description="AI plans + session logger"
                   />
                 </Link>
-                <FeatureCard
-                  icon={<Moon className="h-5 w-5" />}
-                  title="Sleep & recovery"
-                  description="Track and optimize"
-                  soon
-                />
+                <Link to="/coach" className="block">
+                  <FeatureCard
+                    icon={<Sparkles className="h-5 w-5" />}
+                    title="AI Coach"
+                    description="Chat with your personal coach"
+                  />
+                </Link>
               </div>
             </section>
 

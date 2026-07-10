@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      coach_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          model: string | null
+          role: Database["public"]["Enums"]["coach_role"]
+          thread_id: string
+          tokens_in: number | null
+          tokens_out: number | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          role: Database["public"]["Enums"]["coach_role"]
+          thread_id: string
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          role?: Database["public"]["Enums"]["coach_role"]
+          thread_id?: string
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "coach_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_threads: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          last_message_preview: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          last_message_preview?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          last_message_preview?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercise_logs: {
         Row: {
           created_at: string
@@ -579,6 +653,7 @@ export type Database = {
         | "active"
         | "very_active"
       app_role: "admin" | "moderator" | "user"
+      coach_role: "user" | "assistant" | "system"
       cooking_skill: "none" | "beginner" | "intermediate" | "advanced"
       diet_preference:
         | "omnivore"
@@ -754,6 +829,7 @@ export const Constants = {
         "very_active",
       ],
       app_role: ["admin", "moderator", "user"],
+      coach_role: ["user", "assistant", "system"],
       cooking_skill: ["none", "beginner", "intermediate", "advanced"],
       diet_preference: [
         "omnivore",
