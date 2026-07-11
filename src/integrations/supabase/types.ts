@@ -143,6 +143,8 @@ export type Database = {
           ai_confidence: number | null
           ai_model: string | null
           ai_raw: Json | null
+          barcode: string | null
+          brand: string | null
           calories_kcal: number
           carbs_g: number
           created_at: string
@@ -150,6 +152,7 @@ export type Database = {
           fat_g: number
           fiber_g: number
           id: string
+          image_url: string | null
           logged_at: string
           logged_date: string
           meal_type: Database["public"]["Enums"]["meal_type"]
@@ -157,7 +160,9 @@ export type Database = {
           protein_g: number
           serving_qty: number
           serving_unit: string | null
+          sodium_mg: number | null
           source: Database["public"]["Enums"]["meal_source"]
+          sugar_g: number | null
           updated_at: string
           user_id: string
         }
@@ -165,6 +170,8 @@ export type Database = {
           ai_confidence?: number | null
           ai_model?: string | null
           ai_raw?: Json | null
+          barcode?: string | null
+          brand?: string | null
           calories_kcal?: number
           carbs_g?: number
           created_at?: string
@@ -172,6 +179,7 @@ export type Database = {
           fat_g?: number
           fiber_g?: number
           id?: string
+          image_url?: string | null
           logged_at?: string
           logged_date?: string
           meal_type?: Database["public"]["Enums"]["meal_type"]
@@ -179,7 +187,9 @@ export type Database = {
           protein_g?: number
           serving_qty?: number
           serving_unit?: string | null
+          sodium_mg?: number | null
           source?: Database["public"]["Enums"]["meal_source"]
+          sugar_g?: number | null
           updated_at?: string
           user_id: string
         }
@@ -187,6 +197,8 @@ export type Database = {
           ai_confidence?: number | null
           ai_model?: string | null
           ai_raw?: Json | null
+          barcode?: string | null
+          brand?: string | null
           calories_kcal?: number
           carbs_g?: number
           created_at?: string
@@ -194,6 +206,7 @@ export type Database = {
           fat_g?: number
           fiber_g?: number
           id?: string
+          image_url?: string | null
           logged_at?: string
           logged_date?: string
           meal_type?: Database["public"]["Enums"]["meal_type"]
@@ -201,7 +214,9 @@ export type Database = {
           protein_g?: number
           serving_qty?: number
           serving_unit?: string | null
+          sodium_mg?: number | null
           source?: Database["public"]["Enums"]["meal_source"]
+          sugar_g?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -674,7 +689,13 @@ export type Database = {
         | "improve_health"
         | "boost_energy"
       gym_access: "full_gym" | "home_gym" | "basic_equipment" | "no_equipment"
-      meal_source: "manual" | "ai_text" | "ai_photo" | "favorite"
+      meal_source:
+        | "manual"
+        | "ai_text"
+        | "ai_photo"
+        | "favorite"
+        | "ai_photo_scan"
+        | "barcode"
       meal_type: "breakfast" | "lunch" | "dinner" | "snack"
       sex_type: "male" | "female" | "other" | "prefer_not_to_say"
       unit_system: "metric" | "imperial"
@@ -852,7 +873,14 @@ export const Constants = {
         "boost_energy",
       ],
       gym_access: ["full_gym", "home_gym", "basic_equipment", "no_equipment"],
-      meal_source: ["manual", "ai_text", "ai_photo", "favorite"],
+      meal_source: [
+        "manual",
+        "ai_text",
+        "ai_photo",
+        "favorite",
+        "ai_photo_scan",
+        "barcode",
+      ],
       meal_type: ["breakfast", "lunch", "dinner", "snack"],
       sex_type: ["male", "female", "other", "prefer_not_to_say"],
       unit_system: ["metric", "imperial"],
