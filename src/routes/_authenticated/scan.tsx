@@ -143,7 +143,7 @@ function PhotoTab({ userId }: { userId: string }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [hint, setHint] = useState("");
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<AnalyzedMealPhoto | null>(null);
+  const [result, setResult] = useState<(AnalyzedMealPhoto & { model?: string }) | null>(null);
   const [items, setItems] = useState<EditableItem[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const camRef = useRef<HTMLInputElement>(null);
