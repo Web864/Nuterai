@@ -19,6 +19,7 @@ import {
   Apple,
   Award,
   Calendar,
+  Camera,
   Droplets,
   Dumbbell,
   Flame,
@@ -197,6 +198,13 @@ function Dashboard() {
                     icon={<Sparkles className="h-5 w-5" />}
                     title="AI Coach"
                     description="Chat with your personal coach"
+                  />
+                </Link>
+                <Link to="/scan" className="block">
+                  <FeatureCard
+                    icon={<Camera className="h-5 w-5" />}
+                    title="Scan food"
+                    description="Photo or barcode → instant nutrition"
                   />
                 </Link>
               </div>
