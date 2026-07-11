@@ -19,6 +19,7 @@ import {
   Apple,
   Award,
   Calendar,
+  Camera,
   Droplets,
   Dumbbell,
   Flame,
