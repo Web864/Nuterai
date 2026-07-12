@@ -18,6 +18,7 @@ import {
   Activity,
   Apple,
   Award,
+  Bell,
   Calendar,
   Camera,
   Droplets,
