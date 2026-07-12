@@ -222,6 +222,56 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          action: Database["public"]["Enums"]["notification_action"]
+          body: string | null
+          created_at: string
+          delivered_at: string | null
+          id: string
+          read_at: string | null
+          reminder_id: string | null
+          scheduled_for: string
+          title: string
+          type: Database["public"]["Enums"]["reminder_type"]
+          user_id: string
+        }
+        Insert: {
+          action?: Database["public"]["Enums"]["notification_action"]
+          body?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          read_at?: string | null
+          reminder_id?: string | null
+          scheduled_for: string
+          title: string
+          type?: Database["public"]["Enums"]["reminder_type"]
+          user_id: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["notification_action"]
+          body?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          read_at?: string | null
+          reminder_id?: string | null
+          scheduled_for?: string
+          title?: string
+          type?: Database["public"]["Enums"]["reminder_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_reminder_id_fkey"
+            columns: ["reminder_id"]
+            isOneToOne: false
+            referencedRelation: "reminders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -234,9 +284,14 @@ export type Database = {
           id: string
           language: string | null
           locale: string | null
+          notification_sound: boolean
+          notifications_enabled: boolean
           onboarding_completed: boolean
           phone: string | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
           religion: string | null
+          timezone: string | null
           units: Database["public"]["Enums"]["unit_system"]
           updated_at: string
         }
@@ -251,9 +306,14 @@ export type Database = {
           id: string
           language?: string | null
           locale?: string | null
+          notification_sound?: boolean
+          notifications_enabled?: boolean
           onboarding_completed?: boolean
           phone?: string | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
           religion?: string | null
+          timezone?: string | null
           units?: Database["public"]["Enums"]["unit_system"]
           updated_at?: string
         }
@@ -268,11 +328,70 @@ export type Database = {
           id?: string
           language?: string | null
           locale?: string | null
+          notification_sound?: boolean
+          notifications_enabled?: boolean
           onboarding_completed?: boolean
           phone?: string | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
           religion?: string | null
+          timezone?: string | null
           units?: Database["public"]["Enums"]["unit_system"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      reminders: {
+        Row: {
+          created_at: string
+          days_of_week: number[]
+          id: string
+          is_active: boolean
+          is_recurring: boolean
+          message: string | null
+          metadata: Json
+          one_time_at: string | null
+          snooze_until: string | null
+          times: string[]
+          timezone: string
+          title: string
+          type: Database["public"]["Enums"]["reminder_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          days_of_week?: number[]
+          id?: string
+          is_active?: boolean
+          is_recurring?: boolean
+          message?: string | null
+          metadata?: Json
+          one_time_at?: string | null
+          snooze_until?: string | null
+          times?: string[]
+          timezone?: string
+          title: string
+          type?: Database["public"]["Enums"]["reminder_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          days_of_week?: number[]
+          id?: string
+          is_active?: boolean
+          is_recurring?: boolean
+          message?: string | null
+          metadata?: Json
+          one_time_at?: string | null
+          snooze_until?: string | null
+          times?: string[]
+          timezone?: string
+          title?: string
+          type?: Database["public"]["Enums"]["reminder_type"]
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -697,6 +816,20 @@ export type Database = {
         | "ai_photo_scan"
         | "barcode"
       meal_type: "breakfast" | "lunch" | "dinner" | "snack"
+      notification_action:
+        | "pending"
+        | "completed"
+        | "snoozed"
+        | "dismissed"
+        | "missed"
+      reminder_type:
+        | "meal"
+        | "workout"
+        | "water"
+        | "weight"
+        | "sleep"
+        | "medication"
+        | "custom"
       sex_type: "male" | "female" | "other" | "prefer_not_to_say"
       unit_system: "metric" | "imperial"
       workout_difficulty: "beginner" | "intermediate" | "advanced"
@@ -882,6 +1015,22 @@ export const Constants = {
         "barcode",
       ],
       meal_type: ["breakfast", "lunch", "dinner", "snack"],
+      notification_action: [
+        "pending",
+        "completed",
+        "snoozed",
+        "dismissed",
+        "missed",
+      ],
+      reminder_type: [
+        "meal",
+        "workout",
+        "water",
+        "weight",
+        "sleep",
+        "medication",
+        "custom",
+      ],
       sex_type: ["male", "female", "other", "prefer_not_to_say"],
       unit_system: ["metric", "imperial"],
       workout_difficulty: ["beginner", "intermediate", "advanced"],

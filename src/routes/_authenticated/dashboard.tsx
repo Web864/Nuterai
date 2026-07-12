@@ -18,6 +18,7 @@ import {
   Activity,
   Apple,
   Award,
+  Bell,
   Calendar,
   Camera,
   Droplets,
@@ -205,6 +206,13 @@ function Dashboard() {
                     icon={<Camera className="h-5 w-5" />}
                     title="Scan food"
                     description="Photo or barcode → instant nutrition"
+                  />
+                </Link>
+                <Link to="/reminders" className="block">
+                  <FeatureCard
+                    icon={<Bell className="h-5 w-5" />}
+                    title="Reminders"
+                    description="Meals, water, workouts & more"
                   />
                 </Link>
               </div>
