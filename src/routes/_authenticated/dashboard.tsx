@@ -207,6 +207,13 @@ function Dashboard() {
                     description="Photo or barcode → instant nutrition"
                   />
                 </Link>
+                <Link to="/reminders" className="block">
+                  <FeatureCard
+                    icon={<Bell className="h-5 w-5" />}
+                    title="Reminders"
+                    description="Meals, water, workouts & more"
+                  />
+                </Link>
               </div>
             </section>
 
