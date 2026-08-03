@@ -78,8 +78,140 @@ function SettingsPage() {
               <Field label="Water" value={goals.data?.water_target_ml ? `${goals.data.water_target_ml} ml` : "—"} />
             </CardContent>
           </Card>
+
+          <PublicProfileCard userId={userId} />
         </div>
       </div>
+    </div>
+  );
+}
+
+function PublicProfileCard({ userId }: { userId: string }) {
+  const pub = useQuery(publicProfileByIdQueryOptions(userId));
+  const update = useUpdatePublicProfile(userId);
+  const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
+
+  useEffect(() => {
+    if (pub.data) {
+      setUsername(pub.data.username ?? "");
+      setBio(pub.data.bio ?? "");
+    }
+  }, [pub.data]);
+
+  async function save() {
+    const handle = username.trim().toLowerCase();
+    if (handle && !/^[a-z0-9_]{3,24}$/.test(handle)) {
+      toast.error("Handle must be 3–24 characters: letters, numbers or underscore.");
+      return;
+    }
+    if (bio.length > 300) {
+      toast.error("Bio must be under 300 characters.");
+      return;
+    }
+    try {
+      if (handle && handle !== (pub.data?.username ?? "")) {
+        const free = await isUsernameAvailable(handle, userId);
+        if (!free) {
+          toast.error("That handle is already taken.");
+          return;
+        }
+      }
+      await update.mutateAsync({ username: handle || null, bio: bio.trim() || null });
+      toast.success("Public profile updated");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't save profile");
+    }
+  }
+
+  function toggle(key: "is_public" | "show_stats" | "show_achievements" | "allow_friend_requests", value: boolean) {
+    update.mutate({ [key]: value }, { onError: () => toast.error("Couldn't update privacy setting") });
+  }
+
+  const p = pub.data;
+
+  return (
+    <Card className="rounded-3xl border-border/60 shadow-soft">
+      <CardHeader>
+        <CardTitle className="font-display text-xl">Public profile & privacy</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="handle">Handle</Label>
+          <Input
+            id="handle"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="yourname"
+            className="rounded-xl"
+          />
+          <p className="text-xs text-muted-foreground">Used for your profile link: /u/{username || "yourname"}</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="bio">Bio</Label>
+          <Textarea
+            id="bio"
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            placeholder="A line about your goals"
+            className="rounded-xl"
+            rows={3}
+          />
+        </div>
+        <Button onClick={save} disabled={update.isPending} className="rounded-full">
+          {update.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Save profile
+        </Button>
+
+        <div className="space-y-3 border-t border-border/40 pt-4">
+          <ToggleRow
+            label="Public profile"
+            description="Let other athletes discover you and see your profile."
+            checked={p?.is_public ?? true}
+            onChange={(v) => toggle("is_public", v)}
+          />
+          <ToggleRow
+            label="Show stats"
+            description="Display level, XP and streaks on your profile and leaderboards."
+            checked={p?.show_stats ?? true}
+            onChange={(v) => toggle("show_stats", v)}
+          />
+          <ToggleRow
+            label="Show achievements"
+            description="Display unlocked badges on your profile."
+            checked={p?.show_achievements ?? true}
+            onChange={(v) => toggle("show_achievements", v)}
+          />
+          <ToggleRow
+            label="Allow friend requests"
+            description="Others can send you friend requests."
+            checked={p?.allow_friend_requests ?? true}
+            onChange={(v) => toggle("allow_friend_requests", v)}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ToggleRow({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div className="min-w-0">
+        <p className="font-medium">{label}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} aria-label={label} />
     </div>
   );
 }
