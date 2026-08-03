@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Route as AuthedRoute } from "./route";
+import { useGamification } from "@/features/gamification/useGamification";
 import {
   remindersQueryOptions,
   notificationsQueryOptions,
