@@ -471,7 +471,6 @@ function NotificationHistory({ userId }: { userId: string }) {
                 </Button>
               )}
             </div>
-            </div>
           </CardContent>
         </Card>
       ))}
