@@ -777,6 +777,8 @@ function CustomFoodForm({ userId, barcode, onSaved }: { userId: string; barcode:
       const { error } = await supabase.from("meal_entries").insert(row);
       if (error) throw error;
       toast.success("Saved to log");
+      void track({ type: "meal_logged", name: name.trim() });
+      if (barcode) void track({ type: "food_scanned", method: "barcode" }, { silent: true });
       onSaved();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed.");
