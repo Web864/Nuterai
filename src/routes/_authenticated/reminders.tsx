@@ -407,6 +407,7 @@ function ReminderList({ userId, reminders }: { userId: string; reminders: Remind
 function NotificationHistory({ userId }: { userId: string }) {
   const notifs = useQuery(notificationsQueryOptions(userId));
   const mark = useMarkNotification(userId);
+  const { track } = useGamification(userId);
   const data = notifs.data ?? [];
   if (data.length === 0) {
     return <p className="py-8 text-center text-sm text-muted-foreground">No notifications yet.</p>;
@@ -427,15 +428,32 @@ function NotificationHistory({ userId }: { userId: string }) {
               </p>
             </div>
             <div className="flex gap-1">
-              {!n.read_at && (
+              {n.action === "pending" ? (
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => mark.mutate({ id: n.id, patch: { read_at: new Date().toISOString() } })}
-                  aria-label="Mark read"
+                  onClick={() => {
+                    mark.mutate({
+                      id: n.id,
+                      patch: { action: "completed", read_at: new Date().toISOString() },
+                    });
+                    void track({ type: "reminder_completed" });
+                  }}
+                  aria-label="Mark completed"
                 >
                   <Check className="h-4 w-4" />
                 </Button>
+              ) : (
+                !n.read_at && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => mark.mutate({ id: n.id, patch: { read_at: new Date().toISOString() } })}
+                    aria-label="Mark read"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                )
               )}
               {n.action === "pending" && (
                 <Button
@@ -452,6 +470,7 @@ function NotificationHistory({ userId }: { userId: string }) {
                   <X className="h-4 w-4" />
                 </Button>
               )}
+            </div>
             </div>
           </CardContent>
         </Card>
