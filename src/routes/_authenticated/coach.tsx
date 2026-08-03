@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { Route as AuthedRoute } from "./route";
+import { useGamification } from "@/features/gamification/useGamification";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -197,6 +198,7 @@ function ChatPanel({ threadId, userId, onDeleted }: { threadId: string; userId: 
   const qc = useQueryClient();
   const messagesQ = useQuery(messagesQueryOptions(threadId));
   const send = useServerFn(sendCoachMessage);
+  const { track } = useGamification(userId);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -233,6 +235,7 @@ function ChatPanel({ threadId, userId, onDeleted }: { threadId: string; userId: 
     });
     try {
       await send({ data: { thread_id: threadId, message: content } });
+      void track({ type: "coach_message" }, { silent: true });
       await qc.invalidateQueries({ queryKey: ["coach-messages", threadId] });
       await qc.invalidateQueries({ queryKey: ["coach-threads", userId] });
     } catch (e) {
