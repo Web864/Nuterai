@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { Route as AuthedRoute } from "./route";
+import { useGamification } from "@/features/gamification/useGamification";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -159,6 +160,7 @@ function AIGeneratorCard({
 }) {
   const qc = useQueryClient();
   const generate = useServerFn(generateWorkoutPlan);
+  const { track } = useGamification(userId);
   const [goal, setGoal] = useState(
     defaultGoal === "build_muscle"
       ? "Build lean muscle"
@@ -187,6 +189,7 @@ function AIGeneratorCard({
         },
       });
       toast.success(`Plan "${res.name}" created!`);
+      void track({ type: "workout_plan_created", name: res.name });
       qc.invalidateQueries({ queryKey: ["workout-plans", userId] });
       setNotes("");
     } catch (e) {
@@ -456,6 +459,7 @@ function PlanCard({
 function QuickLogCard({ userId, activePlanId }: { userId: string; activePlanId?: string }) {
   const days = useQuery(planDaysQueryOptions(activePlanId));
   const log = useLogSession(userId);
+  const { track } = useGamification(userId);
   const [selectedDayId, setSelectedDayId] = useState<string>("custom");
   const [name, setName] = useState("");
   const [focus, setFocus] = useState<string>("full_body");
@@ -500,6 +504,12 @@ function QuickLogCard({ userId, activePlanId }: { userId: string; activePlanId?:
         plan_day_id: selectedDayId !== "custom" ? selectedDayId : null,
       });
       toast.success("Workout logged!");
+      void track({
+        type: "workout_logged",
+        name,
+        minutes: duration,
+        calories: estimateCalories(duration, intensity),
+      });
       setDialogOpen(false);
       setName("");
       setNotes("");

@@ -10,6 +10,7 @@ import {
   todayISO,
 } from "@/features/logging/queries";
 import { Route as AuthedRoute } from "./route";
+import { LevelCard, BadgeShelf } from "@/features/gamification/StatsWidgets";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,8 @@ import {
   Plus,
   Settings,
   Sparkles,
+  Trophy,
+  Users,
   Utensils,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -150,6 +153,13 @@ function Dashboard() {
               />
             </section>
 
+            <section className="mt-8 grid gap-4 lg:grid-cols-[2fr_1fr]">
+              <LevelCard userId={userId} />
+              <BadgeShelf userId={userId} />
+            </section>
+
+
+
             <section className="mt-8 grid gap-4 lg:grid-cols-3">
               <Card className="lg:col-span-2 rounded-3xl border-border/60 shadow-soft">
                 <CardHeader className="pb-3">
@@ -213,6 +223,20 @@ function Dashboard() {
                     icon={<Bell className="h-5 w-5" />}
                     title="Reminders"
                     description="Meals, water, workouts & more"
+                  />
+                </Link>
+                <Link to="/community" className="block">
+                  <FeatureCard
+                    icon={<Users className="h-5 w-5" />}
+                    title="Community"
+                    description="Feed, friends & activity"
+                  />
+                </Link>
+                <Link to="/achievements" className="block">
+                  <FeatureCard
+                    icon={<Trophy className="h-5 w-5" />}
+                    title="Progress & badges"
+                    description="XP, streaks & leaderboards"
                   />
                 </Link>
               </div>

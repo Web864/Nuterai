@@ -20,6 +20,7 @@ import {
 import { BrowserMultiFormatReader } from "@zxing/browser";
 
 import { Route as AuthedRoute } from "./route";
+import { useGamification } from "@/features/gamification/useGamification";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -139,6 +140,7 @@ type EditableItem = {
 
 function PhotoTab({ userId }: { userId: string }) {
   const qc = useQueryClient();
+  const { track } = useGamification(userId);
   const analyze = useServerFn(analyzeMealPhoto);
   const [preview, setPreview] = useState<string | null>(null);
   const [hint, setHint] = useState("");
@@ -235,6 +237,8 @@ function PhotoTab({ userId }: { userId: string }) {
       const { error } = await supabase.from("meal_entries").insert(rows);
       if (error) throw error;
       toast.success(`Logged ${rows.length} item${rows.length > 1 ? "s" : ""}`);
+      void track({ type: "food_scanned", method: "photo" });
+      void track({ type: "meal_logged", name: chosen[0]?.name }, { silent: true });
       qc.invalidateQueries({ queryKey: ["meals", userId] });
       reset();
     } catch (e) {
@@ -619,6 +623,7 @@ function ProductCard({
   const [qty, setQty] = useState(1);
   const [meal, setMeal] = useState<MealType>(currentMealType());
   const [busy, setBusy] = useState(false);
+  const { track } = useGamification(userId);
 
   const cal = Math.round(product.calories_kcal * qty);
   const p = Math.round(product.protein_g * qty * 10) / 10;
@@ -651,6 +656,8 @@ function ProductCard({
       const { error } = await supabase.from("meal_entries").insert(row);
       if (error) throw error;
       toast.success(`Logged ${product.name}`);
+      void track({ type: "food_scanned", method: "barcode" });
+      void track({ type: "meal_logged", name: product.name }, { silent: true });
       onSaved();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Save failed.");
@@ -744,6 +751,7 @@ function CustomFoodForm({ userId, barcode, onSaved }: { userId: string; barcode:
   const [fat, setFat] = useState("");
   const [meal, setMeal] = useState<MealType>(currentMealType());
   const [busy, setBusy] = useState(false);
+  const { track } = useGamification(userId);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -769,6 +777,8 @@ function CustomFoodForm({ userId, barcode, onSaved }: { userId: string; barcode:
       const { error } = await supabase.from("meal_entries").insert(row);
       if (error) throw error;
       toast.success("Saved to log");
+      void track({ type: "meal_logged", name: name.trim() });
+      if (barcode) void track({ type: "food_scanned", method: "barcode" }, { silent: true });
       onSaved();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed.");

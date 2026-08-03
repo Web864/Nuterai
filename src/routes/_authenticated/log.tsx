@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useGamification } from "@/features/gamification/useGamification";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -63,6 +64,7 @@ function LogPage() {
   const { userId } = AuthedRoute.useRouteContext();
   const navigate = useNavigate();
   const date = useMemo(() => todayISO(), []);
+  const { track } = useGamification(userId);
 
   const meals = useQuery(mealsTodayQueryOptions(userId, date));
   const water = useQuery(waterTodayQueryOptions(userId, date));
@@ -73,6 +75,16 @@ function LogPage() {
   const waterMl = useMemo(() => sumWater(water.data ?? []), [water.data]);
 
   const g = goals.data;
+
+  // Daily bonus when the calorie target is reached (deduped once per day).
+  const calorieTarget = g?.daily_calorie_target ?? 0;
+  useEffect(() => {
+    if (calorieTarget > 0 && totals.calories >= calorieTarget * 0.9) {
+      void track({ type: "calorie_target_hit" });
+    }
+  }, [calorieTarget, totals.calories, track]);
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -151,7 +163,11 @@ function LogPage() {
           </TabsContent>
 
           <TabsContent value="weight" className="mt-4 space-y-4">
-            <WeightLogger userId={userId} lastKg={weight.data?.[0] ? Number(weight.data[0].weight_kg) : undefined} />
+            <WeightLogger
+              userId={userId}
+              lastKg={weight.data?.[0] ? Number(weight.data[0].weight_kg) : undefined}
+              targetKg={g?.target_weight_kg ? Number(g.target_weight_kg) : undefined}
+            />
             <WeightList userId={userId} />
           </TabsContent>
         </Tabs>
@@ -220,6 +236,7 @@ function MealLogger({ userId }: { userId: string }) {
 
   const runAnalyze = useServerFn(analyzeMeal);
   const addMeal = useAddMeal(userId);
+  const { track } = useGamification(userId);
   const qc = useQueryClient();
 
   async function handleAnalyze() {
@@ -261,6 +278,7 @@ function MealLogger({ userId }: { userId: string }) {
         });
       }
       toast.success(`Logged ${analysis.items.length} item${analysis.items.length === 1 ? "" : "s"}.`);
+      void track({ type: "meal_logged", name: analysis.items[0]?.name });
       setDescription("");
       setAnalysis(null);
       qc.invalidateQueries({ queryKey: ["meals", userId] });
@@ -465,12 +483,19 @@ function WaterLogger({
   targetMl: number;
 }) {
   const add = useAddWater(userId);
+  const { track } = useGamification(userId);
   const [custom, setCustom] = useState("");
   const remaining = Math.max(0, targetMl - totalMl);
 
   function log(amount: number) {
     add.mutate(amount, {
-      onSuccess: () => toast.success(`+${amount}ml logged`),
+      onSuccess: () => {
+        toast.success(`+${amount}ml logged`);
+        void track({ type: "water_logged", amountMl: amount });
+        if (targetMl > 0 && totalMl + amount >= targetMl) {
+          void track({ type: "water_goal_met" });
+        }
+      },
       onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't log water"),
     });
   }
@@ -580,8 +605,17 @@ function WaterList({ userId, date }: { userId: string; date: string }) {
 
 /* ---------------- Weight ---------------- */
 
-function WeightLogger({ userId, lastKg }: { userId: string; lastKg?: number }) {
+function WeightLogger({
+  userId,
+  lastKg,
+  targetKg,
+}: {
+  userId: string;
+  lastKg?: number;
+  targetKg?: number;
+}) {
   const add = useAddWeight(userId);
+  const { track } = useGamification(userId);
   const [weight, setWeight] = useState<string>(lastKg ? lastKg.toString() : "");
   const [note, setNote] = useState("");
 
@@ -598,6 +632,11 @@ function WeightLogger({ userId, lastKg }: { userId: string; lastKg?: number }) {
         onSuccess: () => {
           toast.success("Weight logged");
           setNote("");
+          void track({
+            type: "weight_logged",
+            weightKg: n,
+            reachedTarget: !!targetKg && Math.abs(n - targetKg) <= 0.5,
+          });
         },
         onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't log weight"),
       },
