@@ -207,6 +207,7 @@ function UpcomingList({
 // ------------- Create -------------
 function CreateReminderCard({ userId, defaultTz }: { userId: string; defaultTz: string }) {
   const create = useCreateReminder(userId);
+  const { track } = useGamification(userId);
   const [type, setType] = useState<Reminder["type"]>("water");
   const [title, setTitle] = useState("Drink water");
   const [message, setMessage] = useState<string>("");
