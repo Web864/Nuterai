@@ -1,10 +1,21 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Route as AuthedRoute } from "./route";
 import { profileQueryOptions, goalsQueryOptions } from "@/features/goals/queries";
+import {
+  publicProfileByIdQueryOptions,
+  useUpdatePublicProfile,
+  isUsernameAvailable,
+} from "@/features/community/queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { ArrowLeft, Loader2, Pencil } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
