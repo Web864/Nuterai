@@ -241,6 +241,7 @@ function CreateReminderCard({ userId, defaultTz }: { userId: string; defaultTz: 
       {
         onSuccess: () => {
           toast.success("Reminder created");
+          void track({ type: "reminder_created" });
           setTitle("");
           setMessage("");
         },
