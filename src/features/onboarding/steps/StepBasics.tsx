@@ -31,7 +31,9 @@ export function StepBasics({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="country">Country <span className="text-muted-foreground">(optional)</span></Label>
+          <Label htmlFor="country">
+            Country <span className="text-muted-foreground">(optional)</span>
+          </Label>
           <Input
             id="country"
             value={data.country ?? ""}

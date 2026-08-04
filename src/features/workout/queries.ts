@@ -135,7 +135,10 @@ export function parseExercises(json: Json | null | undefined): PlanExercise[] {
   return json as unknown as PlanExercise[];
 }
 
-export function estimateCalories(minutes: number, intensity: "low" | "moderate" | "high" = "moderate"): number {
+export function estimateCalories(
+  minutes: number,
+  intensity: "low" | "moderate" | "high" = "moderate",
+): number {
   const rate = intensity === "high" ? 10 : intensity === "low" ? 5 : 7.5;
   return Math.round(minutes * rate);
 }

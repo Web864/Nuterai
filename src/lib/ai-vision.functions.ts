@@ -67,7 +67,16 @@ const PHOTO_TOOL = {
               sugar_g: { type: "number" },
               ingredients: { type: "array", items: { type: "string" } },
             },
-            required: ["name", "serving_qty", "serving_unit", "calories_kcal", "protein_g", "carbs_g", "fat_g", "fiber_g"],
+            required: [
+              "name",
+              "serving_qty",
+              "serving_unit",
+              "calories_kcal",
+              "protein_g",
+              "carbs_g",
+              "fat_g",
+              "fiber_g",
+            ],
           },
         },
         confidence: { type: "number", minimum: 0, maximum: 1 },
@@ -110,7 +119,8 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
     });
 
     if (res.status === 429) throw new Error("Rate limit reached. Please try again in a moment.");
-    if (res.status === 402) throw new Error("AI credits exhausted. Please add credits to your workspace.");
+    if (res.status === 402)
+      throw new Error("AI credits exhausted. Please add credits to your workspace.");
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.error("[analyzeMealPhoto] gateway error", res.status, text);
@@ -136,7 +146,10 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
 // ---------------- Barcode lookup via Open Food Facts ----------------
 
 const BarcodeInput = z.object({
-  barcode: z.string().trim().regex(/^\d{6,14}$/, "Invalid barcode"),
+  barcode: z
+    .string()
+    .trim()
+    .regex(/^\d{6,14}$/, "Invalid barcode"),
 });
 
 export type BarcodeProduct = {
@@ -172,7 +185,9 @@ export const lookupBarcode = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => BarcodeInput.parse(input))
   .handler(async ({ data }): Promise<BarcodeProduct | null> => {
     const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(data.barcode)}.json?fields=product_name,brands,image_front_url,image_url,serving_size,serving_quantity,nutriments,ingredients_text`;
-    const res = await fetch(url, { headers: { "User-Agent": "NutriAI/1.0 (support@nutriai.app)" } });
+    const res = await fetch(url, {
+      headers: { "User-Agent": "NutriAI/1.0 (support@nutriai.app)" },
+    });
     if (!res.ok) {
       console.error("[lookupBarcode] off error", res.status);
       throw new Error("Barcode service unavailable. Try again shortly.");
@@ -261,7 +276,12 @@ export const searchFood = createServerFn({ method: "POST" })
       }>;
     };
     return (body.products ?? [])
-      .filter((p) => p.product_name && p.nutriments && (p.nutriments["energy-kcal_100g"] != null || p.nutriments["energy-kcal_serving"] != null))
+      .filter(
+        (p) =>
+          p.product_name &&
+          p.nutriments &&
+          (p.nutriments["energy-kcal_100g"] != null || p.nutriments["energy-kcal_serving"] != null),
+      )
       .slice(0, 12)
       .map((p) => {
         const n = p.nutriments ?? {};
@@ -272,11 +292,19 @@ export const searchFood = createServerFn({ method: "POST" })
           name: (p.product_name ?? "").trim(),
           brand: p.brands?.split(",")[0]?.trim() || null,
           image_url: p.image_front_small_url ?? null,
-          calories_kcal: Math.round(perServing ? num(n["energy-kcal_serving"]) : num(n["energy-kcal_100g"])),
-          protein_g: Math.round((perServing ? num(n["proteins_serving"]) : num(n["proteins_100g"])) * 10) / 10,
-          carbs_g: Math.round((perServing ? num(n["carbohydrates_serving"]) : num(n["carbohydrates_100g"])) * 10) / 10,
+          calories_kcal: Math.round(
+            perServing ? num(n["energy-kcal_serving"]) : num(n["energy-kcal_100g"]),
+          ),
+          protein_g:
+            Math.round((perServing ? num(n["proteins_serving"]) : num(n["proteins_100g"])) * 10) /
+            10,
+          carbs_g:
+            Math.round(
+              (perServing ? num(n["carbohydrates_serving"]) : num(n["carbohydrates_100g"])) * 10,
+            ) / 10,
           fat_g: Math.round((perServing ? num(n["fat_serving"]) : num(n["fat_100g"])) * 10) / 10,
-          fiber_g: Math.round((perServing ? num(n["fiber_serving"]) : num(n["fiber_100g"])) * 10) / 10,
+          fiber_g:
+            Math.round((perServing ? num(n["fiber_serving"]) : num(n["fiber_100g"])) * 10) / 10,
           serving_qty: perServing ? 1 : servingQty,
           serving_unit: perServing ? "serving" : "g",
         };

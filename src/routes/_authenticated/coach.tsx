@@ -4,15 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
-import {
-  ArrowLeft,
-  Loader2,
-  MessageSquarePlus,
-  Send,
-  Sparkles,
-  Trash2,
-  Leaf,
-} from "lucide-react";
+import { ArrowLeft, Loader2, MessageSquarePlus, Send, Sparkles, Trash2, Leaf } from "lucide-react";
 
 import { Route as AuthedRoute } from "./route";
 import { useGamification } from "@/features/gamification/useGamification";
@@ -38,10 +30,7 @@ import { sendCoachMessage } from "@/lib/ai-coach.functions";
 
 export const Route = createFileRoute("/_authenticated/coach")({
   head: () => ({
-    meta: [
-      { title: "AI Coach — NutriAI" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "AI Coach — NutriAI" }, { name: "robots", content: "noindex" }],
   }),
   component: CoachPage,
 });
@@ -97,8 +86,17 @@ function CoachPage() {
             </span>
             <span className="font-display text-lg">AI Coach</span>
           </div>
-          <Button size="sm" className="rounded-full" onClick={handleNewThread} disabled={createThread.isPending}>
-            {createThread.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquarePlus className="h-4 w-4" />}
+          <Button
+            size="sm"
+            className="rounded-full"
+            onClick={handleNewThread}
+            disabled={createThread.isPending}
+          >
+            {createThread.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <MessageSquarePlus className="h-4 w-4" />
+            )}
             <span className="ml-1 hidden sm:inline">New chat</span>
           </Button>
         </div>
@@ -109,7 +107,9 @@ function CoachPage() {
         <aside className="hidden lg:block">
           <Card className="rounded-3xl border-border/60 shadow-soft">
             <CardContent className="p-3">
-              <p className="px-2 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">Conversations</p>
+              <p className="px-2 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Conversations
+              </p>
               <ScrollArea className="h-[calc(100vh-220px)] mt-2">
                 <div className="space-y-1">
                   {threadsQ.data?.length === 0 && (
@@ -128,7 +128,9 @@ function CoachPage() {
                       >
                         <p className="truncate font-medium">{t.title}</p>
                         {t.last_message_preview && (
-                          <p className="truncate text-xs text-muted-foreground">{t.last_message_preview}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {t.last_message_preview}
+                          </p>
                         )}
                       </button>
                       <button
@@ -165,8 +167,13 @@ function CoachPage() {
             This will permanently remove "{confirmDelete?.title}" and all its messages.
           </p>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setConfirmDelete(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => confirmDelete && handleDelete(confirmDelete)}>
+            <Button variant="ghost" onClick={() => setConfirmDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => confirmDelete && handleDelete(confirmDelete)}
+            >
               Delete
             </Button>
           </DialogFooter>
@@ -184,17 +191,30 @@ function EmptyState({ onStart, loading }: { onStart: () => void; loading: boolea
       </div>
       <h2 className="mt-4 font-display text-2xl">Meet your AI coach</h2>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-        Ask anything about your nutrition, workouts, or wellbeing. Your coach knows your profile, goals, and recent activity.
+        Ask anything about your nutrition, workouts, or wellbeing. Your coach knows your profile,
+        goals, and recent activity.
       </p>
       <Button size="lg" className="mt-6 rounded-full" onClick={onStart} disabled={loading}>
-        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquarePlus className="mr-2 h-4 w-4" />}
+        {loading ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <MessageSquarePlus className="mr-2 h-4 w-4" />
+        )}
         Start a conversation
       </Button>
     </Card>
   );
 }
 
-function ChatPanel({ threadId, userId, onDeleted }: { threadId: string; userId: string; onDeleted: () => void }) {
+function ChatPanel({
+  threadId,
+  userId,
+  onDeleted,
+}: {
+  threadId: string;
+  userId: string;
+  onDeleted: () => void;
+}) {
   const qc = useQueryClient();
   const messagesQ = useQuery(messagesQueryOptions(threadId));
   const send = useServerFn(sendCoachMessage);
@@ -307,7 +327,12 @@ function ChatPanel({ threadId, userId, onDeleted }: { threadId: string; userId: 
             disabled={sending}
             aria-label="Message"
           />
-          <Button type="submit" size="icon" className="h-11 w-11 rounded-2xl" disabled={sending || !input.trim()}>
+          <Button
+            type="submit"
+            size="icon"
+            className="h-11 w-11 rounded-2xl"
+            disabled={sending || !input.trim()}
+          >
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </form>
@@ -325,9 +350,7 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
         className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
-          isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-secondary text-foreground"
+          isUser ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
         }`}
       >
         {isUser ? (

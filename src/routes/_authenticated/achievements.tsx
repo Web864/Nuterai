@@ -14,7 +14,13 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ArrowLeft, Flame, Lock, Sparkles, Trophy, Users } from "lucide-react";
 import {
   achievementsQueryOptions,
@@ -68,7 +74,9 @@ function AchievementsPage() {
           </Button>
           <div className="min-w-0 flex-1">
             <h1 className="font-display text-2xl tracking-tight sm:text-3xl">Progress</h1>
-            <p className="truncate text-sm text-muted-foreground">Badges, streaks, XP and leaderboards</p>
+            <p className="truncate text-sm text-muted-foreground">
+              Badges, streaks, XP and leaderboards
+            </p>
           </div>
           <Button asChild variant="outline" size="sm" className="rounded-full">
             <Link to="/community">
@@ -84,10 +92,18 @@ function AchievementsPage() {
 
         <Tabs defaultValue="badges">
           <TabsList className="w-full justify-start overflow-x-auto rounded-full">
-            <TabsTrigger value="badges" className="rounded-full">Badges</TabsTrigger>
-            <TabsTrigger value="leaderboard" className="rounded-full">Leaderboard</TabsTrigger>
-            <TabsTrigger value="streaks" className="rounded-full">Streaks</TabsTrigger>
-            <TabsTrigger value="xp" className="rounded-full">XP history</TabsTrigger>
+            <TabsTrigger value="badges" className="rounded-full">
+              Badges
+            </TabsTrigger>
+            <TabsTrigger value="leaderboard" className="rounded-full">
+              Leaderboard
+            </TabsTrigger>
+            <TabsTrigger value="streaks" className="rounded-full">
+              Streaks
+            </TabsTrigger>
+            <TabsTrigger value="xp" className="rounded-full">
+              XP history
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="badges" className="mt-4">
@@ -165,7 +181,10 @@ function BadgesTab({ userId }: { userId: string }) {
             </p>
           </div>
           <div className="w-full max-w-xs">
-            <Progress value={total ? Math.round((unlockedCount / total) * 100) : 0} className="h-2" />
+            <Progress
+              value={total ? Math.round((unlockedCount / total) * 100) : 0}
+              className="h-2"
+            />
           </div>
         </CardContent>
       </Card>
@@ -246,8 +265,13 @@ function AchievementCard({ achievement: a }: { achievement: AchievementWithProgr
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className={`font-medium ${unlocked ? "text-foreground" : "text-muted-foreground"}`}>{a.title}</p>
-            <Badge variant="outline" className={`shrink-0 rounded-full text-[10px] ${style.className}`}>
+            <p className={`font-medium ${unlocked ? "text-foreground" : "text-muted-foreground"}`}>
+              {a.title}
+            </p>
+            <Badge
+              variant="outline"
+              className={`shrink-0 rounded-full text-[10px] ${style.className}`}
+            >
               {style.label}
             </Badge>
           </div>
@@ -352,7 +376,9 @@ function LeaderboardTab() {
                 key={r.user_id}
                 className={`flex items-center gap-3 px-4 py-3 ${r.is_self ? "bg-secondary/50" : ""}`}
               >
-                <span className="w-8 shrink-0 font-display text-lg text-muted-foreground">#{r.rank}</span>
+                <span className="w-8 shrink-0 font-display text-lg text-muted-foreground">
+                  #{r.rank}
+                </span>
                 <Avatar className="h-9 w-9">
                   {r.avatar_url && <AvatarImage src={r.avatar_url} alt="" />}
                   <AvatarFallback className="text-xs">{initialsOf(r.display_name)}</AvatarFallback>
@@ -445,8 +471,11 @@ function StreaksTab({ userId }: { userId: string }) {
               >
                 <span className="text-foreground">{STREAK_LABELS[r.kind as StreakKind]}</span>
                 <span className="text-muted-foreground">
-                  {new Date(r.day).toLocaleDateString(undefined, { month: "short", day: "numeric" })} ·{" "}
-                  {r.streak_value} day{r.streak_value === 1 ? "" : "s"}
+                  {new Date(r.day).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}{" "}
+                  · {r.streak_value} day{r.streak_value === 1 ? "" : "s"}
                 </span>
               </div>
             ))

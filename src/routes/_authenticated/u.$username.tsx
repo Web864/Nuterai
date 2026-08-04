@@ -20,7 +20,10 @@ export const Route = createFileRoute("/_authenticated/u/$username")({
   head: () => ({
     meta: [
       { title: "Profile — NutriAI" },
-      { name: "description", content: "An athlete's NutriAI profile: level, streaks and achievements." },
+      {
+        name: "description",
+        content: "An athlete's NutriAI profile: level, streaks and achievements.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -75,7 +78,9 @@ function ProfilePage() {
                   {profile.data.username && (
                     <p className="text-sm text-muted-foreground">@{profile.data.username}</p>
                   )}
-                  {profile.data.bio && <p className="mt-2 text-sm text-foreground">{profile.data.bio}</p>}
+                  {profile.data.bio && (
+                    <p className="mt-2 text-sm text-foreground">{profile.data.bio}</p>
+                  )}
                   {isSelf && (
                     <Button asChild size="sm" variant="outline" className="mt-3 rounded-full">
                       <Link to="/settings">Edit profile</Link>
@@ -94,22 +99,28 @@ function ProfilePage() {
                   <div>
                     <div className="mb-1.5 flex justify-between text-sm text-muted-foreground">
                       <span>{lp.xp.toLocaleString()} XP</span>
-                      <span>{lp.toNextLevel.toLocaleString()} to level {lp.level + 1}</span>
+                      <span>
+                        {lp.toNextLevel.toLocaleString()} to level {lp.level + 1}
+                      </span>
                     </div>
                     <Progress value={lp.percent} className="h-2" />
                   </div>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {(["workout", "nutrition", "water", "login", "coach", "reminder"] as const).map((k) => (
-                      <div key={k} className="rounded-2xl border border-border/40 p-3">
-                        <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                          {STREAK_LABELS[k]}
-                        </p>
-                        <p className="font-display text-2xl">
-                          {stats.data?.[`${k}_streak`] ?? 0}
-                          <span className="ml-1 text-xs font-sans text-muted-foreground">days</span>
-                        </p>
-                      </div>
-                    ))}
+                    {(["workout", "nutrition", "water", "login", "coach", "reminder"] as const).map(
+                      (k) => (
+                        <div key={k} className="rounded-2xl border border-border/40 p-3">
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                            {STREAK_LABELS[k]}
+                          </p>
+                          <p className="font-display text-2xl">
+                            {stats.data?.[`${k}_streak`] ?? 0}
+                            <span className="ml-1 text-xs font-sans text-muted-foreground">
+                              days
+                            </span>
+                          </p>
+                        </div>
+                      ),
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -145,7 +156,10 @@ function ProfilePage() {
                   <p className="text-sm text-muted-foreground">Nothing shared yet.</p>
                 ) : (
                   activity.data.map((e) => (
-                    <div key={e.id} className="flex justify-between border-b border-border/40 pb-2 text-sm last:border-0">
+                    <div
+                      key={e.id}
+                      className="flex justify-between border-b border-border/40 pb-2 text-sm last:border-0"
+                    >
                       <span className="text-foreground">{e.title}</span>
                       <span className="text-muted-foreground">{relativeTime(e.created_at)}</span>
                     </div>

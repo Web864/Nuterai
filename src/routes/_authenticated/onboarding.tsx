@@ -4,10 +4,7 @@ import { Route as AuthedRoute } from "./route";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
-    meta: [
-      { title: "Set up your plan — NutriAI" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Set up your plan — NutriAI" }, { name: "robots", content: "noindex" }],
   }),
   component: OnboardingPage,
 });

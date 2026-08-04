@@ -48,9 +48,10 @@ function partsInTz(date: Date, tz: string) {
     hour12: false,
     weekday: "short",
   });
-  const parts = Object.fromEntries(
-    fmt.formatToParts(date).map((p) => [p.type, p.value]),
-  ) as Record<string, string>;
+  const parts = Object.fromEntries(fmt.formatToParts(date).map((p) => [p.type, p.value])) as Record<
+    string,
+    string
+  >;
   const wdMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
   return {
     year: Number(parts.year),
@@ -143,9 +144,15 @@ export function inQuietHours(
 
 export function typeLabel(t: string): string {
   return (
-    { meal: "Meal", workout: "Workout", water: "Water", weight: "Weight", sleep: "Sleep", medication: "Medication", custom: "Reminder" }[
-      t
-    ] ?? "Reminder"
+    {
+      meal: "Meal",
+      workout: "Workout",
+      water: "Water",
+      weight: "Weight",
+      sleep: "Sleep",
+      medication: "Medication",
+      custom: "Reminder",
+    }[t] ?? "Reminder"
   );
 }
 

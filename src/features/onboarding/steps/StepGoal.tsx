@@ -5,12 +5,42 @@ import { Label } from "@/components/ui/label";
 import { Battery, Dumbbell, HeartPulse, Scale, TrendingDown, TrendingUp } from "lucide-react";
 
 const GOALS = [
-  { value: "lose_weight", title: "Lose weight", description: "Sustainable fat loss", icon: <TrendingDown className="h-5 w-5" /> },
-  { value: "maintain", title: "Maintain", description: "Stay at my current weight", icon: <Scale className="h-5 w-5" /> },
-  { value: "gain_weight", title: "Gain weight", description: "Healthy weight gain", icon: <TrendingUp className="h-5 w-5" /> },
-  { value: "build_muscle", title: "Build muscle", description: "Grow strength & size", icon: <Dumbbell className="h-5 w-5" /> },
-  { value: "improve_health", title: "Improve health", description: "Feel better overall", icon: <HeartPulse className="h-5 w-5" /> },
-  { value: "boost_energy", title: "Boost energy", description: "Beat afternoon slumps", icon: <Battery className="h-5 w-5" /> },
+  {
+    value: "lose_weight",
+    title: "Lose weight",
+    description: "Sustainable fat loss",
+    icon: <TrendingDown className="h-5 w-5" />,
+  },
+  {
+    value: "maintain",
+    title: "Maintain",
+    description: "Stay at my current weight",
+    icon: <Scale className="h-5 w-5" />,
+  },
+  {
+    value: "gain_weight",
+    title: "Gain weight",
+    description: "Healthy weight gain",
+    icon: <TrendingUp className="h-5 w-5" />,
+  },
+  {
+    value: "build_muscle",
+    title: "Build muscle",
+    description: "Grow strength & size",
+    icon: <Dumbbell className="h-5 w-5" />,
+  },
+  {
+    value: "improve_health",
+    title: "Improve health",
+    description: "Feel better overall",
+    icon: <HeartPulse className="h-5 w-5" />,
+  },
+  {
+    value: "boost_energy",
+    title: "Boost energy",
+    description: "Beat afternoon slumps",
+    icon: <Battery className="h-5 w-5" />,
+  },
 ] as const;
 
 export function StepGoal({
@@ -20,7 +50,10 @@ export function StepGoal({
   data: Partial<OnboardingData>;
   onChange: (p: Partial<OnboardingData>) => void;
 }) {
-  const showPace = data.fitness_goal === "lose_weight" || data.fitness_goal === "gain_weight" || data.fitness_goal === "build_muscle";
+  const showPace =
+    data.fitness_goal === "lose_weight" ||
+    data.fitness_goal === "gain_weight" ||
+    data.fitness_goal === "build_muscle";
   return (
     <div>
       <StepHeader
@@ -62,7 +95,8 @@ export function StepGoal({
             <span>Aggressive</span>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            A sustainable pace is 0.25–0.75 kg per week. Faster loss can affect energy and muscle mass.
+            A sustainable pace is 0.25–0.75 kg per week. Faster loss can affect energy and muscle
+            mass.
           </p>
         </div>
       )}

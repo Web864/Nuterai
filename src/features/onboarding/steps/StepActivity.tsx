@@ -3,11 +3,36 @@ import type { OnboardingData } from "../schemas";
 import { Armchair, Bike, Dumbbell, Footprints, Zap } from "lucide-react";
 
 const OPTIONS = [
-  { value: "sedentary", title: "Sedentary", description: "Little or no exercise; desk job", icon: <Armchair className="h-5 w-5" /> },
-  { value: "light", title: "Lightly active", description: "Light exercise 1–3 days/week", icon: <Footprints className="h-5 w-5" /> },
-  { value: "moderate", title: "Moderately active", description: "Moderate exercise 3–5 days/week", icon: <Bike className="h-5 w-5" /> },
-  { value: "active", title: "Active", description: "Hard exercise 6–7 days/week", icon: <Dumbbell className="h-5 w-5" /> },
-  { value: "very_active", title: "Very active", description: "Intense training or physical job", icon: <Zap className="h-5 w-5" /> },
+  {
+    value: "sedentary",
+    title: "Sedentary",
+    description: "Little or no exercise; desk job",
+    icon: <Armchair className="h-5 w-5" />,
+  },
+  {
+    value: "light",
+    title: "Lightly active",
+    description: "Light exercise 1–3 days/week",
+    icon: <Footprints className="h-5 w-5" />,
+  },
+  {
+    value: "moderate",
+    title: "Moderately active",
+    description: "Moderate exercise 3–5 days/week",
+    icon: <Bike className="h-5 w-5" />,
+  },
+  {
+    value: "active",
+    title: "Active",
+    description: "Hard exercise 6–7 days/week",
+    icon: <Dumbbell className="h-5 w-5" />,
+  },
+  {
+    value: "very_active",
+    title: "Very active",
+    description: "Intense training or physical job",
+    icon: <Zap className="h-5 w-5" />,
+  },
 ] as const;
 
 export function StepActivity({

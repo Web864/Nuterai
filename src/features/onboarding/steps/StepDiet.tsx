@@ -4,7 +4,11 @@ import type { OnboardingData } from "../schemas";
 import { cn } from "@/lib/utils";
 import { ChefHat } from "lucide-react";
 
-const DIETS: ReadonlyArray<{ value: OnboardingData["diet_preference"]; title: string; description?: string }> = [
+const DIETS: ReadonlyArray<{
+  value: OnboardingData["diet_preference"];
+  title: string;
+  description?: string;
+}> = [
   { value: "omnivore", title: "Omnivore", description: "I eat everything" },
   { value: "vegetarian", title: "Vegetarian" },
   { value: "vegan", title: "Vegan" },
@@ -17,7 +21,16 @@ const DIETS: ReadonlyArray<{ value: OnboardingData["diet_preference"]; title: st
   { value: "high_protein", title: "High protein" },
 ];
 
-const COMMON_ALLERGIES = ["Peanuts", "Tree nuts", "Dairy", "Eggs", "Gluten", "Shellfish", "Soy", "Fish"];
+const COMMON_ALLERGIES = [
+  "Peanuts",
+  "Tree nuts",
+  "Dairy",
+  "Eggs",
+  "Gluten",
+  "Shellfish",
+  "Soy",
+  "Fish",
+];
 const CONDITIONS = ["Diabetes", "PCOS", "Hypertension", "High cholesterol", "IBS", "Thyroid"];
 
 const COOKING = [

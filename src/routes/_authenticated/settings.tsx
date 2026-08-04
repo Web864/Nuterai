@@ -19,10 +19,7 @@ import { ArrowLeft, Loader2, Pencil } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
-    meta: [
-      { title: "Settings — NutriAI" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Settings — NutriAI" }, { name: "robots", content: "noindex" }],
   }),
   component: SettingsPage,
 });
@@ -42,9 +39,7 @@ function SettingsPage() {
           </Link>
         </Button>
         <h1 className="font-display text-4xl">Your account</h1>
-        <p className="mt-1 text-muted-foreground">
-          Update your profile and health goals anytime.
-        </p>
+        <p className="mt-1 text-muted-foreground">Update your profile and health goals anytime.</p>
 
         <div className="mt-8 space-y-4">
           <Card className="rounded-3xl border-border/60 shadow-soft">
@@ -52,9 +47,19 @@ function SettingsPage() {
               <CardTitle className="font-display text-xl">Profile</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <Field label="Name" value={profile.data?.display_name ?? profile.data?.full_name ?? "—"} />
+              <Field
+                label="Name"
+                value={profile.data?.display_name ?? profile.data?.full_name ?? "—"}
+              />
               <Field label="Email" value={profile.data?.email ?? "—"} />
-              <Field label="Units" value={(profile.data?.units ?? "metric") === "metric" ? "Metric (kg, cm)" : "Imperial (lb, in)"} />
+              <Field
+                label="Units"
+                value={
+                  (profile.data?.units ?? "metric") === "metric"
+                    ? "Metric (kg, cm)"
+                    : "Imperial (lb, in)"
+                }
+              />
               <Field label="Country" value={profile.data?.country ?? "—"} />
             </CardContent>
           </Card>
@@ -70,12 +75,29 @@ function SettingsPage() {
               </Button>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
-              <Field label="Current weight" value={goals.data?.current_weight_kg ? `${goals.data.current_weight_kg} kg` : "—"} />
-              <Field label="Target weight" value={goals.data?.target_weight_kg ? `${goals.data.target_weight_kg} kg` : "—"} />
-              <Field label="Height" value={goals.data?.height_cm ? `${goals.data.height_cm} cm` : "—"} />
+              <Field
+                label="Current weight"
+                value={goals.data?.current_weight_kg ? `${goals.data.current_weight_kg} kg` : "—"}
+              />
+              <Field
+                label="Target weight"
+                value={goals.data?.target_weight_kg ? `${goals.data.target_weight_kg} kg` : "—"}
+              />
+              <Field
+                label="Height"
+                value={goals.data?.height_cm ? `${goals.data.height_cm} cm` : "—"}
+              />
               <Field label="Age" value={goals.data?.age?.toString() ?? "—"} />
-              <Field label="Calories" value={goals.data?.daily_calorie_target ? `${goals.data.daily_calorie_target} kcal` : "—"} />
-              <Field label="Water" value={goals.data?.water_target_ml ? `${goals.data.water_target_ml} ml` : "—"} />
+              <Field
+                label="Calories"
+                value={
+                  goals.data?.daily_calorie_target ? `${goals.data.daily_calorie_target} kcal` : "—"
+                }
+              />
+              <Field
+                label="Water"
+                value={goals.data?.water_target_ml ? `${goals.data.water_target_ml} ml` : "—"}
+              />
             </CardContent>
           </Card>
 
@@ -124,8 +146,14 @@ function PublicProfileCard({ userId }: { userId: string }) {
     }
   }
 
-  function toggle(key: "is_public" | "show_stats" | "show_achievements" | "allow_friend_requests", value: boolean) {
-    update.mutate({ [key]: value }, { onError: () => toast.error("Couldn't update privacy setting") });
+  function toggle(
+    key: "is_public" | "show_stats" | "show_achievements" | "allow_friend_requests",
+    value: boolean,
+  ) {
+    update.mutate(
+      { [key]: value },
+      { onError: () => toast.error("Couldn't update privacy setting") },
+    );
   }
 
   const p = pub.data;
@@ -145,7 +173,9 @@ function PublicProfileCard({ userId }: { userId: string }) {
             placeholder="yourname"
             className="rounded-xl"
           />
-          <p className="text-xs text-muted-foreground">Used for your profile link: /u/{username || "yourname"}</p>
+          <p className="text-xs text-muted-foreground">
+            Used for your profile link: /u/{username || "yourname"}
+          </p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="bio">Bio</Label>

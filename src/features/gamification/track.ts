@@ -34,7 +34,13 @@ export type TrackEvent =
   | { type: "water_logged"; amountMl?: number }
   | { type: "water_goal_met" }
   | { type: "weight_logged"; weightKg?: number; reachedTarget?: boolean }
-  | { type: "workout_logged"; name?: string; minutes?: number; calories?: number; personalBest?: boolean }
+  | {
+      type: "workout_logged";
+      name?: string;
+      minutes?: number;
+      calories?: number;
+      personalBest?: boolean;
+    }
   | { type: "workout_plan_created"; name?: string }
   | { type: "coach_message" }
   | { type: "food_scanned"; method?: "photo" | "barcode" | "search" }
@@ -111,7 +117,9 @@ function buildPlan(event: TrackEvent): Plan {
         achievements: [
           ["first_weight", 1, "set"],
           ["weight_5", 1, "increment"],
-          ...(event.reachedTarget ? ([["weight_goal", 1, "set"]] as Array<[string, number, "set"]>) : []),
+          ...(event.reachedTarget
+            ? ([["weight_goal", 1, "set"]] as Array<[string, number, "set"]>)
+            : []),
         ],
         activity: {
           kind: "weight",
@@ -128,14 +136,19 @@ function buildPlan(event: TrackEvent): Plan {
           ["workouts_10", 1, "increment"],
           ["workouts_50", 1, "increment"],
           ["workouts_100", 1, "increment"],
-          ...(event.personalBest ? ([["personal_best", 1, "set"]] as Array<[string, number, "set"]>) : []),
+          ...(event.personalBest
+            ? ([["personal_best", 1, "set"]] as Array<[string, number, "set"]>)
+            : []),
         ],
         activity: {
           kind: event.personalBest ? "personal_best" : "workout",
           title: event.name ? `Completed ${event.name}` : "Completed a workout",
           description:
             event.minutes || event.calories
-              ? [event.minutes ? `${event.minutes} min` : null, event.calories ? `${event.calories} kcal` : null]
+              ? [
+                  event.minutes ? `${event.minutes} min` : null,
+                  event.calories ? `${event.calories} kcal` : null,
+                ]
                   .filter(Boolean)
                   .join(" · ")
               : undefined,
@@ -145,7 +158,10 @@ function buildPlan(event: TrackEvent): Plan {
     case "workout_plan_created":
       return {
         xp: "workout_plan_created",
-        activity: { kind: "workout", title: event.name ? `New plan: ${event.name}` : "Created a workout plan" },
+        activity: {
+          kind: "workout",
+          title: event.name ? `New plan: ${event.name}` : "Created a workout plan",
+        },
       };
     case "coach_message":
       return {
@@ -218,7 +234,9 @@ export async function trackEvent(userId: string, event: TrackEvent): Promise<Tra
 
     if (plan.xp) {
       const amount = XP_REWARDS[plan.xp];
-      award = await awardXpRaw(userId, amount, XP_LABELS[plan.xp], event.type, { event: event.type });
+      award = await awardXpRaw(userId, amount, XP_LABELS[plan.xp], event.type, {
+        event: event.type,
+      });
     }
 
     if (plan.streak) {

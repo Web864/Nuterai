@@ -48,10 +48,7 @@ import { todayISO } from "@/features/logging/queries";
 
 export const Route = createFileRoute("/_authenticated/scan")({
   head: () => ({
-    meta: [
-      { title: "Scan food — NutriAI" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Scan food — NutriAI" }, { name: "robots", content: "noindex" }],
   }),
   component: ScanPage,
 });
@@ -264,7 +261,11 @@ function PhotoTab({ userId }: { userId: string }) {
               <Button className="rounded-full" onClick={() => camRef.current?.click()}>
                 <Camera className="mr-2 h-4 w-4" /> Take photo
               </Button>
-              <Button variant="outline" className="rounded-full" onClick={() => fileRef.current?.click()}>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => fileRef.current?.click()}
+              >
                 <Upload className="mr-2 h-4 w-4" /> Upload
               </Button>
             </div>
@@ -287,7 +288,11 @@ function PhotoTab({ userId }: { userId: string }) {
         ) : (
           <div className="space-y-4">
             <div className="relative overflow-hidden rounded-2xl">
-              <img src={preview} alt="Meal preview" className="max-h-96 w-full object-contain bg-secondary/40" />
+              <img
+                src={preview}
+                alt="Meal preview"
+                className="max-h-96 w-full object-contain bg-secondary/40"
+              />
               <Button
                 size="icon"
                 variant="secondary"
@@ -302,7 +307,10 @@ function PhotoTab({ userId }: { userId: string }) {
               <div className="space-y-3">
                 <div>
                   <Label htmlFor="hint" className="text-sm">
-                    Optional hint <span className="text-muted-foreground">(e.g. "medium plate, ~200g pasta")</span>
+                    Optional hint{" "}
+                    <span className="text-muted-foreground">
+                      (e.g. "medium plate, ~200g pasta")
+                    </span>
                   </Label>
                   <Input
                     id="hint"
@@ -314,7 +322,11 @@ function PhotoTab({ userId }: { userId: string }) {
                   />
                 </div>
                 <Button onClick={runAnalyze} disabled={busy} className="w-full rounded-full">
-                  {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  {busy ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
+                  )}
                   {busy ? "Analyzing…" : "Analyze photo"}
                 </Button>
               </div>
@@ -326,27 +338,41 @@ function PhotoTab({ userId }: { userId: string }) {
                   <div>
                     <p className="font-display text-lg">Detected items</p>
                     <p className="text-xs text-muted-foreground">
-                      Confidence: {Math.round((result.confidence ?? 0) * 100)}% — edit anything before saving
+                      Confidence: {Math.round((result.confidence ?? 0) * 100)}% — edit anything
+                      before saving
                     </p>
                   </div>
-                  <Badge variant="outline" className="rounded-full">{items.filter((i) => i.selected).length} selected</Badge>
+                  <Badge variant="outline" className="rounded-full">
+                    {items.filter((i) => i.selected).length} selected
+                  </Badge>
                 </div>
                 <div className="space-y-3">
                   {items.map((it, idx) => (
                     <ItemEditor
                       key={idx}
                       item={it}
-                      onChange={(patch) => setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)))}
+                      onChange={(patch) =>
+                        setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)))
+                      }
                       onRemove={() => setItems((prev) => prev.filter((_, i) => i !== idx))}
                     />
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1 rounded-full" onClick={reset} disabled={busy}>
+                  <Button
+                    variant="outline"
+                    className="flex-1 rounded-full"
+                    onClick={reset}
+                    disabled={busy}
+                  >
                     Discard
                   </Button>
                   <Button className="flex-1 rounded-full" onClick={saveAll} disabled={busy}>
-                    {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                    {busy ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="mr-2 h-4 w-4" />
+                    )}
                     Log {items.filter((i) => i.selected).length} item(s)
                   </Button>
                 </div>
@@ -378,7 +404,9 @@ function ItemEditor({
   const c = Math.round(item.carbs_g * item.quantity * 10) / 10;
   const f = Math.round(item.fat_g * item.quantity * 10) / 10;
   return (
-    <div className={`rounded-2xl border p-3 transition-organic ${item.selected ? "border-accent/40 bg-accent/5" : "border-border/60 bg-card/50 opacity-70"}`}>
+    <div
+      className={`rounded-2xl border p-3 transition-organic ${item.selected ? "border-accent/40 bg-accent/5" : "border-border/60 bg-card/50 opacity-70"}`}
+    >
       <div className="flex items-start gap-2">
         <input
           type="checkbox"
@@ -401,13 +429,18 @@ function ItemEditor({
                 step="0.25"
                 min="0.25"
                 value={item.quantity}
-                onChange={(e) => onChange({ quantity: Math.max(0.25, parseFloat(e.target.value) || 1) })}
+                onChange={(e) =>
+                  onChange({ quantity: Math.max(0.25, parseFloat(e.target.value) || 1) })
+                }
                 className="mt-0.5 h-8 rounded-lg"
               />
             </label>
             <label className="text-xs">
               <span className="text-muted-foreground">Meal</span>
-              <Select value={item.meal_type} onValueChange={(v) => onChange({ meal_type: v as MealType })}>
+              <Select
+                value={item.meal_type}
+                onValueChange={(v) => onChange({ meal_type: v as MealType })}
+              >
                 <SelectTrigger className="mt-0.5 h-8 rounded-lg">
                   <SelectValue />
                 </SelectTrigger>
@@ -426,10 +459,18 @@ function ItemEditor({
             </div>
           </div>
           <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
-            <Badge variant="secondary" className="rounded-full">{cal} kcal</Badge>
-            <Badge variant="outline" className="rounded-full">P {p}g</Badge>
-            <Badge variant="outline" className="rounded-full">C {c}g</Badge>
-            <Badge variant="outline" className="rounded-full">F {f}g</Badge>
+            <Badge variant="secondary" className="rounded-full">
+              {cal} kcal
+            </Badge>
+            <Badge variant="outline" className="rounded-full">
+              P {p}g
+            </Badge>
+            <Badge variant="outline" className="rounded-full">
+              C {c}g
+            </Badge>
+            <Badge variant="outline" className="rounded-full">
+              F {f}g
+            </Badge>
           </div>
           {item.ingredients && item.ingredients.length > 0 && (
             <p className="mt-2 text-xs text-muted-foreground truncate">
@@ -437,7 +478,13 @@ function ItemEditor({
             </p>
           )}
         </div>
-        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onRemove} aria-label="Remove item">
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8"
+          onClick={onRemove}
+          aria-label="Remove item"
+        >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
@@ -500,13 +547,17 @@ function BarcodeTab({ userId }: { userId: string }) {
     try {
       const reader = new BrowserMultiFormatReader();
       readerRef.current = reader;
-      const controls = await reader.decodeFromVideoDevice(undefined, videoRef.current!, (result, err, ctrl) => {
-        if (result) {
-          controlsRef.current = ctrl;
-          ctrl.stop();
-          void handleBarcode(result.getText());
-        }
-      });
+      const controls = await reader.decodeFromVideoDevice(
+        undefined,
+        videoRef.current!,
+        (result, err, ctrl) => {
+          if (result) {
+            controlsRef.current = ctrl;
+            ctrl.stop();
+            void handleBarcode(result.getText());
+          }
+        },
+      );
       controlsRef.current = controls;
     } catch (e) {
       console.error(e);
@@ -559,7 +610,8 @@ function BarcodeTab({ userId }: { userId: string }) {
               </div>
               <h3 className="mt-3 font-display text-xl">Scan a barcode</h3>
               <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                Use your camera or enter the number manually. We look products up via Open Food Facts.
+                Use your camera or enter the number manually. We look products up via Open Food
+                Facts.
               </p>
               <Button className="mt-4 rounded-full" onClick={startScan} disabled={busy}>
                 <Camera className="mr-2 h-4 w-4" /> Start camera
@@ -670,7 +722,11 @@ function ProductCard({
     <div className="space-y-4">
       <div className="flex gap-4">
         {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="h-24 w-24 rounded-2xl object-cover bg-secondary" />
+          <img
+            src={product.image_url}
+            alt={product.name}
+            className="h-24 w-24 rounded-2xl object-cover bg-secondary"
+          />
         ) : (
           <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-secondary">
             <ImageIcon className="h-8 w-8 text-muted-foreground" />
@@ -715,12 +771,22 @@ function ProductCard({
       </div>
 
       <div className="flex flex-wrap gap-2 text-sm">
-        <Badge variant="secondary" className="rounded-full">{cal} kcal</Badge>
-        <Badge variant="outline" className="rounded-full">P {p}g</Badge>
-        <Badge variant="outline" className="rounded-full">C {c}g</Badge>
-        <Badge variant="outline" className="rounded-full">F {f}g</Badge>
+        <Badge variant="secondary" className="rounded-full">
+          {cal} kcal
+        </Badge>
+        <Badge variant="outline" className="rounded-full">
+          P {p}g
+        </Badge>
+        <Badge variant="outline" className="rounded-full">
+          C {c}g
+        </Badge>
+        <Badge variant="outline" className="rounded-full">
+          F {f}g
+        </Badge>
         {product.sugar_g != null && (
-          <Badge variant="outline" className="rounded-full">Sugar {Math.round(product.sugar_g * qty * 10) / 10}g</Badge>
+          <Badge variant="outline" className="rounded-full">
+            Sugar {Math.round(product.sugar_g * qty * 10) / 10}g
+          </Badge>
         )}
       </div>
 
@@ -731,11 +797,20 @@ function ProductCard({
       )}
 
       <div className="flex gap-2">
-        <Button variant="outline" className="flex-1 rounded-full" onClick={onCancel} disabled={busy}>
+        <Button
+          variant="outline"
+          className="flex-1 rounded-full"
+          onClick={onCancel}
+          disabled={busy}
+        >
           Cancel
         </Button>
         <Button className="flex-1 rounded-full" onClick={save} disabled={busy}>
-          {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+          {busy ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Check className="mr-2 h-4 w-4" />
+          )}
           Add to log
         </Button>
       </div>
@@ -743,7 +818,15 @@ function ProductCard({
   );
 }
 
-function CustomFoodForm({ userId, barcode, onSaved }: { userId: string; barcode: string | null; onSaved: () => void }) {
+function CustomFoodForm({
+  userId,
+  barcode,
+  onSaved,
+}: {
+  userId: string;
+  barcode: string | null;
+  onSaved: () => void;
+}) {
   const [name, setName] = useState("");
   const [cal, setCal] = useState("");
   const [protein, setProtein] = useState("");
@@ -789,16 +872,47 @@ function CustomFoodForm({ userId, barcode, onSaved }: { userId: string; barcode:
 
   return (
     <form onSubmit={submit} className="space-y-2">
-      <Input placeholder="Product name" value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl" />
+      <Input
+        placeholder="Product name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="rounded-xl"
+      />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Input placeholder="kcal" inputMode="decimal" value={cal} onChange={(e) => setCal(e.target.value)} className="rounded-xl" />
-        <Input placeholder="P (g)" inputMode="decimal" value={protein} onChange={(e) => setProtein(e.target.value)} className="rounded-xl" />
-        <Input placeholder="C (g)" inputMode="decimal" value={carbs} onChange={(e) => setCarbs(e.target.value)} className="rounded-xl" />
-        <Input placeholder="F (g)" inputMode="decimal" value={fat} onChange={(e) => setFat(e.target.value)} className="rounded-xl" />
+        <Input
+          placeholder="kcal"
+          inputMode="decimal"
+          value={cal}
+          onChange={(e) => setCal(e.target.value)}
+          className="rounded-xl"
+        />
+        <Input
+          placeholder="P (g)"
+          inputMode="decimal"
+          value={protein}
+          onChange={(e) => setProtein(e.target.value)}
+          className="rounded-xl"
+        />
+        <Input
+          placeholder="C (g)"
+          inputMode="decimal"
+          value={carbs}
+          onChange={(e) => setCarbs(e.target.value)}
+          className="rounded-xl"
+        />
+        <Input
+          placeholder="F (g)"
+          inputMode="decimal"
+          value={fat}
+          onChange={(e) => setFat(e.target.value)}
+          className="rounded-xl"
+        />
       </div>
       <div className="flex gap-2">
         <Select value={meal} onValueChange={(v) => setMeal(v as MealType)}>
-          <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="rounded-xl">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="breakfast">Breakfast</SelectItem>
             <SelectItem value="lunch">Lunch</SelectItem>
@@ -901,7 +1015,11 @@ function SearchTab({ userId }: { userId: string }) {
           <div className="rounded-2xl border border-border/60 bg-secondary/40 p-4 text-sm">
             No results. You can still log it as a custom food:
             <div className="mt-2">
-              <CustomFoodForm userId={userId} barcode={null} onSaved={() => qc.invalidateQueries({ queryKey: ["meals", userId] })} />
+              <CustomFoodForm
+                userId={userId}
+                barcode={null}
+                onSaved={() => qc.invalidateQueries({ queryKey: ["meals", userId] })}
+              />
             </div>
           </div>
         )}
@@ -924,10 +1042,18 @@ function SearchTab({ userId }: { userId: string }) {
                   <p className="truncate font-medium text-sm">{r.name}</p>
                   {r.brand && <p className="truncate text-xs text-muted-foreground">{r.brand}</p>}
                   <div className="mt-1 flex flex-wrap gap-1">
-                    <Badge variant="secondary" className="rounded-full text-[10px]">{r.calories_kcal} kcal</Badge>
-                    <Badge variant="outline" className="rounded-full text-[10px]">P {r.protein_g}g</Badge>
-                    <Badge variant="outline" className="rounded-full text-[10px]">C {r.carbs_g}g</Badge>
-                    <Badge variant="outline" className="rounded-full text-[10px]">F {r.fat_g}g</Badge>
+                    <Badge variant="secondary" className="rounded-full text-[10px]">
+                      {r.calories_kcal} kcal
+                    </Badge>
+                    <Badge variant="outline" className="rounded-full text-[10px]">
+                      P {r.protein_g}g
+                    </Badge>
+                    <Badge variant="outline" className="rounded-full text-[10px]">
+                      C {r.carbs_g}g
+                    </Badge>
+                    <Badge variant="outline" className="rounded-full text-[10px]">
+                      F {r.fat_g}g
+                    </Badge>
                   </div>
                 </div>
               </button>

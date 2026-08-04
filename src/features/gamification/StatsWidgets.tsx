@@ -44,9 +44,15 @@ export function LevelCard({ userId }: { userId: string | undefined }) {
         <div className="mt-4">
           <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
             <span>{lp.xp.toLocaleString()} XP</span>
-            <span>{lp.toNextLevel.toLocaleString()} XP to level {lp.level + 1}</span>
+            <span>
+              {lp.toNextLevel.toLocaleString()} XP to level {lp.level + 1}
+            </span>
           </div>
-          <Progress value={lp.percent} className="h-2" aria-label={`Level progress ${lp.percent}%`} />
+          <Progress
+            value={lp.percent}
+            className="h-2"
+            aria-label={`Level progress ${lp.percent}%`}
+          />
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -86,7 +92,10 @@ export function BadgeShelf({ userId, limit = 6 }: { userId: string | undefined; 
             <Sparkles className="h-4 w-4 text-accent" />
             Recent badges
           </p>
-          <Link to="/achievements" className="text-xs font-medium text-primary underline-offset-4 hover:underline">
+          <Link
+            to="/achievements"
+            className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+          >
             View all
           </Link>
         </div>

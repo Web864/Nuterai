@@ -10,7 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Activity,
@@ -53,7 +59,10 @@ export const Route = createFileRoute("/_authenticated/community")({
   head: () => ({
     meta: [
       { title: "Community — NutriAI" },
-      { name: "description", content: "Share progress, cheer on friends and see what your circle is achieving." },
+      {
+        name: "description",
+        content: "Share progress, cheer on friends and see what your circle is achieving.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -74,7 +83,9 @@ function CommunityPage() {
           </Button>
           <div>
             <h1 className="font-display text-2xl tracking-tight">Community</h1>
-            <p className="text-sm text-muted-foreground">Share wins, follow friends, stay accountable.</p>
+            <p className="text-sm text-muted-foreground">
+              Share wins, follow friends, stay accountable.
+            </p>
           </div>
         </div>
       </header>
@@ -82,16 +93,32 @@ function CommunityPage() {
       <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <Tabs defaultValue="feed">
           <TabsList className="mb-6 w-full justify-start overflow-x-auto rounded-full">
-            <TabsTrigger value="feed" className="rounded-full">Feed</TabsTrigger>
-            <TabsTrigger value="activity" className="rounded-full">Activity</TabsTrigger>
-            <TabsTrigger value="friends" className="rounded-full">Friends</TabsTrigger>
-            <TabsTrigger value="discover" className="rounded-full">Discover</TabsTrigger>
+            <TabsTrigger value="feed" className="rounded-full">
+              Feed
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="rounded-full">
+              Activity
+            </TabsTrigger>
+            <TabsTrigger value="friends" className="rounded-full">
+              Friends
+            </TabsTrigger>
+            <TabsTrigger value="discover" className="rounded-full">
+              Discover
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="feed"><PostsTab userId={userId} /></TabsContent>
-          <TabsContent value="activity"><ActivityTab /></TabsContent>
-          <TabsContent value="friends"><FriendsTab userId={userId} /></TabsContent>
-          <TabsContent value="discover"><DiscoverTab userId={userId} /></TabsContent>
+          <TabsContent value="feed">
+            <PostsTab userId={userId} />
+          </TabsContent>
+          <TabsContent value="activity">
+            <ActivityTab />
+          </TabsContent>
+          <TabsContent value="friends">
+            <FriendsTab userId={userId} />
+          </TabsContent>
+          <TabsContent value="discover">
+            <DiscoverTab userId={userId} />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
@@ -176,7 +203,9 @@ function PostsTab({ userId }: { userId: string }) {
 
       {posts.isLoading ? (
         <div className="space-y-3">
-          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-32 rounded-3xl" />)}
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-32 rounded-3xl" />
+          ))}
         </div>
       ) : posts.isError ? (
         <ErrorState message="We couldn't load the feed." onRetry={() => posts.refetch()} />
@@ -188,7 +217,9 @@ function PostsTab({ userId }: { userId: string }) {
         />
       ) : (
         <div className="space-y-4">
-          {posts.data.map((p) => <PostCard key={p.id} post={p} userId={userId} />)}
+          {posts.data.map((p) => (
+            <PostCard key={p.id} post={p} userId={userId} />
+          ))}
         </div>
       )}
     </div>
@@ -230,7 +261,9 @@ function PostCard({ post, userId }: { post: PostWithAuthor; userId: string }) {
                 <span className="font-medium text-foreground">{name}</span>
               )}
               <span className="text-xs text-muted-foreground">{relativeTime(post.created_at)}</span>
-              <Badge variant="outline" className="rounded-full text-xs capitalize">{post.visibility}</Badge>
+              <Badge variant="outline" className="rounded-full text-xs capitalize">
+                {post.visibility}
+              </Badge>
             </div>
             <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">{post.content}</p>
             {post.image_url && (
@@ -253,10 +286,17 @@ function PostCard({ post, userId }: { post: PostWithAuthor; userId: string }) {
             aria-label={post.liked_by_me ? "Remove like" : "Like post"}
             onClick={() => like.mutate({ postId: post.id, liked: post.liked_by_me })}
           >
-            <Heart className={`mr-1.5 h-4 w-4 ${post.liked_by_me ? "fill-current text-destructive" : ""}`} />
+            <Heart
+              className={`mr-1.5 h-4 w-4 ${post.liked_by_me ? "fill-current text-destructive" : ""}`}
+            />
             {post.like_count}
           </Button>
-          <Button variant="ghost" size="sm" className="rounded-full" onClick={() => setShowComments((v) => !v)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="rounded-full"
+            onClick={() => setShowComments((v) => !v)}
+          >
             <MessageCircle className="mr-1.5 h-4 w-4" />
             {post.comment_count}
           </Button>
@@ -266,7 +306,9 @@ function PostCard({ post, userId }: { post: PostWithAuthor; userId: string }) {
                 variant="ghost"
                 size="sm"
                 className="rounded-full text-destructive"
-                onClick={() => del.mutate(post.id, { onSuccess: () => toast.success("Post deleted") })}
+                onClick={() =>
+                  del.mutate(post.id, { onSuccess: () => toast.success("Post deleted") })
+                }
                 aria-label="Delete post"
               >
                 <Trash2 className="h-4 w-4" />
@@ -307,7 +349,8 @@ function PostCard({ post, userId }: { post: PostWithAuthor; userId: string }) {
                   </Avatar>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs text-muted-foreground">
-                      {c.author?.display_name ?? c.author?.full_name ?? "Athlete"} · {relativeTime(c.created_at)}
+                      {c.author?.display_name ?? c.author?.full_name ?? "Athlete"} ·{" "}
+                      {relativeTime(c.created_at)}
                     </p>
                     <p className="text-foreground">{c.content}</p>
                   </div>
@@ -402,11 +445,14 @@ function ActivityTab() {
               <div key={item.id} className="flex items-start gap-3 p-4">
                 <Avatar className="h-9 w-9">
                   {item.avatar_url && <AvatarImage src={item.avatar_url} alt="" />}
-                  <AvatarFallback className="text-xs">{initialsOf(item.display_name)}</AvatarFallback>
+                  <AvatarFallback className="text-xs">
+                    {initialsOf(item.display_name)}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-foreground">
-                    <span className="font-medium">{item.display_name ?? "Athlete"}</span> — {item.title}
+                    <span className="font-medium">{item.display_name ?? "Athlete"}</span> —{" "}
+                    {item.title}
                   </p>
                   {item.description && (
                     <p className="text-xs text-muted-foreground">{item.description}</p>
@@ -441,7 +487,9 @@ function FriendsTab({ userId }: { userId: string }) {
 
   if (friendships.isLoading) return <Skeleton className="h-40 rounded-3xl" />;
   if (friendships.isError) {
-    return <ErrorState message="We couldn't load your friends." onRetry={() => friendships.refetch()} />;
+    return (
+      <ErrorState message="We couldn't load your friends." onRetry={() => friendships.refetch()} />
+    );
   }
 
   const nameOf = (id: string) => {
@@ -458,7 +506,12 @@ function FriendsTab({ userId }: { userId: string }) {
           buckets.incoming.map((f) => {
             const id = otherUserId(f, userId);
             return (
-              <PersonRow key={f.id} name={nameOf(id)} avatar={profiles.data?.[id]?.avatar_url ?? null} username={profiles.data?.[id]?.username ?? null}>
+              <PersonRow
+                key={f.id}
+                name={nameOf(id)}
+                avatar={profiles.data?.[id]?.avatar_url ?? null}
+                username={profiles.data?.[id]?.username ?? null}
+              >
                 <Button
                   size="sm"
                   className="rounded-full"
@@ -493,12 +546,19 @@ function FriendsTab({ userId }: { userId: string }) {
           buckets.accepted.map((f) => {
             const id = otherUserId(f, userId);
             return (
-              <PersonRow key={f.id} name={nameOf(id)} avatar={profiles.data?.[id]?.avatar_url ?? null} username={profiles.data?.[id]?.username ?? null}>
+              <PersonRow
+                key={f.id}
+                name={nameOf(id)}
+                avatar={profiles.data?.[id]?.avatar_url ?? null}
+                username={profiles.data?.[id]?.username ?? null}
+              >
                 <Button
                   size="sm"
                   variant="outline"
                   className="rounded-full text-destructive"
-                  onClick={() => remove.mutate(f.id, { onSuccess: () => toast.success("Friend removed") })}
+                  onClick={() =>
+                    remove.mutate(f.id, { onSuccess: () => toast.success("Friend removed") })
+                  }
                 >
                   Remove
                 </Button>
@@ -513,9 +573,21 @@ function FriendsTab({ userId }: { userId: string }) {
           {buckets.outgoing.map((f) => {
             const id = otherUserId(f, userId);
             return (
-              <PersonRow key={f.id} name={nameOf(id)} avatar={profiles.data?.[id]?.avatar_url ?? null} username={profiles.data?.[id]?.username ?? null}>
-                <Badge variant="outline" className="rounded-full">Pending</Badge>
-                <Button size="sm" variant="ghost" className="rounded-full" onClick={() => remove.mutate(f.id)}>
+              <PersonRow
+                key={f.id}
+                name={nameOf(id)}
+                avatar={profiles.data?.[id]?.avatar_url ?? null}
+                username={profiles.data?.[id]?.username ?? null}
+              >
+                <Badge variant="outline" className="rounded-full">
+                  Pending
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-full"
+                  onClick={() => remove.mutate(f.id)}
+                >
                   Cancel
                 </Button>
               </PersonRow>
@@ -574,7 +646,9 @@ function DiscoverTab({ userId }: { userId: string }) {
               meta={`Level ${r.level} · ${r.xp.toLocaleString()} XP`}
             >
               {r.friendship_status === "accepted" ? (
-                <Badge variant="outline" className="rounded-full">Friends</Badge>
+                <Badge variant="outline" className="rounded-full">
+                  Friends
+                </Badge>
               ) : r.friendship_status === "pending" ? (
                 <Badge variant="outline" className="rounded-full">
                   {r.is_requester ? "Requested" : "Awaiting you"}
@@ -587,7 +661,8 @@ function DiscoverTab({ userId }: { userId: string }) {
                   onClick={() =>
                     send.mutate(r.user_id, {
                       onSuccess: () => toast.success("Request sent"),
-                      onError: (e) => toast.error(e instanceof Error ? e.message : "Could not send request"),
+                      onError: (e) =>
+                        toast.error(e instanceof Error ? e.message : "Could not send request"),
                     })
                   }
                 >
@@ -636,13 +711,19 @@ function PersonRow({
       </Avatar>
       <div className="min-w-0 flex-1">
         {username ? (
-          <Link to="/u/$username" params={{ username }} className="font-medium text-foreground hover:underline">
+          <Link
+            to="/u/$username"
+            params={{ username }}
+            className="font-medium text-foreground hover:underline"
+          >
             {name}
           </Link>
         ) : (
           <p className="truncate font-medium text-foreground">{name}</p>
         )}
-        <p className="truncate text-xs text-muted-foreground">{meta ?? (username ? `@${username}` : "")}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {meta ?? (username ? `@${username}` : "")}
+        </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">{children}</div>
     </div>
@@ -660,7 +741,9 @@ export function EmptyState({
 }) {
   return (
     <Card className="rounded-3xl border-dashed border-border/70 bg-card/50 p-8 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/15">{icon}</div>
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/15">
+        {icon}
+      </div>
       <h2 className="mt-4 font-display text-xl">{title}</h2>
       <p className="mt-2 text-sm text-muted-foreground">{description}</p>
     </Card>

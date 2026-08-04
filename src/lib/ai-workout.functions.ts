@@ -48,7 +48,9 @@ export type GeneratedPlan = z.infer<typeof PlanSchema>;
 
 const InputSchema = z.object({
   goal: z.string().min(2).max(200),
-  gym_access: z.enum(["full_gym", "home_gym", "basic_equipment", "no_equipment"]).default("no_equipment"),
+  gym_access: z
+    .enum(["full_gym", "home_gym", "basic_equipment", "no_equipment"])
+    .default("no_equipment"),
   experience: z.enum(["none", "beginner", "intermediate", "advanced"]).default("beginner"),
   days_per_week: z.number().int().min(1).max(7).default(3),
   minutes_per_session: z.number().int().min(15).max(180).default(45),
@@ -168,7 +170,8 @@ ${data.focus_notes ? `Preferences: ${data.focus_notes}` : ""}`;
     });
 
     if (res.status === 429) throw new Error("Rate limit reached. Please try again in a moment.");
-    if (res.status === 402) throw new Error("AI credits exhausted. Please add credits to your workspace.");
+    if (res.status === 402)
+      throw new Error("AI credits exhausted. Please add credits to your workspace.");
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.error("[generateWorkoutPlan] gateway error", res.status, text);

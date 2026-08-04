@@ -7,10 +7,30 @@ import type { OnboardingData } from "../schemas";
 import { Building2, Dumbbell, Home, Zap } from "lucide-react";
 
 const GYM = [
-  { value: "no_equipment", title: "No equipment", description: "Bodyweight at home", icon: <Home className="h-5 w-5" /> },
-  { value: "basic_equipment", title: "Basic equipment", description: "Bands, dumbbells", icon: <Zap className="h-5 w-5" /> },
-  { value: "home_gym", title: "Home gym", description: "Rack, bench, weights", icon: <Dumbbell className="h-5 w-5" /> },
-  { value: "full_gym", title: "Full gym", description: "Commercial gym access", icon: <Building2 className="h-5 w-5" /> },
+  {
+    value: "no_equipment",
+    title: "No equipment",
+    description: "Bodyweight at home",
+    icon: <Home className="h-5 w-5" />,
+  },
+  {
+    value: "basic_equipment",
+    title: "Basic equipment",
+    description: "Bands, dumbbells",
+    icon: <Zap className="h-5 w-5" />,
+  },
+  {
+    value: "home_gym",
+    title: "Home gym",
+    description: "Rack, bench, weights",
+    icon: <Dumbbell className="h-5 w-5" />,
+  },
+  {
+    value: "full_gym",
+    title: "Full gym",
+    description: "Commercial gym access",
+    icon: <Building2 className="h-5 w-5" />,
+  },
 ] as const;
 
 const EXP = [
@@ -39,11 +59,23 @@ export function StepLifestyle({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="wake">Usual wake time</Label>
-            <Input id="wake" type="time" className="h-12" value={data.wake_time ?? "07:00"} onChange={(e) => onChange({ wake_time: e.target.value })} />
+            <Input
+              id="wake"
+              type="time"
+              className="h-12"
+              value={data.wake_time ?? "07:00"}
+              onChange={(e) => onChange({ wake_time: e.target.value })}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="sleep">Usual bedtime</Label>
-            <Input id="sleep" type="time" className="h-12" value={data.sleep_time ?? "23:00"} onChange={(e) => onChange({ sleep_time: e.target.value })} />
+            <Input
+              id="sleep"
+              type="time"
+              className="h-12"
+              value={data.sleep_time ?? "23:00"}
+              onChange={(e) => onChange({ sleep_time: e.target.value })}
+            />
           </div>
         </div>
 
@@ -80,7 +112,9 @@ export function StepLifestyle({
         <div className="rounded-2xl bg-secondary/60 p-5">
           <div className="mb-2 flex items-baseline justify-between">
             <Label className="text-sm">Typical stress level</Label>
-            <span className="font-display text-lg text-foreground">{data.stress_level ?? 5}/10</span>
+            <span className="font-display text-lg text-foreground">
+              {data.stress_level ?? 5}/10
+            </span>
           </div>
           <Slider
             min={1}
@@ -112,7 +146,15 @@ export function StepLifestyle({
   );
 }
 
-function ToggleRow({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+function ToggleRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <div className="flex items-center justify-between rounded-2xl border border-border bg-card p-4">
       <span className="text-sm font-medium text-foreground">{label}</span>

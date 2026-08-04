@@ -13,20 +13,22 @@ export function StepReview({
   if (!targets) {
     return (
       <div>
-        <StepHeader title="Almost there" description="Please complete the previous steps to see your plan." />
+        <StepHeader
+          title="Almost there"
+          description="Please complete the previous steps to see your plan."
+        />
       </div>
     );
   }
 
-  const goalLabel =
-    {
-      lose_weight: "lose weight",
-      maintain: "maintain your weight",
-      gain_weight: "gain weight",
-      build_muscle: "build muscle",
-      improve_health: "improve your health",
-      boost_energy: "boost your energy",
-    }[data.fitness_goal ?? "improve_health"];
+  const goalLabel = {
+    lose_weight: "lose weight",
+    maintain: "maintain your weight",
+    gain_weight: "gain weight",
+    build_muscle: "build muscle",
+    improve_health: "improve your health",
+    boost_energy: "boost your energy",
+  }[data.fitness_goal ?? "improve_health"];
 
   return (
     <div>
@@ -39,14 +41,31 @@ export function StepReview({
       <div className="rounded-3xl bg-gradient-hero p-8 text-primary-foreground shadow-hero">
         <p className="text-xs uppercase tracking-wider opacity-70">Daily calorie target</p>
         <p className="mt-2 font-display text-6xl">{targets.calories.toLocaleString()}</p>
-        <p className="mt-1 text-sm opacity-80">kcal · maintenance {targets.tdee.toLocaleString()} kcal</p>
+        <p className="mt-1 text-sm opacity-80">
+          kcal · maintenance {targets.tdee.toLocaleString()} kcal
+        </p>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <MacroTile icon={<Apple className="h-4 w-4" />} label="Protein" value={targets.proteinG} unit="g" />
-        <MacroTile icon={<Utensils className="h-4 w-4" />} label="Carbs" value={targets.carbsG} unit="g" />
+        <MacroTile
+          icon={<Apple className="h-4 w-4" />}
+          label="Protein"
+          value={targets.proteinG}
+          unit="g"
+        />
+        <MacroTile
+          icon={<Utensils className="h-4 w-4" />}
+          label="Carbs"
+          value={targets.carbsG}
+          unit="g"
+        />
         <MacroTile icon={<Flame className="h-4 w-4" />} label="Fat" value={targets.fatG} unit="g" />
-        <MacroTile icon={<Wheat className="h-4 w-4" />} label="Fiber" value={targets.fiberG} unit="g" />
+        <MacroTile
+          icon={<Wheat className="h-4 w-4" />}
+          label="Fiber"
+          value={targets.fiberG}
+          unit="g"
+        />
       </div>
 
       <div className="mt-3 rounded-2xl border border-border bg-secondary/50 p-4">
@@ -62,13 +81,24 @@ export function StepReview({
       </div>
 
       <p className="mt-6 text-xs text-muted-foreground">
-        These targets are estimates using Mifflin–St Jeor. NutriAI will refine them based on your progress. Nothing here is medical advice.
+        These targets are estimates using Mifflin–St Jeor. NutriAI will refine them based on your
+        progress. Nothing here is medical advice.
       </p>
     </div>
   );
 }
 
-function MacroTile({ icon, label, value, unit }: { icon: React.ReactNode; label: string; value: number; unit: string }) {
+function MacroTile({
+  icon,
+  label,
+  value,
+  unit,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  unit: string;
+}) {
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex items-center gap-2 text-muted-foreground">

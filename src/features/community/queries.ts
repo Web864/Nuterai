@@ -141,7 +141,10 @@ export const friendshipsQueryOptions = (userId: string | undefined) =>
   });
 
 /** Profiles for every user the current user has any friendship row with. */
-export const friendProfilesQueryOptions = (userId: string | undefined, friendships: Friendship[]) => {
+export const friendProfilesQueryOptions = (
+  userId: string | undefined,
+  friendships: Friendship[],
+) => {
   const ids = friendships
     .map((f) => (f.requester_id === userId ? f.addressee_id : f.requester_id))
     .filter(Boolean);
@@ -220,7 +223,13 @@ export function useSendFriendRequest(userId: string) {
 export function useRespondToFriendRequest(userId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: "accepted" | "declined" | "blocked" }) => {
+    mutationFn: async ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: "accepted" | "declined" | "blocked";
+    }) => {
       const { error } = await supabase.from("friendships").update({ status }).eq("id", id);
       if (error) throw error;
     },
@@ -248,13 +257,20 @@ export function useRemoveFriend(userId: string) {
 
 /* ---------------------------------- posts --------------------------------- */
 
-export const postsFeedQueryOptions = (userId: string | undefined, scope: "all" | "friends" | "mine") =>
+export const postsFeedQueryOptions = (
+  userId: string | undefined,
+  scope: "all" | "friends" | "mine",
+) =>
   queryOptions({
     queryKey: ["posts", userId, scope],
     enabled: !!userId,
     queryFn: async (): Promise<PostWithAuthor[]> => {
       if (!userId) return [];
-      let q = supabase.from("posts").select("*").order("created_at", { ascending: false }).limit(50);
+      let q = supabase
+        .from("posts")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
       if (scope === "mine") q = q.eq("user_id", userId);
       const { data, error } = await q;
       if (error) throw error;
@@ -268,9 +284,15 @@ export const postsFeedQueryOptions = (userId: string | undefined, scope: "all" |
           .from("post_likes")
           .select("post_id")
           .eq("user_id", userId)
-          .in("post_id", posts.map((p) => p.id)),
+          .in(
+            "post_id",
+            posts.map((p) => p.id),
+          ),
         scope === "friends"
-          ? supabase.from("friendships").select("requester_id, addressee_id").eq("status", "accepted")
+          ? supabase
+              .from("friendships")
+              .select("requester_id, addressee_id")
+              .eq("status", "accepted")
           : Promise.resolve({ data: null, error: null } as const),
       ]);
       if (authors.error) throw authors.error;
@@ -464,7 +486,15 @@ export function useDeleteComment() {
 
 export function useReportPost(userId: string) {
   return useMutation({
-    mutationFn: async ({ postId, reason, details }: { postId: string; reason: string; details?: string }) => {
+    mutationFn: async ({
+      postId,
+      reason,
+      details,
+    }: {
+      postId: string;
+      reason: string;
+      details?: string;
+    }) => {
       const { error } = await supabase
         .from("post_reports")
         .insert({ post_id: postId, reporter_id: userId, reason, details: details ?? null });

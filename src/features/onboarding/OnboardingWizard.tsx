@@ -76,20 +76,31 @@ export function OnboardingWizard({
       sex: (g?.sex as OnboardingData["sex"]) ?? DEFAULTS.sex!,
       age: g?.age ?? DEFAULTS.age!,
       height_cm: g?.height_cm ? Number(g.height_cm) : DEFAULTS.height_cm!,
-      current_weight_kg: g?.current_weight_kg ? Number(g.current_weight_kg) : DEFAULTS.current_weight_kg!,
-      target_weight_kg: g?.target_weight_kg ? Number(g.target_weight_kg) : DEFAULTS.target_weight_kg!,
-      activity_level: (g?.activity_level as OnboardingData["activity_level"]) ?? DEFAULTS.activity_level!,
+      current_weight_kg: g?.current_weight_kg
+        ? Number(g.current_weight_kg)
+        : DEFAULTS.current_weight_kg!,
+      target_weight_kg: g?.target_weight_kg
+        ? Number(g.target_weight_kg)
+        : DEFAULTS.target_weight_kg!,
+      activity_level:
+        (g?.activity_level as OnboardingData["activity_level"]) ?? DEFAULTS.activity_level!,
       fitness_goal: (g?.fitness_goal as OnboardingData["fitness_goal"]) ?? DEFAULTS.fitness_goal!,
-      pace_kg_per_week: g?.pace_kg_per_week ? Number(g.pace_kg_per_week) : DEFAULTS.pace_kg_per_week!,
+      pace_kg_per_week: g?.pace_kg_per_week
+        ? Number(g.pace_kg_per_week)
+        : DEFAULTS.pace_kg_per_week!,
       target_timeline_weeks: g?.target_timeline_weeks ?? undefined,
-      diet_preference: (g?.diet_preference as OnboardingData["diet_preference"]) ?? DEFAULTS.diet_preference!,
+      diet_preference:
+        (g?.diet_preference as OnboardingData["diet_preference"]) ?? DEFAULTS.diet_preference!,
       allergies: g?.allergies ?? [],
       medical_conditions: g?.medical_conditions ?? [],
-      cooking_skill: (g?.cooking_skill as OnboardingData["cooking_skill"]) ?? DEFAULTS.cooking_skill!,
+      cooking_skill:
+        (g?.cooking_skill as OnboardingData["cooking_skill"]) ?? DEFAULTS.cooking_skill!,
       wake_time: g?.wake_time ?? "07:00",
       sleep_time: g?.sleep_time ?? "23:00",
       gym_access: (g?.gym_access as OnboardingData["gym_access"]) ?? DEFAULTS.gym_access!,
-      workout_experience: (g?.workout_experience as OnboardingData["workout_experience"]) ?? DEFAULTS.workout_experience!,
+      workout_experience:
+        (g?.workout_experience as OnboardingData["workout_experience"]) ??
+        DEFAULTS.workout_experience!,
       stress_level: g?.stress_level ?? DEFAULTS.stress_level!,
       smoking: g?.smoking ?? false,
       alcohol: g?.alcohol ?? false,
@@ -256,12 +267,7 @@ export function OnboardingWizard({
               Start my plan
             </Button>
           ) : (
-            <Button
-              size="lg"
-              className="rounded-full"
-              onClick={next}
-              disabled={!canProceed}
-            >
+            <Button size="lg" className="rounded-full" onClick={next} disabled={!canProceed}>
               Continue
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -277,13 +283,7 @@ function validateStep(step: number, d: Partial<OnboardingData>): boolean {
     case 0:
       return !!d.full_name && d.full_name.trim().length > 0 && !!d.units;
     case 1:
-      return (
-        !!d.sex &&
-        !!d.age &&
-        !!d.height_cm &&
-        !!d.current_weight_kg &&
-        !!d.target_weight_kg
-      );
+      return !!d.sex && !!d.age && !!d.height_cm && !!d.current_weight_kg && !!d.target_weight_kg;
     case 2:
       return !!d.activity_level;
     case 3:
@@ -291,11 +291,7 @@ function validateStep(step: number, d: Partial<OnboardingData>): boolean {
     case 4:
       return !!d.diet_preference && !!d.cooking_skill;
     case 5:
-      return (
-        !!d.gym_access &&
-        !!d.workout_experience &&
-        typeof d.stress_level === "number"
-      );
+      return !!d.gym_access && !!d.workout_experience && typeof d.stress_level === "number";
     default:
       return true;
   }

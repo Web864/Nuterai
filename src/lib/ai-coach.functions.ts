@@ -21,13 +21,41 @@ Style:
 - If user asks about medical conditions, medications, or eating disorders, recommend a licensed professional.
 - Never make up data you don't have. If context is missing, ask a quick clarifying question.`;
 
-async function buildUserContext(supabase: ReturnType<typeof createClient>, userId: string): Promise<string> {
+async function buildUserContext(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<string> {
   const [profileRes, goalsRes, mealsRes, workoutsRes, weightRes] = await Promise.all([
-    supabase.from("profiles").select("full_name, sex, age, height_cm, activity_level").eq("id", userId).maybeSingle(),
-    supabase.from("user_goals").select("fitness_goal, diet_preference, daily_calorie_target, protein_g, carbs_g, fat_g, fiber_g, water_target_ml, tdee_kcal, target_weight_kg").eq("user_id", userId).maybeSingle(),
-    supabase.from("meal_entries").select("name, calories_kcal, protein_g, carbs_g, fat_g, logged_at").eq("user_id", userId).order("logged_at", { ascending: false }).limit(10),
-    supabase.from("workout_sessions").select("name, duration_seconds, calories_burned, logged_at").eq("user_id", userId).order("logged_at", { ascending: false }).limit(5),
-    supabase.from("weight_logs").select("weight_kg, logged_at").eq("user_id", userId).order("logged_at", { ascending: false }).limit(5),
+    supabase
+      .from("profiles")
+      .select("full_name, sex, age, height_cm, activity_level")
+      .eq("id", userId)
+      .maybeSingle(),
+    supabase
+      .from("user_goals")
+      .select(
+        "fitness_goal, diet_preference, daily_calorie_target, protein_g, carbs_g, fat_g, fiber_g, water_target_ml, tdee_kcal, target_weight_kg",
+      )
+      .eq("user_id", userId)
+      .maybeSingle(),
+    supabase
+      .from("meal_entries")
+      .select("name, calories_kcal, protein_g, carbs_g, fat_g, logged_at")
+      .eq("user_id", userId)
+      .order("logged_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("workout_sessions")
+      .select("name, duration_seconds, calories_burned, logged_at")
+      .eq("user_id", userId)
+      .order("logged_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("weight_logs")
+      .select("weight_kg, logged_at")
+      .eq("user_id", userId)
+      .order("logged_at", { ascending: false })
+      .limit(5),
   ]);
 
   const profile = profileRes.data;
@@ -38,20 +66,44 @@ async function buildUserContext(supabase: ReturnType<typeof createClient>, userI
 
   const parts: string[] = ["=== USER CONTEXT ==="];
   if (profile) {
-    parts.push(`Profile: ${profile.full_name ?? "user"} · sex:${profile.sex ?? "?"} · age:${profile.age ?? "?"} · height:${profile.height_cm ?? "?"}cm · activity:${profile.activity_level ?? "?"}`);
+    parts.push(
+      `Profile: ${profile.full_name ?? "user"} · sex:${profile.sex ?? "?"} · age:${profile.age ?? "?"} · height:${profile.height_cm ?? "?"}cm · activity:${profile.activity_level ?? "?"}`,
+    );
   }
   if (goals) {
-    parts.push(`Goal: ${goals.fitness_goal ?? "?"} · diet:${goals.diet_preference ?? "?"} · target weight:${goals.target_weight_kg ?? "?"}kg`);
-    parts.push(`Daily targets: ${goals.daily_calorie_target ?? "?"} kcal · P:${goals.protein_g ?? "?"}g · C:${goals.carbs_g ?? "?"}g · F:${goals.fat_g ?? "?"}g · Fiber:${goals.fiber_g ?? "?"}g · Water:${goals.water_target_ml ?? "?"}ml · TDEE:${goals.tdee_kcal ?? "?"} kcal`);
+    parts.push(
+      `Goal: ${goals.fitness_goal ?? "?"} · diet:${goals.diet_preference ?? "?"} · target weight:${goals.target_weight_kg ?? "?"}kg`,
+    );
+    parts.push(
+      `Daily targets: ${goals.daily_calorie_target ?? "?"} kcal · P:${goals.protein_g ?? "?"}g · C:${goals.carbs_g ?? "?"}g · F:${goals.fat_g ?? "?"}g · Fiber:${goals.fiber_g ?? "?"}g · Water:${goals.water_target_ml ?? "?"}ml · TDEE:${goals.tdee_kcal ?? "?"} kcal`,
+    );
   }
   if (weights.length) {
-    parts.push(`Recent weight (kg): ${weights.map((w: { weight_kg: number | null; logged_at: string | null }) => `${w.weight_kg}@${w.logged_at?.slice(0, 10)}`).join(", ")}`);
+    parts.push(
+      `Recent weight (kg): ${weights.map((w: { weight_kg: number | null; logged_at: string | null }) => `${w.weight_kg}@${w.logged_at?.slice(0, 10)}`).join(", ")}`,
+    );
   }
   if (meals.length) {
-    parts.push(`Recent meals: ${meals.slice(0, 5).map((m: { name: string; calories_kcal: number | null; protein_g: number | null; carbs_g: number | null; fat_g: number | null }) => `${m.name} (${Math.round(m.calories_kcal ?? 0)}kcal, P${Math.round(m.protein_g ?? 0)}/C${Math.round(m.carbs_g ?? 0)}/F${Math.round(m.fat_g ?? 0)})`).join("; ")}`);
+    parts.push(
+      `Recent meals: ${meals
+        .slice(0, 5)
+        .map(
+          (m: {
+            name: string;
+            calories_kcal: number | null;
+            protein_g: number | null;
+            carbs_g: number | null;
+            fat_g: number | null;
+          }) =>
+            `${m.name} (${Math.round(m.calories_kcal ?? 0)}kcal, P${Math.round(m.protein_g ?? 0)}/C${Math.round(m.carbs_g ?? 0)}/F${Math.round(m.fat_g ?? 0)})`,
+        )
+        .join("; ")}`,
+    );
   }
   if (workouts.length) {
-    parts.push(`Recent workouts: ${workouts.map((w: { name: string; duration_seconds: number | null; calories_burned: number | null }) => `${w.name} (${Math.round((w.duration_seconds ?? 0) / 60)}min, ${w.calories_burned ?? 0}kcal)`).join("; ")}`);
+    parts.push(
+      `Recent workouts: ${workouts.map((w: { name: string; duration_seconds: number | null; calories_burned: number | null }) => `${w.name} (${Math.round((w.duration_seconds ?? 0) / 60)}min, ${w.calories_burned ?? 0}kcal)`).join("; ")}`,
+    );
   }
   parts.push("=== END CONTEXT ===");
   return parts.join("\n");
@@ -118,7 +170,8 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     });
 
     if (res.status === 429) throw new Error("Rate limit reached. Please try again in a moment.");
-    if (res.status === 402) throw new Error("AI credits exhausted. Please add credits to your workspace.");
+    if (res.status === 402)
+      throw new Error("AI credits exhausted. Please add credits to your workspace.");
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.error("[sendCoachMessage] gateway error", res.status, text);
