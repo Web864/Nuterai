@@ -52,7 +52,10 @@ export const adminOverview = createServerFn({ method: "GET" })
     ] = await Promise.all([
       countRows(admin, "profiles"),
       countRows(admin, "profiles", d7),
-      admin.from("profiles").select("*", { count: "exact", head: true }).eq("onboarding_completed", true),
+      admin
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("onboarding_completed", true),
       countRows(admin, "meal_entries"),
       countRows(admin, "meal_entries", d7),
       countRows(admin, "workout_sessions"),
@@ -63,7 +66,10 @@ export const adminOverview = createServerFn({ method: "GET" })
       countRows(admin, "posts"),
       countRows(admin, "post_comments"),
       admin.from("post_reports").select("*", { count: "exact", head: true }).eq("status", "open"),
-      admin.from("user_achievements").select("*", { count: "exact", head: true }).not("unlocked_at", "is", null),
+      admin
+        .from("user_achievements")
+        .select("*", { count: "exact", head: true })
+        .not("unlocked_at", "is", null),
     ]);
 
     const [signupRows, mealRows, workoutRows, xpRows] = await Promise.all([
@@ -103,7 +109,11 @@ export const adminListUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
-      .object({ q: z.string().trim().max(120).optional(), limit: z.number().optional(), offset: z.number().optional() })
+      .object({
+        q: z.string().trim().max(120).optional(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      })
       .parse(d ?? {}),
   )
   .handler(async ({ data, context }) => {
@@ -114,9 +124,12 @@ export const adminListUsers = createServerFn({ method: "GET" })
 
     let query = admin
       .from("profiles")
-      .select("id, display_name, full_name, email, username, avatar_url, country, city, onboarding_completed, is_public, created_at", {
-        count: "exact",
-      })
+      .select(
+        "id, display_name, full_name, email, username, avatar_url, country, city, onboarding_completed, is_public, created_at",
+        {
+          count: "exact",
+        },
+      )
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -132,8 +145,14 @@ export const adminListUsers = createServerFn({ method: "GET" })
 
     const ids = (rows ?? []).map((r) => r.id);
     const [statsRes, rolesRes] = await Promise.all([
-      admin.from("user_stats").select("user_id, xp, level, workout_streak, nutrition_streak, login_streak").in("user_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]),
-      admin.from("user_roles").select("user_id, role").in("user_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]),
+      admin
+        .from("user_stats")
+        .select("user_id, xp, level, workout_streak, nutrition_streak, login_streak")
+        .in("user_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]),
+      admin
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]),
     ]);
 
     const statsBy = new Map((statsRes.data ?? []).map((s) => [s.user_id, s]));
@@ -160,20 +179,65 @@ export const adminUserDetail = createServerFn({ method: "GET" })
     const admin = await getAdminClient();
     const uid = data.userId;
 
-    const [profile, goals, stats, roles, meals, workouts, threads, reminders, posts, xp, achievements] =
-      await Promise.all([
-        admin.from("profiles").select("*").eq("id", uid).maybeSingle(),
-        admin.from("user_goals").select("*").eq("user_id", uid).maybeSingle(),
-        admin.from("user_stats").select("*").eq("user_id", uid).maybeSingle(),
-        admin.from("user_roles").select("role").eq("user_id", uid),
-        admin.from("meal_entries").select("id, name, meal_type, calories_kcal, protein_g, logged_at").eq("user_id", uid).order("logged_at", { ascending: false }).limit(10),
-        admin.from("workout_sessions").select("id, name, focus, duration_minutes, calories_kcal, logged_at").eq("user_id", uid).order("logged_at", { ascending: false }).limit(10),
-        admin.from("coach_threads").select("id, title, last_message_preview, last_message_at").eq("user_id", uid).order("last_message_at", { ascending: false }).limit(10),
-        admin.from("reminders").select("id, type, title, is_active, times").eq("user_id", uid).limit(20),
-        admin.from("posts").select("id, content, kind, like_count, comment_count, is_hidden, created_at").eq("user_id", uid).order("created_at", { ascending: false }).limit(10),
-        admin.from("xp_events").select("id, amount, reason, created_at").eq("user_id", uid).order("created_at", { ascending: false }).limit(20),
-        admin.from("user_achievements").select("achievement_code, progress, target, unlocked_at").eq("user_id", uid).order("unlocked_at", { ascending: false, nullsFirst: false }).limit(30),
-      ]);
+    const [
+      profile,
+      goals,
+      stats,
+      roles,
+      meals,
+      workouts,
+      threads,
+      reminders,
+      posts,
+      xp,
+      achievements,
+    ] = await Promise.all([
+      admin.from("profiles").select("*").eq("id", uid).maybeSingle(),
+      admin.from("user_goals").select("*").eq("user_id", uid).maybeSingle(),
+      admin.from("user_stats").select("*").eq("user_id", uid).maybeSingle(),
+      admin.from("user_roles").select("role").eq("user_id", uid),
+      admin
+        .from("meal_entries")
+        .select("id, name, meal_type, calories_kcal, protein_g, logged_at")
+        .eq("user_id", uid)
+        .order("logged_at", { ascending: false })
+        .limit(10),
+      admin
+        .from("workout_sessions")
+        .select("id, name, focus, duration_minutes, calories_kcal, logged_at")
+        .eq("user_id", uid)
+        .order("logged_at", { ascending: false })
+        .limit(10),
+      admin
+        .from("coach_threads")
+        .select("id, title, last_message_preview, last_message_at")
+        .eq("user_id", uid)
+        .order("last_message_at", { ascending: false })
+        .limit(10),
+      admin
+        .from("reminders")
+        .select("id, type, title, is_active, times")
+        .eq("user_id", uid)
+        .limit(20),
+      admin
+        .from("posts")
+        .select("id, content, kind, like_count, comment_count, is_hidden, created_at")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: false })
+        .limit(10),
+      admin
+        .from("xp_events")
+        .select("id, amount, reason, created_at")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      admin
+        .from("user_achievements")
+        .select("achievement_code, progress, target, unlocked_at")
+        .eq("user_id", uid)
+        .order("unlocked_at", { ascending: false, nullsFirst: false })
+        .limit(30),
+    ]);
 
     return {
       profile: profile.data,
@@ -208,34 +272,56 @@ export const adminSetRole = createServerFn({ method: "POST" })
     }
     const admin = await getAdminClient();
     if (data.grant) {
-      const { error } = await admin.from("user_roles").insert({ user_id: data.userId, role: data.role });
+      const { error } = await admin
+        .from("user_roles")
+        .insert({ user_id: data.userId, role: data.role });
       if (error && !error.message.includes("duplicate")) throw new Error(error.message);
     } else {
-      const { error } = await admin.from("user_roles").delete().eq("user_id", data.userId).eq("role", data.role);
+      const { error } = await admin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", data.userId)
+        .eq("role", data.role);
       if (error) throw new Error(error.message);
     }
-    await writeAudit(admin, context.userId, data.grant ? "role.grant" : "role.revoke", "user", data.userId, {
-      role: data.role,
-    });
+    await writeAudit(
+      admin,
+      context.userId,
+      data.grant ? "role.grant" : "role.revoke",
+      "user",
+      data.userId,
+      {
+        role: data.role,
+      },
+    );
     return { ok: true };
   });
 
 export const adminSetUserVisibility = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ userId: z.string().uuid(), isPublic: z.boolean() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ userId: z.string().uuid(), isPublic: z.boolean() }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     const admin = await getAdminClient();
-    const { error } = await admin.from("profiles").update({ is_public: data.isPublic }).eq("id", data.userId);
+    const { error } = await admin
+      .from("profiles")
+      .update({ is_public: data.isPublic })
+      .eq("id", data.userId);
     if (error) throw new Error(error.message);
-    await writeAudit(admin, context.userId, "profile.visibility", "user", data.userId, { isPublic: data.isPublic });
+    await writeAudit(admin, context.userId, "profile.visibility", "user", data.userId, {
+      isPublic: data.isPublic,
+    });
     return { ok: true };
   });
 
 export const adminListReports = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ status: z.enum(["open", "reviewed", "dismissed", "all"]).default("open") }).parse(d ?? {}),
+    z
+      .object({ status: z.enum(["open", "reviewed", "dismissed", "all"]).default("open") })
+      .parse(d ?? {}),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
@@ -285,7 +371,10 @@ export const adminModeratePost = createServerFn({ method: "POST" })
     const admin = await getAdminClient();
 
     if (data.action === "hide" || data.action === "unhide") {
-      const { error } = await admin.from("posts").update({ is_hidden: data.action === "hide" }).eq("id", data.postId);
+      const { error } = await admin
+        .from("posts")
+        .update({ is_hidden: data.action === "hide" })
+        .eq("id", data.postId);
       if (error) throw new Error(error.message);
     } else if (data.action === "delete") {
       const { error } = await admin.from("posts").delete().eq("id", data.postId);
@@ -316,7 +405,8 @@ export const adminListAchievements = createServerFn({ method: "GET" })
       admin.from("user_achievements").select("achievement_code").not("unlocked_at", "is", null),
     ]);
     const counts = new Map<string, number>();
-    for (const u of unlocks ?? []) counts.set(u.achievement_code, (counts.get(u.achievement_code) ?? 0) + 1);
+    for (const u of unlocks ?? [])
+      counts.set(u.achievement_code, (counts.get(u.achievement_code) ?? 0) + 1);
     return (rows ?? []).map((r) => ({ ...r, unlockCount: counts.get(r.code) ?? 0 }));
   });
 
@@ -348,7 +438,9 @@ export const adminUpdateAchievement = createServerFn({ method: "POST" })
       })
       .eq("code", data.code);
     if (error) throw new Error(error.message);
-    await writeAudit(admin, context.userId, "achievement.update", "achievement", data.code, { title: data.title });
+    await writeAudit(admin, context.userId, "achievement.update", "achievement", data.code, {
+      title: data.title,
+    });
     return { ok: true };
   });
 
@@ -397,5 +489,8 @@ export const adminAuditLog = createServerFn({ method: "GET" })
       .select("id, display_name, email")
       .in("id", actorIds.length ? actorIds : ["00000000-0000-0000-0000-000000000000"]);
     const by = new Map((actors ?? []).map((a) => [a.id, a]));
-    return (rows ?? []).map((r) => ({ ...r, actor: r.actor_id ? (by.get(r.actor_id) ?? null) : null }));
+    return (rows ?? []).map((r) => ({
+      ...r,
+      actor: r.actor_id ? (by.get(r.actor_id) ?? null) : null,
+    }));
   });

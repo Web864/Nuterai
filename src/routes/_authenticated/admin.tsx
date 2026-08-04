@@ -45,7 +45,10 @@ export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
       { title: "Admin console — NutriAI" },
-      { name: "description", content: "Operations console for NutriAI: users, moderation, analytics and settings." },
+      {
+        name: "description",
+        content: "Operations console for NutriAI: users, moderation, analytics and settings.",
+      },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -94,7 +97,9 @@ function AdminPage() {
           </Button>
           <div className="min-w-0">
             <h1 className="font-display text-2xl tracking-tight">Admin console</h1>
-            <p className="text-xs text-muted-foreground">Signed in as admin · {userId.slice(0, 8)}</p>
+            <p className="text-xs text-muted-foreground">
+              Signed in as admin · {userId.slice(0, 8)}
+            </p>
           </div>
         </div>
       </header>
@@ -168,7 +173,11 @@ function Sparkline({ data, label }: { data: { day: string; count: number }[]; la
         <CardTitle className="font-display text-base">{label}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex h-24 items-end gap-1" role="img" aria-label={`${label}, last ${data.length} days`}>
+        <div
+          className="flex h-24 items-end gap-1"
+          role="img"
+          aria-label={`${label}, last ${data.length} days`}
+        >
           {data.map((d) => (
             <div key={d.day} className="flex-1" title={`${d.day}: ${d.count}`}>
               <div
@@ -189,14 +198,19 @@ function Sparkline({ data, label }: { data: { day: string; count: number }[]; la
 function OverviewTab() {
   const q = useQuery(adminOverviewQueryOptions());
   if (q.isLoading) return <Skeleton className="h-64 rounded-3xl" />;
-  if (q.error) return <p className="text-sm text-destructive">Could not load analytics. {q.error.message}</p>;
+  if (q.error)
+    return <p className="text-sm text-destructive">Could not load analytics. {q.error.message}</p>;
   const t = q.data!.totals;
 
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Users" value={t.users} hint={`+${t.newUsers7} this week`} />
-        <Stat label="Onboarded" value={t.onboarded} hint={`${Math.round((t.onboarded / Math.max(t.users, 1)) * 100)}% completion`} />
+        <Stat
+          label="Onboarded"
+          value={t.onboarded}
+          hint={`${Math.round((t.onboarded / Math.max(t.users, 1)) * 100)}% completion`}
+        />
         <Stat label="Meals logged" value={t.meals} hint={`+${t.meals7} this week`} />
         <Stat label="Workouts" value={t.workouts} hint={`+${t.workouts7} this week`} />
         <Stat label="Coach messages" value={t.coachMsgs} hint={`+${t.coachMsgs7} this week`} />
@@ -258,13 +272,19 @@ function UsersTab() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-foreground">
                     {u.display_name ?? u.full_name ?? "Athlete"}
-                    {u.username && <span className="ml-1.5 text-muted-foreground">@{u.username}</span>}
+                    {u.username && (
+                      <span className="ml-1.5 text-muted-foreground">@{u.username}</span>
+                    )}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">{u.email ?? "no email"}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
                   {u.roles.map((r) => (
-                    <Badge key={r} variant={r === "admin" ? "default" : "outline"} className="rounded-full">
+                    <Badge
+                      key={r}
+                      variant={r === "admin" ? "default" : "outline"}
+                      className="rounded-full"
+                    >
                       {r}
                     </Badge>
                   ))}
@@ -283,7 +303,11 @@ function UsersTab() {
                     variant="outline"
                     className="rounded-full"
                     onClick={() =>
-                      setRole.mutate({ userId: u.id, role: "admin", grant: !u.roles.includes("admin") })
+                      setRole.mutate({
+                        userId: u.id,
+                        role: "admin",
+                        grant: !u.roles.includes("admin"),
+                      })
                     }
                     disabled={setRole.isPending}
                   >
@@ -352,12 +376,27 @@ function UserSheet({ userId, onClose }: { userId: string | null; onClose: () => 
             <section>
               <h3 className="font-display text-base">Profile</h3>
               <dl className="mt-2 grid grid-cols-2 gap-2 text-muted-foreground">
-                <div>Email<dd className="text-foreground">{d.profile?.email ?? "—"}</dd></div>
-                <div>Handle<dd className="text-foreground">{d.profile?.username ?? "—"}</dd></div>
-                <div>Location<dd className="text-foreground">{[d.profile?.city, d.profile?.country].filter(Boolean).join(", ") || "—"}</dd></div>
-                <div>Roles<dd className="text-foreground">{d.roles.join(", ") || "user"}</dd></div>
-                <div>Level<dd className="text-foreground">{d.stats?.level ?? 1}</dd></div>
-                <div>XP<dd className="text-foreground">{(d.stats?.xp ?? 0).toLocaleString()}</dd></div>
+                <div>
+                  Email<dd className="text-foreground">{d.profile?.email ?? "—"}</dd>
+                </div>
+                <div>
+                  Handle<dd className="text-foreground">{d.profile?.username ?? "—"}</dd>
+                </div>
+                <div>
+                  Location
+                  <dd className="text-foreground">
+                    {[d.profile?.city, d.profile?.country].filter(Boolean).join(", ") || "—"}
+                  </dd>
+                </div>
+                <div>
+                  Roles<dd className="text-foreground">{d.roles.join(", ") || "user"}</dd>
+                </div>
+                <div>
+                  Level<dd className="text-foreground">{d.stats?.level ?? 1}</dd>
+                </div>
+                <div>
+                  XP<dd className="text-foreground">{(d.stats?.xp ?? 0).toLocaleString()}</dd>
+                </div>
               </dl>
             </section>
 
@@ -372,11 +411,16 @@ function UserSheet({ userId, onClose }: { userId: string | null; onClose: () => 
 
             <DetailList
               title="Recent meals"
-              rows={d.meals.map((m) => `${m.name} · ${Math.round(m.calories_kcal)} kcal · ${relativeTime(m.logged_at)}`)}
+              rows={d.meals.map(
+                (m) =>
+                  `${m.name} · ${Math.round(m.calories_kcal)} kcal · ${relativeTime(m.logged_at)}`,
+              )}
             />
             <DetailList
               title="Recent workouts"
-              rows={d.workouts.map((w) => `${w.name} · ${w.duration_minutes}min · ${relativeTime(w.logged_at)}`)}
+              rows={d.workouts.map(
+                (w) => `${w.name} · ${w.duration_minutes}min · ${relativeTime(w.logged_at)}`,
+              )}
             />
             <DetailList
               title="Coach threads"
@@ -384,16 +428,27 @@ function UserSheet({ userId, onClose }: { userId: string | null; onClose: () => 
             />
             <DetailList
               title="Reminders"
-              rows={d.reminders.map((r) => `${r.title} · ${r.type} · ${r.is_active ? "active" : "paused"}`)}
+              rows={d.reminders.map(
+                (r) => `${r.title} · ${r.type} · ${r.is_active ? "active" : "paused"}`,
+              )}
             />
             <DetailList
               title="Posts"
-              rows={d.posts.map((p) => `${p.is_hidden ? "[hidden] " : ""}${p.content.slice(0, 60)} · ♥ ${p.like_count}`)}
+              rows={d.posts.map(
+                (p) =>
+                  `${p.is_hidden ? "[hidden] " : ""}${p.content.slice(0, 60)} · ♥ ${p.like_count}`,
+              )}
             />
-            <DetailList title="XP ledger" rows={d.xp.map((x) => `${x.amount > 0 ? "+" : ""}${x.amount} · ${x.reason}`)} />
+            <DetailList
+              title="XP ledger"
+              rows={d.xp.map((x) => `${x.amount > 0 ? "+" : ""}${x.amount} · ${x.reason}`)}
+            />
             <DetailList
               title="Achievements"
-              rows={d.achievements.map((a) => `${a.achievement_code} · ${a.progress}/${a.target}${a.unlocked_at ? " ✓" : ""}`)}
+              rows={d.achievements.map(
+                (a) =>
+                  `${a.achievement_code} · ${a.progress}/${a.target}${a.unlocked_at ? " ✓" : ""}`,
+              )}
             />
           </div>
         )}
@@ -411,7 +466,10 @@ function DetailList({ title, rows }: { title: string; rows: string[] }) {
       ) : (
         <ul className="mt-1 space-y-1">
           {rows.map((r, i) => (
-            <li key={`${title}-${i}`} className="truncate border-b border-border/40 pb-1 text-foreground last:border-0">
+            <li
+              key={`${title}-${i}`}
+              className="truncate border-b border-border/40 pb-1 text-foreground last:border-0"
+            >
               {r}
             </li>
           ))}
@@ -460,7 +518,10 @@ function ModerationTab() {
                 <Badge variant="outline" className="rounded-full capitalize">
                   {r.reason}
                 </Badge>
-                <Badge variant={r.status === "open" ? "default" : "outline"} className="rounded-full capitalize">
+                <Badge
+                  variant={r.status === "open" ? "default" : "outline"}
+                  className="rounded-full capitalize"
+                >
                   {r.status}
                 </Badge>
                 <span className="text-xs text-muted-foreground">{relativeTime(r.created_at)}</span>
@@ -472,7 +533,9 @@ function ModerationTab() {
                   {r.author?.username ? ` · @${r.author.username}` : ""}
                   {r.post?.is_hidden ? " · hidden" : ""}
                 </p>
-                <p className="mt-1 whitespace-pre-wrap text-foreground">{r.post?.content ?? "Post deleted."}</p>
+                <p className="mt-1 whitespace-pre-wrap text-foreground">
+                  {r.post?.content ?? "Post deleted."}
+                </p>
               </div>
               {r.post && (
                 <div className="flex flex-wrap gap-2">
@@ -496,7 +559,9 @@ function ModerationTab() {
                     variant="outline"
                     className="rounded-full"
                     disabled={moderate.isPending}
-                    onClick={() => moderate.mutate({ postId: r.post!.id, reportId: r.id, action: "dismiss" })}
+                    onClick={() =>
+                      moderate.mutate({ postId: r.post!.id, reportId: r.id, action: "dismiss" })
+                    }
                   >
                     Dismiss report
                   </Button>
@@ -505,7 +570,9 @@ function ModerationTab() {
                     variant="destructive"
                     className="rounded-full"
                     disabled={moderate.isPending}
-                    onClick={() => moderate.mutate({ postId: r.post!.id, reportId: r.id, action: "delete" })}
+                    onClick={() =>
+                      moderate.mutate({ postId: r.post!.id, reportId: r.id, action: "delete" })
+                    }
                   >
                     Delete post
                   </Button>
@@ -523,7 +590,13 @@ function AchievementsTab() {
   const list = useQuery(adminAchievementsQueryOptions());
   const update = useAdminUpdateAchievement();
   const [editing, setEditing] = useState<string | null>(null);
-  const [draft, setDraft] = useState({ title: "", description: "", xp_reward: 0, target: 1, is_secret: false });
+  const [draft, setDraft] = useState({
+    title: "",
+    description: "",
+    xp_reward: 0,
+    target: 1,
+    is_secret: false,
+  });
 
   const rows = useMemo(() => list.data ?? [], [list.data]);
 
@@ -710,7 +783,9 @@ function AuditTab() {
               {e.action}
             </Badge>
             <span className="text-muted-foreground">{e.target_type}</span>
-            <span className="truncate font-mono text-xs text-muted-foreground">{e.target_id ?? "—"}</span>
+            <span className="truncate font-mono text-xs text-muted-foreground">
+              {e.target_id ?? "—"}
+            </span>
             <span className="ml-auto text-xs text-muted-foreground">
               {e.actor?.display_name ?? e.actor?.email ?? "system"} · {relativeTime(e.created_at)}
             </span>

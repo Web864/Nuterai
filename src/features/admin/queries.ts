@@ -94,7 +94,11 @@ export function useAdminSetRole() {
   const fn = useServerFn(adminSetRole);
   return useAdminMutation<{ userId: string; role: "admin" | "moderator" | "user"; grant: boolean }>(
     fn as never,
-    [["admin", "users"], ["admin", "user"], ["admin", "audit"]],
+    [
+      ["admin", "users"],
+      ["admin", "user"],
+      ["admin", "audit"],
+    ],
     "Role updated",
   );
 }
@@ -103,7 +107,11 @@ export function useAdminSetVisibility() {
   const fn = useServerFn(adminSetUserVisibility);
   return useAdminMutation<{ userId: string; isPublic: boolean }>(
     fn as never,
-    [["admin", "users"], ["admin", "user"], ["admin", "audit"]],
+    [
+      ["admin", "users"],
+      ["admin", "user"],
+      ["admin", "audit"],
+    ],
     "Profile visibility updated",
   );
 }
@@ -114,7 +122,15 @@ export function useAdminModeratePost() {
     postId: string;
     reportId?: string;
     action: "hide" | "unhide" | "delete" | "dismiss";
-  }>(fn as never, [["admin", "reports"], ["admin", "audit"], ["admin", "overview"]], "Moderation applied");
+  }>(
+    fn as never,
+    [
+      ["admin", "reports"],
+      ["admin", "audit"],
+      ["admin", "overview"],
+    ],
+    "Moderation applied",
+  );
 }
 
 export function useAdminUpdateAchievement() {
@@ -126,7 +142,14 @@ export function useAdminUpdateAchievement() {
     xp_reward: number;
     target: number;
     is_secret: boolean;
-  }>(fn as never, [["admin", "achievements"], ["admin", "audit"]], "Achievement saved");
+  }>(
+    fn as never,
+    [
+      ["admin", "achievements"],
+      ["admin", "audit"],
+    ],
+    "Achievement saved",
+  );
 }
 
 export function useAdminUpdateSetting() {
