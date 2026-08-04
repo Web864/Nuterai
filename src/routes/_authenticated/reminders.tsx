@@ -36,10 +36,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/reminders")({
   head: () => ({
-    meta: [
-      { title: "Reminders — NutriAI" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Reminders — NutriAI" }, { name: "robots", content: "noindex" }],
   }),
   component: RemindersPage,
 });
@@ -70,9 +67,9 @@ function RemindersPage() {
     const now = new Date();
     return (reminders.data ?? [])
       .filter((r) => r.is_active)
-      .map((r) => ({ r, next: nextOccurrence(r as any, now) }))
+      .map((r) => ({ r, next: nextOccurrence(r as Parameters<typeof nextOccurrence>[0], now) }))
       .filter((x) => x.next)
-      .sort((a, b) => (a.next!.getTime() - b.next!.getTime()))
+      .sort((a, b) => a.next!.getTime() - b.next!.getTime())
       .slice(0, 20);
   }, [reminders.data]);
 
@@ -82,13 +79,20 @@ function RemindersPage() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="h-4 w-4" /> Dashboard
           </Link>
           <div className="flex items-center gap-2">
             <Bell className="h-4 w-4 text-accent" />
             <span className="font-display text-lg">Reminders</span>
-            {unread > 0 && <Badge variant="destructive" className="rounded-full">{unread}</Badge>}
+            {unread > 0 && (
+              <Badge variant="destructive" className="rounded-full">
+                {unread}
+              </Badge>
+            )}
           </div>
         </div>
       </header>
@@ -122,12 +126,21 @@ function RemindersPage() {
 
         <Tabs defaultValue="upcoming" className="w-full">
           <TabsList className="rounded-full">
-            <TabsTrigger value="upcoming" className="rounded-full">Upcoming</TabsTrigger>
-            <TabsTrigger value="all" className="rounded-full">All reminders</TabsTrigger>
-            <TabsTrigger value="history" className="rounded-full">
-              History {unread > 0 && <span className="ml-1 rounded-full bg-primary/20 px-1.5 text-xs">{unread}</span>}
+            <TabsTrigger value="upcoming" className="rounded-full">
+              Upcoming
             </TabsTrigger>
-            <TabsTrigger value="preferences" className="rounded-full">Preferences</TabsTrigger>
+            <TabsTrigger value="all" className="rounded-full">
+              All reminders
+            </TabsTrigger>
+            <TabsTrigger value="history" className="rounded-full">
+              History{" "}
+              {unread > 0 && (
+                <span className="ml-1 rounded-full bg-primary/20 px-1.5 text-xs">{unread}</span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="preferences" className="rounded-full">
+              Preferences
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming" className="mt-6">
@@ -135,7 +148,10 @@ function RemindersPage() {
           </TabsContent>
 
           <TabsContent value="all" className="mt-6 space-y-6">
-            <CreateReminderCard userId={userId} defaultTz={profile.data?.timezone ?? detectTimezone()} />
+            <CreateReminderCard
+              userId={userId}
+              defaultTz={profile.data?.timezone ?? detectTimezone()}
+            />
             <ReminderList userId={userId} reminders={reminders.data ?? []} />
           </TabsContent>
 
@@ -177,11 +193,14 @@ function UpcomingList({
           <CardContent className="flex items-center justify-between gap-4 p-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="rounded-full">{typeLabel(r.type)}</Badge>
+                <Badge variant="secondary" className="rounded-full">
+                  {typeLabel(r.type)}
+                </Badge>
                 <p className="truncate font-medium">{r.title}</p>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
-                {next ? formatWhen(next) : "—"} · {next?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                {next ? formatWhen(next) : "—"} ·{" "}
+                {next?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </p>
             </div>
             <Button
@@ -245,7 +264,7 @@ function CreateReminderCard({ userId, defaultTz }: { userId: string; defaultTz: 
           setTitle("");
           setMessage("");
         },
-        onError: (e: any) => toast.error(e.message ?? "Failed"),
+        onError: (e: Error) => toast.error(e.message || "Failed"),
       },
     );
   }
@@ -262,22 +281,36 @@ function CreateReminderCard({ userId, defaultTz }: { userId: string; defaultTz: 
           <div>
             <Label>Type</Label>
             <Select value={type} onValueChange={(v) => setType(v as Reminder["type"])}>
-              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {REMINDER_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div>
             <Label>Title</Label>
-            <Input className="mt-1" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Log breakfast" />
+            <Input
+              className="mt-1"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Log breakfast"
+            />
           </div>
         </div>
         <div>
           <Label>Message (optional)</Label>
-          <Textarea className="mt-1" value={message} onChange={(e) => setMessage(e.target.value)} rows={2} />
+          <Textarea
+            className="mt-1"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={2}
+          />
         </div>
 
         <div className="flex items-center justify-between rounded-2xl bg-secondary/50 px-4 py-3">
@@ -295,7 +328,12 @@ function CreateReminderCard({ userId, defaultTz }: { userId: string; defaultTz: 
               <div className="mt-2 space-y-2">
                 {times.map((t, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <Input type="time" value={t} onChange={(e) => updateTime(i, e.target.value)} className="max-w-[160px]" />
+                    <Input
+                      type="time"
+                      value={t}
+                      onChange={(e) => updateTime(i, e.target.value)}
+                      className="max-w-[160px]"
+                    />
                     <Button
                       variant="ghost"
                       size="sm"
@@ -306,7 +344,12 @@ function CreateReminderCard({ userId, defaultTz }: { userId: string; defaultTz: 
                     </Button>
                   </div>
                 ))}
-                <Button variant="outline" size="sm" className="rounded-full" onClick={() => setTimes((p) => [...p, "12:00"])}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => setTimes((p) => [...p, "12:00"])}
+                >
                   <Plus className="mr-1 h-3 w-3" /> Add time
                 </Button>
               </div>
@@ -342,7 +385,11 @@ function CreateReminderCard({ userId, defaultTz }: { userId: string; defaultTz: 
           </div>
         )}
 
-        <Button className="w-full rounded-full" disabled={!canSave || create.isPending} onClick={handleSave}>
+        <Button
+          className="w-full rounded-full"
+          disabled={!canSave || create.isPending}
+          onClick={handleSave}
+        >
           {create.isPending ? "Saving…" : "Create reminder"}
         </Button>
       </CardContent>
@@ -366,7 +413,9 @@ function ReminderList({ userId, reminders }: { userId: string; reminders: Remind
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary" className="rounded-full">{typeLabel(r.type)}</Badge>
+                  <Badge variant="secondary" className="rounded-full">
+                    {typeLabel(r.type)}
+                  </Badge>
                   <p className="font-medium">{r.title}</p>
                   {!r.is_active && <Badge variant="outline">Paused</Badge>}
                 </div>
@@ -374,11 +423,13 @@ function ReminderList({ userId, reminders }: { userId: string; reminders: Remind
                 <p className="mt-2 text-xs text-muted-foreground">
                   {r.is_recurring
                     ? `${r.times.join(", ") || "no times"} · ${
-                        r.days_of_week?.length === 7 ? "every day" : r.days_of_week.map((d) => DAYS[d]).join(", ")
+                        r.days_of_week?.length === 7
+                          ? "every day"
+                          : r.days_of_week.map((d) => DAYS[d]).join(", ")
                       }`
                     : r.one_time_at
-                    ? new Date(r.one_time_at).toLocaleString()
-                    : ""}
+                      ? new Date(r.one_time_at).toLocaleString()
+                      : ""}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -422,7 +473,9 @@ function NotificationHistory({ userId }: { userId: string }) {
           <CardContent className="flex items-start justify-between gap-3 p-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="rounded-full">{typeLabel(n.type)}</Badge>
+                <Badge variant="secondary" className="rounded-full">
+                  {typeLabel(n.type)}
+                </Badge>
                 <p className="font-medium">{n.title}</p>
               </div>
               {n.body && <p className="mt-1 text-sm text-muted-foreground">{n.body}</p>}
@@ -451,7 +504,9 @@ function NotificationHistory({ userId }: { userId: string }) {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => mark.mutate({ id: n.id, patch: { read_at: new Date().toISOString() } })}
+                    onClick={() =>
+                      mark.mutate({ id: n.id, patch: { read_at: new Date().toISOString() } })
+                    }
                     aria-label="Mark read"
                   >
                     <Check className="h-4 w-4" />
@@ -532,7 +587,9 @@ function PreferencesCard({ userId }: { userId: string }) {
           </div>
         </div>
         <div>
-          <Label className="flex items-center gap-2"><Moon className="h-4 w-4" /> Quiet hours</Label>
+          <Label className="flex items-center gap-2">
+            <Moon className="h-4 w-4" /> Quiet hours
+          </Label>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Input
               type="time"

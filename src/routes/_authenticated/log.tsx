@@ -52,10 +52,7 @@ import { analyzeMeal, type AnalyzedMeal } from "@/lib/ai-meal.functions";
 
 export const Route = createFileRoute("/_authenticated/log")({
   head: () => ({
-    meta: [
-      { title: "Log — NutriAI" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Log — NutriAI" }, { name: "robots", content: "noindex" }],
   }),
   component: LogPage,
 });
@@ -84,8 +81,6 @@ function LogPage() {
     }
   }, [calorieTarget, totals.calories, track]);
 
-
-
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -105,7 +100,11 @@ function LogPage() {
             </span>
             <div>
               <p className="text-xs text-muted-foreground">
-                {new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
+                {new Date().toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "short",
+                  day: "numeric",
+                })}
               </p>
               <p className="font-display text-base leading-tight">Today's log</p>
             </div>
@@ -203,7 +202,9 @@ function TotalCard({
         </div>
         <p className="mt-2 font-display text-2xl text-foreground">
           {value.toLocaleString()}
-          <span className="ml-1 text-xs font-sans text-muted-foreground">/ {target.toLocaleString()} {unit}</span>
+          <span className="ml-1 text-xs font-sans text-muted-foreground">
+            / {target.toLocaleString()} {unit}
+          </span>
         </p>
         <Progress value={pct} className="mt-2 h-1.5" />
       </CardContent>
@@ -230,7 +231,9 @@ function defaultMealType(): "breakfast" | "lunch" | "dinner" | "snack" {
 
 function MealLogger({ userId }: { userId: string }) {
   const [description, setDescription] = useState("");
-  const [mealType, setMealType] = useState<"breakfast" | "lunch" | "dinner" | "snack">(defaultMealType());
+  const [mealType, setMealType] = useState<"breakfast" | "lunch" | "dinner" | "snack">(
+    defaultMealType(),
+  );
   const [analysis, setAnalysis] = useState<AnalyzedMeal | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -277,7 +280,9 @@ function MealLogger({ userId }: { userId: string }) {
           ai_raw: JSON.parse(JSON.stringify(analysis)),
         });
       }
-      toast.success(`Logged ${analysis.items.length} item${analysis.items.length === 1 ? "" : "s"}.`);
+      toast.success(
+        `Logged ${analysis.items.length} item${analysis.items.length === 1 ? "" : "s"}.`,
+      );
       void track({ type: "meal_logged", name: analysis.items[0]?.name });
       setDescription("");
       setAnalysis(null);
@@ -320,7 +325,9 @@ function MealLogger({ userId }: { userId: string }) {
               </SelectTrigger>
               <SelectContent>
                 {MEAL_TYPES.map((m) => (
-                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                  <SelectItem key={m.value} value={m.value}>
+                    {m.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -333,7 +340,11 @@ function MealLogger({ userId }: { userId: string }) {
             disabled={analyzing || description.trim().length < 2}
             className="rounded-full"
           >
-            {analyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+            {analyzing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Wand2 className="mr-2 h-4 w-4" />
+            )}
             Analyze with AI
           </Button>
           {analysis && (
@@ -441,8 +452,8 @@ function MealList({ userId, date }: { userId: string; date: string }) {
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-foreground">{m.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {Number(m.serving_qty)} {m.serving_unit} · P {Number(m.protein_g).toFixed(0)}g · C{" "}
-                      {Number(m.carbs_g).toFixed(0)}g · F {Number(m.fat_g).toFixed(0)}g
+                      {Number(m.serving_qty)} {m.serving_unit} · P {Number(m.protein_g).toFixed(0)}g
+                      · C {Number(m.carbs_g).toFixed(0)}g · F {Number(m.fat_g).toFixed(0)}g
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -512,7 +523,8 @@ function WaterLogger({
         <div className="rounded-2xl bg-secondary/50 p-4 text-sm text-muted-foreground">
           {remaining > 0 ? (
             <>
-              <strong className="text-foreground">{remaining.toLocaleString()} ml</strong> to reach your daily goal.
+              <strong className="text-foreground">{remaining.toLocaleString()} ml</strong> to reach
+              your daily goal.
             </>
           ) : (
             <span className="text-foreground">You've hit your hydration goal for today.</span>
@@ -584,7 +596,10 @@ function WaterList({ userId, date }: { userId: string; date: string }) {
             <span className="text-foreground">
               {w.amount_ml} ml
               <span className="ml-2 text-xs text-muted-foreground">
-                {new Date(w.logged_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                {new Date(w.logged_at).toLocaleTimeString(undefined, {
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
               </span>
             </span>
             <Button
@@ -680,7 +695,11 @@ function WeightLogger({
             </div>
           </div>
           <Button type="submit" className="rounded-full" disabled={add.isPending}>
-            {add.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+            {add.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="mr-2 h-4 w-4" />
+            )}
             Save weight
           </Button>
         </form>

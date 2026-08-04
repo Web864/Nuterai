@@ -112,7 +112,10 @@ export const CATEGORY_LABELS: Record<AchievementCategory, string> = {
   milestone: "Milestones",
 };
 
-export const DIFFICULTY_STYLES: Record<AchievementDifficulty, { label: string; className: string }> = {
+export const DIFFICULTY_STYLES: Record<
+  AchievementDifficulty,
+  { label: string; className: string }
+> = {
   bronze: { label: "Bronze", className: "bg-[#B87333]/15 text-[#8a5522] border-[#B87333]/30" },
   silver: { label: "Silver", className: "bg-muted text-muted-foreground border-border" },
   gold: { label: "Gold", className: "bg-accent/20 text-accent-foreground border-accent/40" },

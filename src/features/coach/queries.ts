@@ -68,10 +68,7 @@ export function useRenameThread(userId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, title }: { id: string; title: string }) => {
-      const { error } = await supabase
-        .from("coach_threads")
-        .update({ title })
-        .eq("id", id);
+      const { error } = await supabase.from("coach_threads").update({ title }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["coach-threads", userId] }),

@@ -47,7 +47,7 @@ export function useReminderEngine(userId: string | undefined) {
       const notifEnabled = profile?.notifications_enabled !== false;
 
       for (const r of reminders as Reminder[]) {
-        const next = nextOccurrence(r as any, now);
+        const next = nextOccurrence(r as Parameters<typeof nextOccurrence>[0], now);
         if (!next) continue;
         const delta = next.getTime() - now.getTime();
         if (delta > LOOKAHEAD_MS) continue;

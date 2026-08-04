@@ -49,17 +49,21 @@ function LandingPage() {
                 Your personal AI health coach
               </span>
               <h1 className="mt-6 font-display text-5xl leading-[1.05] text-foreground sm:text-6xl lg:text-7xl">
-                Eat well.<br />
-                Move often.<br />
+                Eat well.
+                <br />
+                Move often.
+                <br />
                 <span className="text-primary">Live better.</span>
               </h1>
               <p className="mt-6 max-w-lg text-lg text-muted-foreground">
-                NutriAI builds a nutrition, fitness, and lifestyle plan around your body, your goals, and your day —
-                and adapts it as you go.
+                NutriAI builds a nutrition, fitness, and lifestyle plan around your body, your
+                goals, and your day — and adapts it as you go.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button asChild size="lg" className="rounded-full px-7">
-                  <Link to="/auth" search={{ mode: "signup" }}>Get started free</Link>
+                  <Link to="/auth" search={{ mode: "signup" }}>
+                    Get started free
+                  </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="rounded-full px-7">
                   <Link to="/auth">I already have an account</Link>
@@ -87,12 +91,15 @@ function LandingPage() {
         <section className="border-t border-border/60 bg-secondary/30 py-20">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="mx-auto max-w-2xl text-center">
-              <p className="text-xs font-medium uppercase tracking-wider text-accent">One app. Everything.</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-accent">
+                One app. Everything.
+              </p>
               <h2 className="mt-3 font-display text-4xl text-foreground sm:text-5xl">
                 Health that fits <em className="not-italic text-primary">your</em> life.
               </h2>
               <p className="mt-4 text-muted-foreground">
-                No generic plans. No calorie guessing. Just a coach that understands your body, your goals, and the way you actually live.
+                No generic plans. No calorie guessing. Just a coach that understands your body, your
+                goals, and the way you actually live.
               </p>
             </div>
 
@@ -135,8 +142,12 @@ function LandingPage() {
         <section className="py-24">
           <div className="mx-auto max-w-5xl px-4 sm:px-6">
             <div className="mx-auto max-w-2xl text-center">
-              <p className="text-xs font-medium uppercase tracking-wider text-accent">How it works</p>
-              <h2 className="mt-3 font-display text-4xl text-foreground sm:text-5xl">Three steps to a healthier you.</h2>
+              <p className="text-xs font-medium uppercase tracking-wider text-accent">
+                How it works
+              </p>
+              <h2 className="mt-3 font-display text-4xl text-foreground sm:text-5xl">
+                Three steps to a healthier you.
+              </h2>
             </div>
             <div className="mt-14 grid gap-10 md:grid-cols-3">
               <Step number={1} title="Tell us about you" icon={<Leaf className="h-5 w-5" />}>
@@ -160,7 +171,9 @@ function LandingPage() {
               Start your personalized plan in under two minutes. Free forever.
             </p>
             <Button asChild size="lg" variant="secondary" className="mt-8 rounded-full px-8">
-              <Link to="/auth" search={{ mode: "signup" }}>Create my plan</Link>
+              <Link to="/auth" search={{ mode: "signup" }}>
+                Create my plan
+              </Link>
             </Button>
           </div>
         </section>
@@ -182,15 +195,21 @@ function SiteHeader() {
           <span className="font-display text-lg tracking-tight">NutriAI</span>
         </Link>
         <nav className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
-          <Link to="/about" className="transition-organic hover:text-foreground">About</Link>
-          <Link to="/pricing" className="transition-organic hover:text-foreground">Pricing</Link>
+          <Link to="/about" className="transition-organic hover:text-foreground">
+            About
+          </Link>
+          <Link to="/pricing" className="transition-organic hover:text-foreground">
+            Pricing
+          </Link>
         </nav>
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="sm" className="rounded-full">
             <Link to="/auth">Sign in</Link>
           </Button>
           <Button asChild size="sm" className="rounded-full">
-            <Link to="/auth" search={{ mode: "signup" }}>Start free</Link>
+            <Link to="/auth" search={{ mode: "signup" }}>
+              Start free
+            </Link>
           </Button>
         </div>
       </div>
@@ -210,17 +229,33 @@ function SiteFooter() {
           <span>© {new Date().getFullYear()}</span>
         </div>
         <div className="flex flex-wrap items-center gap-4">
-          <Link to="/about" className="hover:text-foreground">About</Link>
-          <Link to="/pricing" className="hover:text-foreground">Pricing</Link>
-          <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
-          <Link to="/terms" className="hover:text-foreground">Terms</Link>
+          <Link to="/about" className="hover:text-foreground">
+            About
+          </Link>
+          <Link to="/pricing" className="hover:text-foreground">
+            Pricing
+          </Link>
+          <Link to="/privacy" className="hover:text-foreground">
+            Privacy
+          </Link>
+          <Link to="/terms" className="hover:text-foreground">
+            Terms
+          </Link>
         </div>
       </div>
     </footer>
   );
 }
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+function FeatureCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
   return (
     <div className="rounded-3xl border border-border/60 bg-card p-6 shadow-soft transition-organic hover:shadow-elevated">
       <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
@@ -232,7 +267,17 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode; titl
   );
 }
 
-function Step({ number, title, icon, children }: { number: number; title: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Step({
+  number,
+  title,
+  icon,
+  children,
+}: {
+  number: number;
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <div className="flex items-center gap-3">

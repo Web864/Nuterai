@@ -60,10 +60,7 @@ import { generateWorkoutPlan } from "@/lib/ai-workout.functions";
 
 export const Route = createFileRoute("/_authenticated/workout")({
   head: () => ({
-    meta: [
-      { title: "Workouts — NutriAI" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Workouts — NutriAI" }, { name: "robots", content: "noindex" }],
   }),
   component: WorkoutPage,
 });
@@ -268,7 +265,9 @@ function AIGeneratorCard({
               min={15}
               max={180}
               value={minutes}
-              onChange={(e) => setMinutes(Math.max(15, Math.min(180, Number(e.target.value) || 45)))}
+              onChange={(e) =>
+                setMinutes(Math.max(15, Math.min(180, Number(e.target.value) || 45)))
+              }
               className="mt-1.5 rounded-2xl"
             />
           </div>
@@ -341,7 +340,9 @@ function PlansList({
           key={plan.id}
           plan={plan}
           isActive={plan.id === activePlanId}
-          onActivate={() => setActive.mutate(plan.id, { onSuccess: () => toast.success("Set as active plan") })}
+          onActivate={() =>
+            setActive.mutate(plan.id, { onSuccess: () => toast.success("Set as active plan") })
+          }
           onDelete={() =>
             del.mutate(plan.id, {
               onSuccess: () => toast.success("Plan deleted"),
@@ -437,7 +438,10 @@ function PlanCard({
                   </div>
                   <ul className="space-y-1.5 text-sm">
                     {exercises.map((ex, i) => (
-                      <li key={i} className="flex justify-between border-b border-border/40 py-1 last:border-0">
+                      <li
+                        key={i}
+                        className="flex justify-between border-b border-border/40 py-1 last:border-0"
+                      >
                         <span className="font-medium text-foreground">{ex.name}</span>
                         <span className="text-muted-foreground">
                           {ex.sets} × {ex.reps}
@@ -682,13 +686,7 @@ function QuickLogCard({ userId, activePlanId }: { userId: string; activePlanId?:
 }
 
 // ---------------- History ----------------
-function SessionHistory({
-  userId,
-  sessions,
-}: {
-  userId: string;
-  sessions: WorkoutSession[];
-}) {
+function SessionHistory({ userId, sessions }: { userId: string; sessions: WorkoutSession[] }) {
   const del = useDeleteSession(userId);
 
   if (sessions.length === 0) {

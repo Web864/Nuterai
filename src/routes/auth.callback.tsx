@@ -9,10 +9,7 @@ const search = z.object({ next: z.string().optional() });
 export const Route = createFileRoute("/auth/callback")({
   validateSearch: search,
   head: () => ({
-    meta: [
-      { title: "Signing you in — NutriAI" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Signing you in — NutriAI" }, { name: "robots", content: "noindex" }],
   }),
   component: CallbackPage,
 });

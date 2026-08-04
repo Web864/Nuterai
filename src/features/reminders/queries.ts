@@ -80,13 +80,7 @@ export function useDeleteReminder(userId: string) {
 export function useMarkNotification(userId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      id,
-      patch,
-    }: {
-      id: string;
-      patch: TablesUpdate<"notifications">;
-    }) => {
+    mutationFn: async ({ id, patch }: { id: string; patch: TablesUpdate<"notifications"> }) => {
       const { error } = await supabase.from("notifications").update(patch).eq("id", id);
       if (error) throw error;
     },
@@ -99,7 +93,10 @@ export function useSnoozeReminder(userId: string) {
   return useMutation({
     mutationFn: async ({ id, minutes }: { id: string; minutes: number }) => {
       const until = new Date(Date.now() + minutes * 60_000).toISOString();
-      const { error } = await supabase.from("reminders").update({ snooze_until: until }).eq("id", id);
+      const { error } = await supabase
+        .from("reminders")
+        .update({ snooze_until: until })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

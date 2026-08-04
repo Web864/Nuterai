@@ -30,19 +30,19 @@ import {
   Moon,
   Plus,
   Settings,
+  ShieldCheck,
   Sparkles,
   Trophy,
   Users,
   Utensils,
 } from "lucide-react";
+import { adminWhoAmIQueryOptions } from "@/features/admin/queries";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
-    meta: [
-      { title: "Dashboard — NutriAI" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Dashboard — NutriAI" }, { name: "robots", content: "noindex" }],
   }),
   component: Dashboard,
 });
@@ -107,9 +107,7 @@ function Dashboard() {
             <h1 className="mt-1 font-display text-4xl text-foreground sm:text-5xl">
               {greeting}, {firstName}.
             </h1>
-            <p className="mt-2 text-muted-foreground">
-              Here's your personalized plan for today.
-            </p>
+            <p className="mt-2 text-muted-foreground">Here's your personalized plan for today.</p>
           </div>
           <Button asChild size="lg" className="rounded-full">
             <Link to="/log">
@@ -158,8 +156,6 @@ function Dashboard() {
               <BadgeShelf userId={userId} />
             </section>
 
-
-
             <section className="mt-8 grid gap-4 lg:grid-cols-3">
               <Card className="lg:col-span-2 rounded-3xl border-border/60 shadow-soft">
                 <CardHeader className="pb-3">
@@ -169,14 +165,33 @@ function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                  <MacroRow label="Protein" value={totals.protein} target={g.protein_g ?? 0} unit="g" />
-                  <MacroRow label="Carbohydrates" value={totals.carbs} target={g.carbs_g ?? 0} unit="g" />
-                  <MacroRow label="Healthy fats" value={totals.fat} target={g.fat_g ?? 0} unit="g" />
+                  <MacroRow
+                    label="Protein"
+                    value={totals.protein}
+                    target={g.protein_g ?? 0}
+                    unit="g"
+                  />
+                  <MacroRow
+                    label="Carbohydrates"
+                    value={totals.carbs}
+                    target={g.carbs_g ?? 0}
+                    unit="g"
+                  />
+                  <MacroRow
+                    label="Healthy fats"
+                    value={totals.fat}
+                    target={g.fat_g ?? 0}
+                    unit="g"
+                  />
                   <MacroRow label="Fiber" value={totals.fiber} target={g.fiber_g ?? 0} unit="g" />
                   <div className="rounded-2xl bg-secondary/60 p-4 text-sm">
-                    <p className="font-medium text-foreground">Your maintenance is {g.tdee_kcal} kcal.</p>
+                    <p className="font-medium text-foreground">
+                      Your maintenance is {g.tdee_kcal} kcal.
+                    </p>
                     <p className="mt-1 text-muted-foreground">
-                      To reach your goal, aim for <strong className="text-foreground">{g.daily_calorie_target} kcal/day</strong>.
+                      To reach your goal, aim for{" "}
+                      <strong className="text-foreground">{g.daily_calorie_target} kcal/day</strong>
+                      .
                     </p>
                   </div>
                 </CardContent>
@@ -267,7 +282,8 @@ function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Your weekly nutrition, workouts, sleep and mood trends will appear here once you start logging.
+                    Your weekly nutrition, workouts, sleep and mood trends will appear here once you
+                    start logging.
                   </p>
                   <Button asChild variant="outline" className="mt-4 rounded-full">
                     <Link to="/settings">
@@ -299,6 +315,7 @@ function Dashboard() {
 }
 
 function TopBar({ onSignOut, name }: { onSignOut: () => void; name: string }) {
+  const who = useQuery(adminWhoAmIQueryOptions());
   return (
     <div className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
@@ -309,13 +326,28 @@ function TopBar({ onSignOut, name }: { onSignOut: () => void; name: string }) {
           <span className="font-display text-lg tracking-tight">NutriAI</span>
         </Link>
         <div className="flex items-center gap-2">
+          {who.data?.isAdmin && (
+            <Button asChild variant="ghost" size="sm" className="rounded-full">
+              <Link to="/admin">
+                <ShieldCheck className="h-4 w-4" />
+                <span className="sr-only sm:not-sr-only sm:ml-2">Admin</span>
+              </Link>
+            </Button>
+          )}
           <Button asChild variant="ghost" size="sm" className="rounded-full">
             <Link to="/settings">
               <Settings className="h-4 w-4" />
               <span className="sr-only sm:not-sr-only sm:ml-2">Settings</span>
             </Link>
           </Button>
-          <Button variant="ghost" size="sm" className="rounded-full" onClick={onSignOut} aria-label={`Sign ${name} out`}>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="rounded-full"
+            onClick={onSignOut}
+            aria-label={`Sign ${name} out`}
+          >
             <LogOut className="h-4 w-4" />
             <span className="sr-only sm:not-sr-only sm:ml-2">Sign out</span>
           </Button>
@@ -344,7 +376,9 @@ function StatCard({
   return (
     <Card className="rounded-3xl border-border/60 shadow-soft transition-organic hover:shadow-elevated">
       <CardContent className="p-5">
-        <div className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${accent ?? "bg-secondary text-primary"}`}>
+        <div
+          className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${accent ?? "bg-secondary text-primary"}`}
+        >
           {accent ? <span className="text-primary-foreground">{icon}</span> : icon}
         </div>
         <p className="mt-4 text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
@@ -364,7 +398,17 @@ function StatCard({
   );
 }
 
-function MacroRow({ label, value, target, unit }: { label: string; value: number; target: number; unit: string }) {
+function MacroRow({
+  label,
+  value,
+  target,
+  unit,
+}: {
+  label: string;
+  value: number;
+  target: number;
+  unit: string;
+}) {
   const pct = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
   return (
     <div>
@@ -380,7 +424,17 @@ function MacroRow({ label, value, target, unit }: { label: string; value: number
   );
 }
 
-function FeatureCard({ icon, title, description, soon }: { icon: React.ReactNode; title: string; description: string; soon?: boolean }) {
+function FeatureCard({
+  icon,
+  title,
+  description,
+  soon,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  soon?: boolean;
+}) {
   return (
     <Card className="rounded-3xl border-border/60 shadow-soft transition-organic hover:shadow-elevated">
       <CardContent className="flex items-center gap-4 p-4">

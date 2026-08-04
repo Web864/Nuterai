@@ -26,9 +26,12 @@ export function useGamification(userId: string | undefined) {
           });
         }
         if (result.streak && result.streak.isNewDay && result.streak.streak > 1) {
-          toast(`🔥 ${result.streak.streak}-day ${STREAK_LABELS[result.streak.kind].toLowerCase()} streak`, {
-            duration: 3500,
-          });
+          toast(
+            `🔥 ${result.streak.streak}-day ${STREAK_LABELS[result.streak.kind].toLowerCase()} streak`,
+            {
+              duration: 3500,
+            },
+          );
         }
         for (const a of result.unlocked) {
           toast.success(`🏆 Achievement unlocked — ${a.title}`, {

@@ -19,9 +19,16 @@ export function StepBiometrics({
 }) {
   const isImperial = data.units === "imperial";
 
-  const heightDisplay = isImperial && data.height_cm ? Math.round(data.height_cm / 2.54) : data.height_cm ?? "";
-  const weightDisplay = isImperial && data.current_weight_kg ? Math.round(data.current_weight_kg * 2.20462) : data.current_weight_kg ?? "";
-  const targetDisplay = isImperial && data.target_weight_kg ? Math.round(data.target_weight_kg * 2.20462) : data.target_weight_kg ?? "";
+  const heightDisplay =
+    isImperial && data.height_cm ? Math.round(data.height_cm / 2.54) : (data.height_cm ?? "");
+  const weightDisplay =
+    isImperial && data.current_weight_kg
+      ? Math.round(data.current_weight_kg * 2.20462)
+      : (data.current_weight_kg ?? "");
+  const targetDisplay =
+    isImperial && data.target_weight_kg
+      ? Math.round(data.target_weight_kg * 2.20462)
+      : (data.target_weight_kg ?? "");
 
   return (
     <div>
@@ -85,7 +92,9 @@ export function StepBiometrics({
               value={weightDisplay}
               onChange={(e) => {
                 const v = Number(e.target.value);
-                onChange({ current_weight_kg: isImperial ? Math.round((v / 2.20462) * 10) / 10 : v });
+                onChange({
+                  current_weight_kg: isImperial ? Math.round((v / 2.20462) * 10) / 10 : v,
+                });
               }}
             />
           </div>

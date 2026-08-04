@@ -6,9 +6,16 @@ export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
       { title: "Pricing — NutriAI" },
-      { name: "description", content: "Start free with NutriAI. Upgrade to Pro for unlimited AI coaching and advanced features." },
+      {
+        name: "description",
+        content:
+          "Start free with NutriAI. Upgrade to Pro for unlimited AI coaching and advanced features.",
+      },
       { property: "og:title", content: "NutriAI Pricing" },
-      { property: "og:description", content: "Simple pricing. Free forever. Pro when you're ready." },
+      {
+        property: "og:description",
+        content: "Simple pricing. Free forever. Pro when you're ready.",
+      },
     ],
   }),
   component: PricingPage,
@@ -25,7 +32,8 @@ function PricingPage() {
           <p className="text-xs font-medium uppercase tracking-wider text-accent">Pricing</p>
           <h1 className="mt-2 font-display text-5xl">Simple, honest pricing.</h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            Start free with everything you need. Upgrade to Pro when you want unlimited AI coaching and advanced insights.
+            Start free with everything you need. Upgrade to Pro when you want unlimited AI coaching
+            and advanced insights.
           </p>
         </div>
 
@@ -40,7 +48,11 @@ function PricingPage() {
               "Water, sleep, and mood tracking",
               "Basic AI coach (10 messages/day)",
             ]}
-            cta={<Link to="/auth" search={{ mode: "signup" }}>Start free</Link>}
+            cta={
+              <Link to="/auth" search={{ mode: "signup" }}>
+                Start free
+              </Link>
+            }
           />
           <Plan
             highlight
@@ -85,20 +97,35 @@ function Plan({
           : "rounded-3xl border border-border/60 bg-card p-8 shadow-soft"
       }
     >
-      <p className={highlight ? "text-xs uppercase tracking-wider opacity-70" : "text-xs uppercase tracking-wider text-accent"}>
+      <p
+        className={
+          highlight
+            ? "text-xs uppercase tracking-wider opacity-70"
+            : "text-xs uppercase tracking-wider text-accent"
+        }
+      >
         {name}
       </p>
       <p className="mt-3 font-display text-5xl">{price}</p>
-      <p className={highlight ? "mt-1 text-sm opacity-80" : "mt-1 text-sm text-muted-foreground"}>{tagline}</p>
+      <p className={highlight ? "mt-1 text-sm opacity-80" : "mt-1 text-sm text-muted-foreground"}>
+        {tagline}
+      </p>
       <ul className="mt-6 space-y-3 text-sm">
         {features.map((f) => (
           <li key={f} className="flex items-start gap-2">
-            <Check className={highlight ? "mt-0.5 h-4 w-4 opacity-90" : "mt-0.5 h-4 w-4 text-accent"} />
+            <Check
+              className={highlight ? "mt-0.5 h-4 w-4 opacity-90" : "mt-0.5 h-4 w-4 text-accent"}
+            />
             <span>{f}</span>
           </li>
         ))}
       </ul>
-      <Button asChild size="lg" className="mt-8 w-full rounded-full" variant={highlight ? "secondary" : "default"}>
+      <Button
+        asChild
+        size="lg"
+        className="mt-8 w-full rounded-full"
+        variant={highlight ? "secondary" : "default"}
+      >
         {cta}
       </Button>
     </div>

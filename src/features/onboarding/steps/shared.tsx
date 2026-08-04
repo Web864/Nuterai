@@ -1,10 +1,20 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export function StepHeader({ eyebrow, title, description }: { eyebrow?: string; title: string; description?: string }) {
+export function StepHeader({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow?: string;
+  title: string;
+  description?: string;
+}) {
   return (
     <div className="mb-8">
-      {eyebrow && <p className="mb-2 text-xs font-medium uppercase tracking-wider text-accent">{eyebrow}</p>}
+      {eyebrow && (
+        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-accent">{eyebrow}</p>
+      )}
       <h2 className="font-display text-3xl text-foreground sm:text-4xl">{title}</h2>
       {description && <p className="mt-2 text-muted-foreground">{description}</p>}
     </div>
