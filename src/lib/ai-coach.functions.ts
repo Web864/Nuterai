@@ -110,7 +110,8 @@ async function buildUserContext(
 }
 
 // Stub type import to avoid circular issues
-type SupabaseLike = { from: (t: string) => unknown };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- narrow structural shim for the generated client
+type SupabaseLike = { from: (t: string) => any };
 function createClient(): SupabaseLike {
   return { from: () => ({}) };
 }
