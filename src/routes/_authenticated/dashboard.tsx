@@ -299,6 +299,7 @@ function Dashboard() {
 }
 
 function TopBar({ onSignOut, name }: { onSignOut: () => void; name: string }) {
+  const who = useQuery(adminWhoAmIQueryOptions());
   return (
     <div className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
@@ -309,12 +310,21 @@ function TopBar({ onSignOut, name }: { onSignOut: () => void; name: string }) {
           <span className="font-display text-lg tracking-tight">NutriAI</span>
         </Link>
         <div className="flex items-center gap-2">
+          {who.data?.isAdmin && (
+            <Button asChild variant="ghost" size="sm" className="rounded-full">
+              <Link to="/admin">
+                <ShieldCheck className="h-4 w-4" />
+                <span className="sr-only sm:not-sr-only sm:ml-2">Admin</span>
+              </Link>
+            </Button>
+          )}
           <Button asChild variant="ghost" size="sm" className="rounded-full">
             <Link to="/settings">
               <Settings className="h-4 w-4" />
               <span className="sr-only sm:not-sr-only sm:ml-2">Settings</span>
             </Link>
           </Button>
+
           <Button variant="ghost" size="sm" className="rounded-full" onClick={onSignOut} aria-label={`Sign ${name} out`}>
             <LogOut className="h-4 w-4" />
             <span className="sr-only sm:not-sr-only sm:ml-2">Sign out</span>
