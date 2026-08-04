@@ -67,7 +67,7 @@ function RemindersPage() {
     const now = new Date();
     return (reminders.data ?? [])
       .filter((r) => r.is_active)
-      .map((r) => ({ r, next: nextOccurrence(r as any, now) }))
+      .map((r) => ({ r, next: nextOccurrence(r as Parameters<typeof nextOccurrence>[0], now) }))
       .filter((x) => x.next)
       .sort((a, b) => a.next!.getTime() - b.next!.getTime())
       .slice(0, 20);
@@ -264,7 +264,7 @@ function CreateReminderCard({ userId, defaultTz }: { userId: string; defaultTz: 
           setTitle("");
           setMessage("");
         },
-        onError: (e: any) => toast.error(e.message ?? "Failed"),
+        onError: (e: Error) => toast.error(e.message || "Failed"),
       },
     );
   }

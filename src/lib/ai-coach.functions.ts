@@ -110,7 +110,7 @@ async function buildUserContext(
 }
 
 // Stub type import to avoid circular issues
-type SupabaseLike = { from: (t: string) => any };
+type SupabaseLike = { from: (t: string) => unknown };
 function createClient(): SupabaseLike {
   return { from: () => ({}) };
 }
