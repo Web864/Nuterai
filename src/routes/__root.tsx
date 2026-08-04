@@ -14,6 +14,8 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { registerServiceWorker } from "../lib/pwa";
+
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -129,6 +131,10 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
+    registerServiceWorker();
+  }, []);
+
+  useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
@@ -136,6 +142,7 @@ function RootComponent() {
     });
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);
+
 
   return (
     <QueryClientProvider client={queryClient}>
