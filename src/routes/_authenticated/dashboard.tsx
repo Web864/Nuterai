@@ -30,11 +30,14 @@ import {
   Moon,
   Plus,
   Settings,
+  ShieldCheck,
   Sparkles,
   Trophy,
   Users,
   Utensils,
 } from "lucide-react";
+import { adminWhoAmIQueryOptions } from "@/features/admin/queries";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
