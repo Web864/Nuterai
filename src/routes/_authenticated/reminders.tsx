@@ -445,6 +445,7 @@ function ReminderList({ userId, reminders }: { userId: string; reminders: Remind
                       del.mutate(r.id, { onSuccess: () => toast.success("Deleted") });
                     }
                   }}
+                  aria-label={`Delete reminder ${r.title}`}
                 >
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
@@ -495,7 +496,7 @@ function NotificationHistory({ userId }: { userId: string }) {
                     });
                     void track({ type: "reminder_completed" });
                   }}
-                  aria-label="Mark completed"
+                  aria-label="Mark reminder completed"
                 >
                   <Check className="h-4 w-4" />
                 </Button>

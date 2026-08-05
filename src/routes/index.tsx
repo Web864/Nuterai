@@ -29,6 +29,21 @@ export const Route = createFileRoute("/")({
         content: "AI-powered nutrition, fitness, and lifestyle coaching that adapts to your day.",
       },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "NutriAI",
+          applicationCategory: "HealthApplication",
+          operatingSystem: "Web, iOS, Android",
+          description:
+            "AI-powered nutrition, fitness, and lifestyle coaching that adapts to your body, goals, and day.",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+        }),
+      },
+    ],
   }),
   component: LandingPage,
 });
@@ -81,6 +96,8 @@ function LandingPage() {
                 alt="A bowl of fresh leafy greens with avocado, berries, salmon, and grains — a colorful plate representing personalized nutrition"
                 width={1600}
                 height={1200}
+                fetchPriority="high"
+                decoding="async"
                 className="rounded-[2rem] shadow-hero"
               />
             </div>

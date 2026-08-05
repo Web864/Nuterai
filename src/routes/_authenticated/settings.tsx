@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Loader2, Pencil } from "lucide-react";
+import { BillingPanel } from "@/features/billing/BillingPanel";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -102,6 +103,12 @@ function SettingsPage() {
           </Card>
 
           <PublicProfileCard userId={userId} />
+
+          <Card className="rounded-3xl border-border/60 shadow-soft">
+            <CardContent className="pt-6">
+              <BillingPanel userId={userId} />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
