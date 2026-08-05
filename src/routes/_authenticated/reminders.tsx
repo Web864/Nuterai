@@ -497,7 +497,6 @@ function NotificationHistory({ userId }: { userId: string }) {
                     void track({ type: "reminder_completed" });
                   }}
                   aria-label="Mark reminder completed"
-                  aria-label="Mark completed"
                 >
                   <Check className="h-4 w-4" />
                 </Button>
