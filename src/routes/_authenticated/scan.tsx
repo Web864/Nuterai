@@ -291,6 +291,8 @@ function PhotoTab({ userId }: { userId: string }) {
               <img
                 src={preview}
                 alt="Meal preview"
+                loading="lazy"
+                decoding="async"
                 className="max-h-96 w-full object-contain bg-secondary/40"
               />
               <Button
@@ -728,6 +730,8 @@ function ProductCard({
           <img
             src={product.image_url}
             alt={product.name}
+            loading="lazy"
+            decoding="async"
             className="h-24 w-24 rounded-2xl object-cover bg-secondary"
           />
         ) : (
@@ -1035,7 +1039,13 @@ function SearchTab({ userId }: { userId: string }) {
                 className="flex w-full gap-3 rounded-2xl border border-border/60 bg-card/50 p-3 text-left transition-organic hover:border-accent/40 hover:bg-secondary/50"
               >
                 {r.image_url ? (
-                  <img src={r.image_url} alt="" className="h-14 w-14 rounded-xl object-cover" />
+                  <img
+                    src={r.image_url}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="h-14 w-14 rounded-xl object-cover"
+                  />
                 ) : (
                   <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-secondary">
                     <ImageIcon className="h-5 w-5 text-muted-foreground" />
