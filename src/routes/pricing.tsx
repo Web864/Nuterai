@@ -39,15 +39,10 @@ function PricingPage() {
 
         <div className="mt-14 grid gap-6 md:grid-cols-2">
           <Plan
-            name="Free"
+            name={PLANS.free.name}
             price="$0"
-            tagline="Everything to get started"
-            features={[
-              "Personalized calorie & macro targets",
-              "Daily meal & workout suggestions",
-              "Water, sleep, and mood tracking",
-              "Basic AI coach (10 messages/day)",
-            ]}
+            tagline={PLANS.free.tagline}
+            features={PLANS.free.features}
             cta={
               <Link to="/auth" search={{ mode: "signup" }}>
                 Start free
@@ -56,19 +51,18 @@ function PricingPage() {
           />
           <Plan
             highlight
-            name="Pro"
-            price="$9.99"
-            tagline="per month · billed monthly"
-            features={[
-              "Unlimited AI coach conversations",
-              "Photo + barcode food scanner",
-              "Unlimited meal plan regeneration",
-              "Advanced analytics & PDF export",
-              "Family sharing (up to 4 people)",
-            ]}
-            cta={<span>Coming soon</span>}
+            name={PLANS.pro.name}
+            price={`$${PLANS.pro.priceUsdMonthly}`}
+            tagline={PLANS.pro.tagline}
+            features={PLANS.pro.features}
+            cta={<span>Not yet available</span>}
           />
         </div>
+
+        <p className="mt-8 text-center text-sm text-muted-foreground">
+          Pro isn&apos;t on sale yet — checkout opens once payments are live. Everything listed
+          under Free is available today.
+        </p>
       </div>
     </div>
   );
