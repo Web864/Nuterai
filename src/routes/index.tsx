@@ -26,7 +26,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "NutriAI — Your Personal AI Health & Lifestyle Coach" },
       {
         property: "og:description",
-        content: "AI-powered nutrition, fitness, and lifestyle coaching that adapts to your day.",
+        content: "NutriAI adapts to your body, goals, and lifestyle to create the perfect nutrition, fitness, and wellness plan — powered by AI.",
       },
     ],
     scripts: [
