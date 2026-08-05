@@ -102,6 +102,12 @@ function SettingsPage() {
           </Card>
 
           <PublicProfileCard userId={userId} />
+
+          <Card className="rounded-3xl border-border/60 shadow-soft">
+            <CardContent className="pt-6">
+              <BillingPanel userId={userId} />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
