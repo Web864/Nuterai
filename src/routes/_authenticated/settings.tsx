@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Loader2, Pencil } from "lucide-react";
+import { BillingPanel } from "@/features/billing/BillingPanel";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
