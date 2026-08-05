@@ -62,7 +62,11 @@ export interface BillingProvider {
 export async function readBillingSettings(
   client: Client,
 ): Promise<{ provider: string; paidPlansEnabled: boolean }> {
-  const { data } = await client.from("app_settings").select("value").eq("key", "billing").maybeSingle();
+  const { data } = await client
+    .from("app_settings")
+    .select("value")
+    .eq("key", "billing")
+    .maybeSingle();
   const value = (data?.value ?? {}) as { provider?: string; paid_plans_enabled?: boolean };
   return {
     provider: process.env["BILLING_PROVIDER"] || value.provider || "mock",
@@ -71,10 +75,7 @@ export async function readBillingSettings(
 }
 
 /** Loads (and lazily creates) the caller's subscription row. */
-export async function readSubscriptionState(
-  client: Client,
-  userId: string,
-): Promise<BillingState> {
+export async function readSubscriptionState(client: Client, userId: string): Promise<BillingState> {
   const settings = await readBillingSettings(client);
   const { data } = await client
     .from("subscriptions")
@@ -83,7 +84,11 @@ export async function readSubscriptionState(
     .maybeSingle();
 
   if (!data) {
-    return { ...FREE_BILLING_STATE, provider: settings.provider, paidPlansEnabled: settings.paidPlansEnabled };
+    return {
+      ...FREE_BILLING_STATE,
+      provider: settings.provider,
+      paidPlansEnabled: settings.paidPlansEnabled,
+    };
   }
 
   return {

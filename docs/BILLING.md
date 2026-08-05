@@ -5,17 +5,17 @@ payment processor directly; it talks to a `BillingProvider`.
 
 ## Current state
 
-| Piece | Status |
-| --- | --- |
-| Plan catalogue & entitlements | ✅ `src/lib/billing/plans.ts` |
-| Provider interface | ✅ `src/lib/billing/provider.server.ts` |
-| Mock provider (dev only, cannot charge) | ✅ same file |
-| Server API | ✅ `src/lib/billing.functions.ts` |
-| Client bindings + gating hook | ✅ `src/features/billing/queries.ts` |
-| Settings UI | ✅ `src/features/billing/BillingPanel.tsx` |
-| Database (`subscriptions`, `billing_events`) | ✅ RLS: users read their own, admins read all; writes are service-role only |
-| Feature flag | ✅ `app_settings.billing` → `{ provider, paid_plans_enabled }`, overridable with the `BILLING_PROVIDER` env var |
-| **Real Stripe checkout** | ❌ Blocked: requires enabling the Stripe integration (Lovable Pro plan) |
+| Piece                                        | Status                                                                                                          |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Plan catalogue & entitlements                | ✅ `src/lib/billing/plans.ts`                                                                                   |
+| Provider interface                           | ✅ `src/lib/billing/provider.server.ts`                                                                         |
+| Mock provider (dev only, cannot charge)      | ✅ same file                                                                                                    |
+| Server API                                   | ✅ `src/lib/billing.functions.ts`                                                                               |
+| Client bindings + gating hook                | ✅ `src/features/billing/queries.ts`                                                                            |
+| Settings UI                                  | ✅ `src/features/billing/BillingPanel.tsx`                                                                      |
+| Database (`subscriptions`, `billing_events`) | ✅ RLS: users read their own, admins read all; writes are service-role only                                     |
+| Feature flag                                 | ✅ `app_settings.billing` → `{ provider, paid_plans_enabled }`, overridable with the `BILLING_PROVIDER` env var |
+| **Real Stripe checkout**                     | ❌ Blocked: requires enabling the Stripe integration (Lovable Pro plan)                                         |
 
 While `paid_plans_enabled` is `false`, upgrade buttons are disabled and the UI
 tells users paid plans aren't live. Nothing pretends to charge.

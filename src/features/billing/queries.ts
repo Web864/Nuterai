@@ -61,8 +61,7 @@ export function useStartCheckout(userId: string | undefined) {
 export function useOpenBillingPortal() {
   const fn = useServerFn(openBillingPortal);
   return useMutation({
-    mutationFn: async () =>
-      await fn({ data: { returnUrl: `${window.location.origin}/settings` } }),
+    mutationFn: async () => await fn({ data: { returnUrl: `${window.location.origin}/settings` } }),
     onSuccess: (result) => {
       if (result.redirectUrl) window.location.href = result.redirectUrl;
       else toast.info(result.message);

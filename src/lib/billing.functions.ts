@@ -38,9 +38,7 @@ export const startSubscriptionCheckout = createServerFn({ method: "POST" })
 
 export const openBillingPortal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
-    z.object({ returnUrl: z.string().url().max(500) }).parse(data),
-  )
+  .inputValidator((data: unknown) => z.object({ returnUrl: z.string().url().max(500) }).parse(data))
   .handler(async ({ context, data }) => {
     const settings = await readBillingSettings(context.supabase);
     return getBillingProvider(settings.provider).createPortalSession({

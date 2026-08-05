@@ -9,12 +9,7 @@
 
 export type PlanId = "free" | "pro";
 
-export type SubscriptionStatus =
-  | "active"
-  | "trialing"
-  | "past_due"
-  | "canceled"
-  | "incomplete";
+export type SubscriptionStatus = "active" | "trialing" | "past_due" | "canceled" | "incomplete";
 
 /** Every gate-able capability in the product. */
 export type Entitlement =
