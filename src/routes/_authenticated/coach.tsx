@@ -332,6 +332,7 @@ function ChatPanel({
             size="icon"
             className="h-11 w-11 rounded-2xl"
             disabled={sending || !input.trim()}
+            aria-label="Send message"
           >
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
