@@ -149,6 +149,33 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          provider: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          provider?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          provider?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       coach_messages: {
         Row: {
           content: string
@@ -748,6 +775,51 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["streak_kind"]
           streak_value?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          id: string
+          metadata: Json
+          plan: Database["public"]["Enums"]["billing_plan"]
+          provider: string
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          metadata?: Json
+          plan?: Database["public"]["Enums"]["billing_plan"]
+          provider?: string
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          metadata?: Json
+          plan?: Database["public"]["Enums"]["billing_plan"]
+          provider?: string
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -1439,6 +1511,7 @@ export type Database = {
         | "active"
         | "very_active"
       app_role: "admin" | "moderator" | "user"
+      billing_plan: "free" | "pro"
       coach_role: "user" | "assistant" | "system"
       cooking_skill: "none" | "beginner" | "intermediate" | "advanced"
       diet_preference:
@@ -1493,6 +1566,12 @@ export type Database = {
         | "login"
         | "coach"
         | "reminder"
+      subscription_status:
+        | "active"
+        | "trialing"
+        | "past_due"
+        | "canceled"
+        | "incomplete"
       unit_system: "metric" | "imperial"
       workout_difficulty: "beginner" | "intermediate" | "advanced"
       workout_experience: "none" | "beginner" | "intermediate" | "advanced"
@@ -1664,6 +1743,7 @@ export const Constants = {
         "very_active",
       ],
       app_role: ["admin", "moderator", "user"],
+      billing_plan: ["free", "pro"],
       coach_role: ["user", "assistant", "system"],
       cooking_skill: ["none", "beginner", "intermediate", "advanced"],
       diet_preference: [
@@ -1723,6 +1803,13 @@ export const Constants = {
         "login",
         "coach",
         "reminder",
+      ],
+      subscription_status: [
+        "active",
+        "trialing",
+        "past_due",
+        "canceled",
+        "incomplete",
       ],
       unit_system: ["metric", "imperial"],
       workout_difficulty: ["beginner", "intermediate", "advanced"],
