@@ -478,7 +478,7 @@ function ActivityTab() {
 
 function FriendsTab({ userId }: { userId: string }) {
   const friendships = useQuery(friendshipsQueryOptions(userId));
-  const rows = friendships.data ?? [];
+  const rows = useMemo(() => friendships.data ?? [], [friendships.data]);
   const profiles = useQuery(friendProfilesQueryOptions(userId, rows));
   const buckets = useMemo(() => bucketFriendships(rows, userId), [rows, userId]);
   const respond = useRespondToFriendRequest(userId);

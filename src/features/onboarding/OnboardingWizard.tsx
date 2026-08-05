@@ -105,7 +105,6 @@ export function OnboardingWizard({
       smoking: g?.smoking ?? false,
       alcohol: g?.alcohol ?? false,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileQ.data, goalsQ.data]);
 
   const [data, setData] = useState<Partial<OnboardingData>>(initial);

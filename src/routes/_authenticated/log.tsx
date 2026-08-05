@@ -411,13 +411,14 @@ function MealList({ userId, date }: { userId: string; date: string }) {
   const meals = useQuery(mealsTodayQueryOptions(userId, date));
   const del = useDeleteMeal(userId);
 
+  const mealRows = meals.data;
   const grouped = useMemo(() => {
-    const map: Record<string, typeof meals.data> = {};
-    for (const m of meals.data ?? []) {
+    const map: Record<string, typeof mealRows> = {};
+    for (const m of mealRows ?? []) {
       (map[m.meal_type] ||= []).push(m);
     }
     return map;
-  }, [meals.data]);
+  }, [mealRows]);
 
   if (!meals.data || meals.data.length === 0) {
     return (
