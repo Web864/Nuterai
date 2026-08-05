@@ -110,7 +110,7 @@ export const FREE_BILLING_STATE: BillingState = {
   status: "active",
   provider: "none",
   paidPlansEnabled: false,
-  currentPeriodEnd: false as unknown as boolean extends never ? never : null,
+  currentPeriodEnd: null,
   cancelAtPeriodEnd: false,
 };
 
