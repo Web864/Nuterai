@@ -17,7 +17,7 @@ import {
   Check,
   Leaf,
 } from "lucide-react";
-import { BrowserMultiFormatReader } from "@zxing/browser";
+import type { BrowserMultiFormatReader } from "@zxing/browser";
 
 import { Route as AuthedRoute } from "./route";
 import { useGamification } from "@/features/gamification/useGamification";
@@ -545,6 +545,9 @@ function BarcodeTab({ userId }: { userId: string }) {
     setProduct(null);
     setNotFound(null);
     try {
+      // Loaded on demand: the ZXing decoder is ~500 kB and only the barcode
+      // tab needs it, so it must not ship in the initial scan-page chunk.
+      const { BrowserMultiFormatReader } = await import("@zxing/browser");
       const reader = new BrowserMultiFormatReader();
       readerRef.current = reader;
       const controls = await reader.decodeFromVideoDevice(
