@@ -101,6 +101,7 @@ function AuthPage() {
           <span className="font-display text-2xl tracking-tight">NutriAI</span>
         </Link>
 
+        <h1 className="sr-only">Sign in to NutriAI</h1>
         <div className="w-full rounded-3xl bg-card p-8 shadow-hero">
           <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
             <TabsList className="grid w-full grid-cols-2 rounded-full">
