@@ -42,7 +42,21 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
-    meta: [{ title: "Dashboard — NutriAI" }, { name: "robots", content: "noindex" }],
+    meta: [
+      { title: "Dashboard — NutriAI" },
+      {
+        name: "description",
+        content:
+          "Your NutriAI dashboard: today's calories, macros, water, workouts, and streaks in one personalized daily view.",
+      },
+      { property: "og:title", content: "Your NutriAI Dashboard" },
+      {
+        property: "og:description",
+        content:
+          "Track today's calories, macros, water, workouts, and streaks in your personalized NutriAI dashboard.",
+      },
+      { name: "robots", content: "noindex" },
+    ],
   }),
   component: Dashboard,
 });
