@@ -5,7 +5,11 @@ export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
       { title: "Terms of Service — NutriAI" },
-      { name: "description", content: "The terms that govern your use of NutriAI." },
+      {
+        name: "description",
+        content:
+          "Read the NutriAI terms of service: how your account works, acceptable use of our AI coaching, and why our plans are wellness guidance, not medical advice.",
+      },
     ],
   }),
   component: TermsPage,
