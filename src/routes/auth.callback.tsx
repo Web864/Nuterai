@@ -40,6 +40,7 @@ function CallbackPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-hero">
       <div className="flex flex-col items-center gap-4 text-primary-foreground">
+        <h1 className="sr-only">Verifying your account</h1>
         <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-foreground/10 backdrop-blur">
           <Leaf className="h-6 w-6" />
         </span>

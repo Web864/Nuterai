@@ -7,11 +7,13 @@ interface SitemapEntry {
   priority: string;
 }
 
+const BASE_URL = "https://nurture-glow-16.lovable.app";
+
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const origin = new URL(request.url).origin;
+      GET: async () => {
+        const origin = BASE_URL;
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "weekly", priority: "1.0" },
           { path: "/about", changefreq: "monthly", priority: "0.7" },

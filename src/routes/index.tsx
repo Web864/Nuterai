@@ -17,16 +17,17 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NutriAI — Your Personal AI Health & Lifestyle Coach" },
+      { title: "NutriAI — AI Meal Plans, Workouts & Habit Tracking" },
       {
         name: "description",
         content:
-          "NutriAI adapts to your body, goals, and lifestyle to create the perfect nutrition, fitness, and wellness plan — powered by AI.",
+          "Get an AI nutrition and fitness plan built around your body, goals, and schedule — meal plans, adaptive workouts, food scanning, and habit tracking, free.",
       },
-      { property: "og:title", content: "NutriAI — Your Personal AI Health & Lifestyle Coach" },
+      { property: "og:title", content: "NutriAI — AI Meal Plans, Workouts & Habit Tracking" },
       {
         property: "og:description",
-        content: "NutriAI adapts to your body, goals, and lifestyle to create the perfect nutrition, fitness, and wellness plan — powered by AI.",
+        content:
+          "An AI health coach that builds your meals and workouts, scans your food, and adapts as your week changes. Free to start.",
       },
     ],
     scripts: [

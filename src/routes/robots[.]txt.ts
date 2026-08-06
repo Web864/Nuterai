@@ -7,8 +7,8 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/robots.txt")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const origin = new URL(request.url).origin;
+      GET: async () => {
+        const origin = "https://nurture-glow-16.lovable.app";
         const body = [
           "User-agent: *",
           "Allow: /",
