@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const MODEL = "google/gemini-2.5-flash";
+const MODEL = "gemini-flash-latest";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 const ExerciseSchema = z.object({
   name: z.string(),
@@ -140,7 +141,7 @@ export const generateWorkoutPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("AI is not configured. Please contact support.");
 
     const userPrompt = `Generate a workout plan.
@@ -152,7 +153,7 @@ Days per week: ${data.days_per_week}
 Target session length: ${data.minutes_per_session} minutes
 ${data.focus_notes ? `Preferences: ${data.focus_notes}` : ""}`;
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch(GEMINI_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -170,8 +171,6 @@ ${data.focus_notes ? `Preferences: ${data.focus_notes}` : ""}`;
     });
 
     if (res.status === 429) throw new Error("Rate limit reached. Please try again in a moment.");
-    if (res.status === 402)
-      throw new Error("AI credits exhausted. Please add credits to your workspace.");
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.error("[generateWorkoutPlan] gateway error", res.status, text);

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import type {} from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 
 interface SitemapEntry {
   path: string;
@@ -7,13 +7,11 @@ interface SitemapEntry {
   priority: string;
 }
 
-const BASE_URL = "https://nurture-glow-16.lovable.app";
-
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
-        const origin = BASE_URL;
+        const origin = new URL(getRequest().url).origin;
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "weekly", priority: "1.0" },
           { path: "/about", changefreq: "monthly", priority: "0.7" },

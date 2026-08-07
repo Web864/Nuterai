@@ -15,7 +15,7 @@ export type AuthedClient = SupabaseClient<Database>;
 export async function assertAdmin(supabase: AuthedClient, userId: string): Promise<void> {
   const { data, error } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (error) throw new Error(`Role check failed: ${error.message}`);
-  if (!data) throw new Response("Forbidden", { status: 403 });
+  if (!data) throw new Error("Forbidden: admin role required.");
 }
 
 /** Service-role client, loaded lazily so it never enters a client bundle. */

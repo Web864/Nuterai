@@ -15,7 +15,7 @@ payment processor directly; it talks to a `BillingProvider`.
 | Settings UI                                  | ✅ `src/features/billing/BillingPanel.tsx`                                                                      |
 | Database (`subscriptions`, `billing_events`) | ✅ RLS: users read their own, admins read all; writes are service-role only                                     |
 | Feature flag                                 | ✅ `app_settings.billing` → `{ provider, paid_plans_enabled }`, overridable with the `BILLING_PROVIDER` env var |
-| **Real Stripe checkout**                     | ❌ Blocked: requires enabling the Stripe integration (Lovable Pro plan)                                         |
+| **Real Stripe checkout**                     | ❌ Not wired up yet: requires a Stripe account and API keys                                                     |
 
 While `paid_plans_enabled` is `false`, upgrade buttons are disabled and the UI
 tells users paid plans aren't live. Nothing pretends to charge.
@@ -40,8 +40,8 @@ adding an `Entitlement` string and listing it on the plan — no other change.
 
 ## Plugging in Stripe later
 
-1. Enable the Stripe integration so `STRIPE_SECRET_KEY` and
-   `STRIPE_WEBHOOK_SECRET` exist as backend secrets.
+1. Create a Stripe account and set `STRIPE_SECRET_KEY` and
+   `STRIPE_WEBHOOK_SECRET` as backend secrets.
 2. Create the Pro product/price in Stripe and put the price ID in
    `PLANS.pro.providerPriceIds.stripe`.
 3. Add `src/lib/billing/provider.stripe.server.ts` exporting a `BillingProvider`:

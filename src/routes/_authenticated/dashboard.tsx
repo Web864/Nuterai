@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { profileQueryOptions, goalsQueryOptions } from "@/features/goals/queries";
 import {
   mealsTodayQueryOptions,
@@ -77,9 +77,11 @@ function Dashboard() {
 
   const needsOnboarding = profile.data && profile.data.onboarding_completed === false;
 
-  if (needsOnboarding) {
-    navigate({ to: "/onboarding", replace: true });
-  }
+  useEffect(() => {
+    if (needsOnboarding) {
+      navigate({ to: "/onboarding", replace: true });
+    }
+  }, [needsOnboarding, navigate]);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();

@@ -151,7 +151,12 @@ function CoachPage() {
         {/* Main */}
         <section>
           {activeId ? (
-            <ChatPanel threadId={activeId} userId={userId} onDeleted={() => setActiveId(null)} />
+            <ChatPanel
+              key={activeId}
+              threadId={activeId}
+              userId={userId}
+              onDeleted={() => setActiveId(null)}
+            />
           ) : (
             <EmptyState onStart={handleNewThread} loading={createThread.isPending} />
           )}

@@ -1,7 +1,7 @@
 # NutriAI — architecture
 
-Stack: TanStack Start (React 19 + Vite 7), Tailwind v4 design tokens, Lovable
-Cloud (Postgres + Auth + storage) and Lovable AI Gateway (Gemini 2.5 Flash).
+Stack: TanStack Start (React 19 + Vite 7), Tailwind v4 design tokens, Supabase
+(Postgres + Auth + storage) and the Gemini API directly (gemini-flash-latest).
 
 ## Layout
 
@@ -61,7 +61,8 @@ src/lib/*.server.ts         server-only helpers, blocked from client bundles
 
 ## Monitoring
 
-- Root `errorComponent` reports through `lib/lovable-error-reporting.ts`.
-- `lib/error-capture.ts` captures unhandled errors/rejections.
+- Root `errorComponent` logs to the console; `lib/error-capture.ts` captures
+  unhandled errors/rejections so `server.ts` can recover a stack trace even
+  when h3 swallows the original throw.
 - AI and billing failures are logged server-side with provider detail; users get
   a safe message.

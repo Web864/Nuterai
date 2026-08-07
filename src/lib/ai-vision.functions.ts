@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const VISION_MODEL = "google/gemini-2.5-flash";
+const VISION_MODEL = "gemini-flash-latest";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 const AnalyzedItemSchema = z.object({
   name: z.string(),
@@ -91,14 +92,14 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => PhotoInput.parse(input))
   .handler(async ({ data }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("AI is not configured. Please contact support.");
 
     const userText = data.hint
       ? `Analyze this food photo. Additional hint from user: ${data.hint}`
       : "Analyze this food photo and estimate nutrition for every visible item.";
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch(GEMINI_URL, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -119,8 +120,6 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
     });
 
     if (res.status === 429) throw new Error("Rate limit reached. Please try again in a moment.");
-    if (res.status === 402)
-      throw new Error("AI credits exhausted. Please add credits to your workspace.");
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.error("[analyzeMealPhoto] gateway error", res.status, text);

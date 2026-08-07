@@ -1,7 +1,7 @@
 /**
  * Guarded service-worker registration. This is the ONLY place that registers
- * `/sw.js` — offline caching must never activate in dev or the Lovable preview,
- * where a stale app shell would mask live edits.
+ * `/sw.js` — offline caching must never activate in dev or inside a preview
+ * iframe, where a stale app shell would mask live edits.
  */
 
 const SW_URL = "/sw.js";
@@ -13,9 +13,6 @@ function isBlockedContext(): boolean {
 
   const host = window.location.hostname;
   if (host.startsWith("id-preview--") || host.startsWith("preview--")) return true;
-  if (host === "lovableproject.com" || host.endsWith(".lovableproject.com")) return true;
-  if (host === "lovableproject-dev.com" || host.endsWith(".lovableproject-dev.com")) return true;
-  if (host === "beta.lovable.dev" || host.endsWith(".beta.lovable.dev")) return true;
   if (new URLSearchParams(window.location.search).has("sw")) {
     return new URLSearchParams(window.location.search).get("sw") === "off";
   }

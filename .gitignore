@@ -20,6 +20,9 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Local secrets — never commit (contains SUPABASE_SERVICE_ROLE_KEY)
+.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

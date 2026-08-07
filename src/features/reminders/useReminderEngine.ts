@@ -22,12 +22,15 @@ export function useReminderEngine(userId: string | undefined) {
   const profileQ = useQuery(profileQueryOptions(userId));
   const remindersQ = useQuery(remindersQueryOptions(userId));
   const firedRef = useRef<Set<string>>(new Set());
+  const timezoneSyncedRef = useRef<string | undefined>(undefined);
 
-  // Persist detected timezone once.
+  // Persist detected timezone once per user per session.
   useEffect(() => {
     if (!userId || !profileQ.data) return;
+    if (timezoneSyncedRef.current === userId) return;
     const detected = detectTimezone();
     if (!profileQ.data.timezone || profileQ.data.timezone === "UTC") {
+      timezoneSyncedRef.current = userId;
       void supabase.from("profiles").update({ timezone: detected }).eq("id", userId);
     }
   }, [userId, profileQ.data]);

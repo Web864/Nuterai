@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getRequest } from "@tanstack/react-start/server";
 
 /**
  * Served dynamically so the sitemap reference is an absolute URL on whatever
@@ -8,7 +9,7 @@ export const Route = createFileRoute("/robots.txt")({
   server: {
     handlers: {
       GET: async () => {
-        const origin = "https://nurture-glow-16.lovable.app";
+        const origin = new URL(getRequest().url).origin;
         const body = [
           "User-agent: *",
           "Allow: /",

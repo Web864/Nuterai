@@ -1,8 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
-const MODEL = "google/gemini-2.5-flash";
+const MODEL = "gemini-flash-latest";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 const InputSchema = z.object({
   thread_id: z.string().uuid(),
@@ -22,19 +25,15 @@ Style:
 - Never make up data you don't have. If context is missing, ask a quick clarifying question.`;
 
 async function buildUserContext(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<string> {
   const [profileRes, goalsRes, mealsRes, workoutsRes, weightRes] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("full_name, sex, age, height_cm, activity_level")
-      .eq("id", userId)
-      .maybeSingle(),
+    supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
     supabase
       .from("user_goals")
       .select(
-        "fitness_goal, diet_preference, daily_calorie_target, protein_g, carbs_g, fat_g, fiber_g, water_target_ml, tdee_kcal, target_weight_kg",
+        "fitness_goal, diet_preference, daily_calorie_target, protein_g, carbs_g, fat_g, fiber_g, water_target_ml, tdee_kcal, target_weight_kg, sex, age, height_cm, activity_level",
       )
       .eq("user_id", userId)
       .maybeSingle(),
@@ -46,7 +45,7 @@ async function buildUserContext(
       .limit(10),
     supabase
       .from("workout_sessions")
-      .select("name, duration_seconds, calories_burned, logged_at")
+      .select("name, duration_minutes, calories_kcal, logged_at")
       .eq("user_id", userId)
       .order("logged_at", { ascending: false })
       .limit(5),
@@ -65,9 +64,9 @@ async function buildUserContext(
   const weights = weightRes.data ?? [];
 
   const parts: string[] = ["=== USER CONTEXT ==="];
-  if (profile) {
+  if (profile || goals) {
     parts.push(
-      `Profile: ${profile.full_name ?? "user"} · sex:${profile.sex ?? "?"} · age:${profile.age ?? "?"} · height:${profile.height_cm ?? "?"}cm · activity:${profile.activity_level ?? "?"}`,
+      `Profile: ${profile?.full_name ?? "user"} · sex:${goals?.sex ?? "?"} · age:${goals?.age ?? "?"} · height:${goals?.height_cm ?? "?"}cm · activity:${goals?.activity_level ?? "?"}`,
     );
   }
   if (goals) {
@@ -102,25 +101,18 @@ async function buildUserContext(
   }
   if (workouts.length) {
     parts.push(
-      `Recent workouts: ${workouts.map((w: { name: string; duration_seconds: number | null; calories_burned: number | null }) => `${w.name} (${Math.round((w.duration_seconds ?? 0) / 60)}min, ${w.calories_burned ?? 0}kcal)`).join("; ")}`,
+      `Recent workouts: ${workouts.map((w: { name: string; duration_minutes: number | null; calories_kcal: number | null }) => `${w.name} (${w.duration_minutes ?? 0}min, ${w.calories_kcal ?? 0}kcal)`).join("; ")}`,
     );
   }
   parts.push("=== END CONTEXT ===");
   return parts.join("\n");
 }
 
-// Stub type import to avoid circular issues
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- narrow structural shim for the generated client
-type SupabaseLike = { from: (t: string) => any };
-function createClient(): SupabaseLike {
-  return { from: () => ({}) };
-}
-
 export const sendCoachMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("AI is not configured. Please contact support.");
 
     const { supabase, userId } = context;
@@ -153,7 +145,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     if (insertUserErr) throw new Error(insertUserErr.message);
 
     // Build user context
-    const userContext = await buildUserContext(supabase as never, userId);
+    const userContext = await buildUserContext(supabase, userId);
 
     const messages: Array<{ role: string; content: string }> = [
       { role: "system", content: `${SYSTEM_PROMPT}\n\n${userContext}` },
@@ -161,7 +153,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
       { role: "user", content: data.message },
     ];
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch(GEMINI_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -171,8 +163,6 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     });
 
     if (res.status === 429) throw new Error("Rate limit reached. Please try again in a moment.");
-    if (res.status === 402)
-      throw new Error("AI credits exhausted. Please add credits to your workspace.");
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.error("[sendCoachMessage] gateway error", res.status, text);
@@ -187,8 +177,11 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     const reply = payload.choices?.[0]?.message?.content?.trim();
     if (!reply) throw new Error("The AI didn't return a response. Please try again.");
 
-    // Persist assistant message
-    const { data: assistantMsg, error: insertAiErr } = await supabase
+    // Persist assistant message via the service-role client: RLS restricts
+    // client-authenticated inserts to role = 'user' so a browser can't forge
+    // assistant/system turns and inject instructions into the AI prompt.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: assistantMsg, error: insertAiErr } = await supabaseAdmin
       .from("coach_messages")
       .insert({
         thread_id: data.thread_id,

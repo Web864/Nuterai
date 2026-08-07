@@ -34,13 +34,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { goalsQueryOptions } from "@/features/goals/queries";
 import {
   plansQueryOptions,
@@ -471,7 +464,6 @@ function QuickLogCard({ userId, activePlanId }: { userId: string; activePlanId?:
   const [effort, setEffort] = useState(7);
   const [intensity, setIntensity] = useState<"low" | "moderate" | "high">("moderate");
   const [notes, setNotes] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [logExercises, setLogExercises] = useState<PlanExercise[]>([]);
 
   function pickDay(id: string) {
@@ -514,7 +506,6 @@ function QuickLogCard({ userId, activePlanId }: { userId: string; activePlanId?:
         minutes: duration,
         calories: estimateCalories(duration, intensity),
       });
-      setDialogOpen(false);
       setName("");
       setNotes("");
       setLogExercises([]);
@@ -669,18 +660,6 @@ function QuickLogCard({ userId, activePlanId }: { userId: string; activePlanId?:
           </Button>
         </div>
       </CardContent>
-
-      {/* Dialog placeholder kept simple; kept for future exercise-level logging */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Log details</DialogTitle>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => setDialogOpen(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 }

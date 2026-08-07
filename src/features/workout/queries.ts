@@ -59,7 +59,11 @@ export function useSetActivePlan(userId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (planId: string) => {
-      await supabase.from("workout_plans").update({ is_active: false }).eq("user_id", userId);
+      const { error: deactivateErr } = await supabase
+        .from("workout_plans")
+        .update({ is_active: false })
+        .eq("user_id", userId);
+      if (deactivateErr) throw deactivateErr;
       const { error } = await supabase
         .from("workout_plans")
         .update({ is_active: true })

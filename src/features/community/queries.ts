@@ -293,6 +293,7 @@ export const postsFeedQueryOptions = (
               .from("friendships")
               .select("requester_id, addressee_id")
               .eq("status", "accepted")
+              .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
           : Promise.resolve({ data: null, error: null } as const),
       ]);
       if (authors.error) throw authors.error;
