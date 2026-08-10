@@ -4,6 +4,15 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Leaf } from "lucide-react";
 
+// Captured at module evaluation time, before the router's own hydration can
+// touch window.location (a known class of bug: SPA routers reconstructing
+// the URL from their internal {pathname, search} model can silently drop a
+// hash fragment they don't track, and by the time a useEffect runs it may
+// already be gone). exchangeCodeForSession/setSession below use these
+// snapshots instead of re-reading window.location live.
+const capturedSearch = typeof window !== "undefined" ? window.location.search : "";
+const capturedHash = typeof window !== "undefined" ? window.location.hash : "";
+
 const search = z.object({ next: z.string().optional() });
 
 export const Route = createFileRoute("/auth/callback")({
@@ -21,6 +30,23 @@ function CallbackPage() {
     let cancelled = false;
 
     async function finish() {
+      // Don't rely solely on supabase-js's own auto-detection (which reads
+      // window.location fresh, at whatever moment its lazily-constructed
+      // client happens to initialize) — exchange explicitly using the
+      // snapshot taken at module load. Covers both PKCE (email confirmation,
+      // OAuth — this client uses flowType: "pkce") and, defensively, any
+      // legacy implicit-flow hash tokens.
+      const code = new URLSearchParams(capturedSearch).get("code");
+      const hashParams = new URLSearchParams(capturedHash.replace(/^#/, ""));
+      const access_token = hashParams.get("access_token");
+      const refresh_token = hashParams.get("refresh_token");
+
+      if (code) {
+        await supabase.auth.exchangeCodeForSession(code);
+      } else if (access_token && refresh_token) {
+        await supabase.auth.setSession({ access_token, refresh_token });
+      }
+
       // Give supabase-js time to persist the session from URL fragment / OAuth
       for (let i = 0; i < 20; i++) {
         const { data } = await supabase.auth.getSession();
