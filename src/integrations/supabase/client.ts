@@ -1,6 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
+// Set server-side only, in src/routes/__root.tsx's shellComponent (never
+// re-executed on the client — see the comment there for why: some hosts only
+// expose configured env vars to the SSR runtime, not the static build step
+// that produces this browser bundle, so import.meta.env.VITE_* alone isn't
+// reliable there).
+declare global {
+  interface Window {
+    __PUBLIC_ENV__?: { SUPABASE_URL?: string; SUPABASE_PUBLISHABLE_KEY?: string };
+  }
+}
+
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
 }
@@ -29,11 +40,20 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseClient() {
-  // Use import.meta.env for client-side (Vite build-time replacement)
-  // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  // Preference order: (1) the value the SSR runtime injected into this exact
+  // response's HTML (window.__PUBLIC_ENV__ — always live/correct, since it's
+  // read from process.env at request time, not build time), (2) Vite's
+  // build-time inlined import.meta.env.VITE_* (covers local dev and
+  // Capacitor's local static webDir fallback shell, which never goes through
+  // SSR), (3) process.env directly, for SSR itself before the shell has
+  // rendered anything.
+  const runtimeEnv = typeof window !== "undefined" ? window.__PUBLIC_ENV__ : undefined;
+  const SUPABASE_URL =
+    runtimeEnv?.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
   const SUPABASE_PUBLISHABLE_KEY =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+    runtimeEnv?.SUPABASE_PUBLISHABLE_KEY ||
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [

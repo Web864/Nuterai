@@ -113,10 +113,29 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  // Rendered server-side only — this shell is never re-executed during client
+  // hydration, so it's the safe place to read live process.env at request
+  // time and hand the browser client the two public (non-secret) Supabase
+  // values it needs. Some hosts only expose configured env vars to the SSR
+  // runtime, not the static build step that produces the JS bundle, so
+  // relying solely on Vite's build-time import.meta.env.VITE_* isn't
+  // reliable there — see src/integrations/supabase/client.ts.
+  const publicEnv = {
+    SUPABASE_URL: process.env.SUPABASE_URL ?? "",
+    SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY ?? "",
+  };
+
   return (
     <html lang="en">
       <head>
         <HeadContent />
+        {publicEnv.SUPABASE_URL && publicEnv.SUPABASE_PUBLISHABLE_KEY && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.__PUBLIC_ENV__=${JSON.stringify(publicEnv).replace(/</g, "\\u003c")};`,
+            }}
+          />
+        )}
       </head>
       <body>
         {children}
