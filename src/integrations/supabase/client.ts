@@ -73,6 +73,15 @@ function createSupabaseClient() {
       storage: typeof window !== "undefined" ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
+      // auth-js defaults to 'implicit', but email confirmation links from
+      // this project redirect with a PKCE ?code= param. On a flow-type
+      // mismatch, _getSessionFromURL() throws internally and _initialize()
+      // silently swallows it (returns {error}, never logs or rethrows) — no
+      // session is ever set, with nothing in the console to explain why.
+      // Must match on both ends of the same flow: signUp()/signInWithOAuth()
+      // need this set to persist a PKCE code_verifier at request time, and
+      // the callback page needs it set to accept the code redirect.
+      flowType: "pkce",
     },
   });
 }
