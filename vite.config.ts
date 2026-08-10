@@ -23,6 +23,26 @@ export default defineConfig(async ({ command, mode }): Promise<UserConfig> => {
     envDefine[`import.meta.env.${key}`] = JSON.stringify(value);
   }
 
+  // The browser/Capacitor bundle can only ever read import.meta.env.VITE_* —
+  // Vite statically inlines it at build time, there's no real process.env in
+  // a WebView. Some hosts (e.g. this project's current Vercel config) only
+  // have the unprefixed server-side names set, not duplicated VITE_ copies,
+  // which left the client bundle with no Supabase URL/key at all and made it
+  // throw at runtime. Fall back to the unprefixed names for the client build
+  // too — but only these three public, publishable-safe values. Deliberately
+  // never reads SUPABASE_SERVICE_ROLE_KEY here.
+  const rawEnv = loadEnv(mode, process.cwd(), "");
+  const publicFallbacks: Record<string, string | undefined> = {
+    VITE_SUPABASE_URL: rawEnv.SUPABASE_URL,
+    VITE_SUPABASE_PUBLISHABLE_KEY: rawEnv.SUPABASE_PUBLISHABLE_KEY,
+    VITE_SUPABASE_PROJECT_ID: rawEnv.SUPABASE_PROJECT_ID,
+  };
+  for (const [key, value] of Object.entries(publicFallbacks)) {
+    if (value && !(`import.meta.env.${key}` in envDefine)) {
+      envDefine[`import.meta.env.${key}`] = JSON.stringify(value);
+    }
+  }
+
   const plugins = [
     tailwindcss(),
     tsConfigPaths({ projects: ["./tsconfig.json"] }),
