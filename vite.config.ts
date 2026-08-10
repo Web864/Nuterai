@@ -6,12 +6,15 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { nitro } from "nitro/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
-// Nitro (defaultPreset: "cloudflare-module") publishes client assets to
-// `.output/public` — vite-plugin-pwa needs to be told that explicitly or it
-// globs/writes sw.js against Vite's default `dist` outDir instead, which
-// isn't what actually gets deployed, and ships a service worker that
-// precaches nothing (see docs/ARCHITECTURE.md's PWA section).
-const PWA_OUT_DIR = ".output/public";
+// vite-plugin-pwa needs to be told nitro's actual client-asset output dir, or
+// it globs/writes sw.js against Vite's default `dist` outDir instead — not
+// what's actually deployed — shipping a service worker that precaches
+// nothing (see docs/ARCHITECTURE.md's PWA section). Nitro itself picks its
+// output preset from the hosting platform's own build-time env var (e.g.
+// Vercel sets `VERCEL=1`) and `defaultPreset: "cloudflare-module"` below is
+// only the fallback for unrecognized/local environments — so this has to
+// mirror that same detection rather than assume one fixed preset.
+const PWA_OUT_DIR = process.env.VERCEL ? ".vercel/output/static" : ".output/public";
 
 export default defineConfig(async ({ command, mode }): Promise<UserConfig> => {
   const envDefine: Record<string, string> = {};
