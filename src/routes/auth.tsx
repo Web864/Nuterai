@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { isNative, OAUTH_REDIRECT_URL } from "@/lib/native";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,6 +79,26 @@ function AuthPage() {
 
   async function handleGoogle() {
     setLoading(true);
+
+    if (isNative) {
+      // Google blocks OAuth from an embedded WebView user agent, so open the
+      // system browser instead and let the nutriai://auth-callback deep link
+      // (handled in src/lib/native.ts) bring the user back into the app.
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: OAUTH_REDIRECT_URL, skipBrowserRedirect: true },
+      });
+      if (error || !data?.url) {
+        setLoading(false);
+        toast.error("Google sign-in failed. Please try again.");
+        return;
+      }
+      const { Browser } = await import("@capacitor/browser");
+      await Browser.open({ url: data.url });
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

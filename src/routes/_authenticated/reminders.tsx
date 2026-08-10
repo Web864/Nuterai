@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Route as AuthedRoute } from "./route";
 import { useGamification } from "@/features/gamification/useGamification";
@@ -14,7 +14,11 @@ import {
   type Reminder,
 } from "@/features/reminders/queries";
 import { profileQueryOptions, useUpdateProfile } from "@/features/goals/queries";
-import { requestNotificationPermission } from "@/features/reminders/useReminderEngine";
+import {
+  checkNotificationPermission,
+  requestNotificationPermission,
+} from "@/features/reminders/useReminderEngine";
+import { isNative } from "@/lib/native";
 import { detectTimezone, nextOccurrence, typeLabel, formatWhen } from "@/lib/reminders";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,8 +64,15 @@ function RemindersPage() {
   const profile = useQuery(profileQueryOptions(userId));
 
   const [permission, setPermission] = useState<NotificationPermission>(
-    typeof window !== "undefined" && "Notification" in window ? Notification.permission : "denied",
+    isNative || typeof window === "undefined" || !("Notification" in window)
+      ? "default"
+      : Notification.permission,
   );
+
+  useEffect(() => {
+    if (!isNative) return;
+    void checkNotificationPermission().then(setPermission);
+  }, []);
 
   const upcoming = useMemo(() => {
     const now = new Date();

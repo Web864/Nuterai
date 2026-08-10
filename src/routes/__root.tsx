@@ -14,6 +14,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { registerServiceWorker } from "../lib/pwa";
+import { initializeNative } from "../lib/native";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
@@ -131,7 +132,8 @@ function RootComponent() {
 
   useEffect(() => {
     registerServiceWorker();
-  }, []);
+    void initializeNative(router);
+  }, [router]);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {

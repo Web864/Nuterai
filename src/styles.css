@@ -195,6 +195,11 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    /* Gesture-nav / notch clearance inside the Android WebView (viewport-fit=cover
+       in __root.tsx's head enables these); 0px everywhere else. */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
   }
   h1, h2, h3, h4 {
     font-family: var(--font-display);

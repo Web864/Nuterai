@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { profileQueryOptions } from "@/features/goals/queries";
 import { remindersQueryOptions, type Reminder } from "./queries";
 import { nextOccurrence, inQuietHours, typeLabel, detectTimezone } from "@/lib/reminders";
+import { isNative } from "@/lib/native";
 
 const TICK_MS = 30_000;
 const LOOKAHEAD_MS = 60_000; // fire notifications up to 60s ahead of scheduled_for
@@ -118,9 +119,102 @@ export function useReminderEngine(userId: string | undefined) {
       clearInterval(t);
     };
   }, [userId, remindersQ.data, profileQ.data, qc]);
+
+  // Native only: the tick loop above only fires while this screen is open in
+  // JS, so it can't deliver reminders while the app is backgrounded or
+  // killed. Schedule real OS-level notifications as a backup covering the
+  // upcoming week, using the exact same nextOccurrence()/quiet-hours rules.
+  useEffect(() => {
+    if (!isNative || !userId) return;
+    const reminders = (remindersQ.data ?? []) as Reminder[];
+    const profile = profileQ.data;
+    let cancelled = false;
+
+    async function syncNativeSchedule() {
+      const { LocalNotifications } = await import("@capacitor/local-notifications");
+      const perm = await LocalNotifications.checkPermissions();
+      if (perm.display !== "granted") return;
+      if (cancelled) return;
+
+      const pending = await LocalNotifications.getPending();
+      if (pending.notifications.length) {
+        await LocalNotifications.cancel({
+          notifications: pending.notifications.map((n) => ({ id: n.id })),
+        });
+      }
+      if (cancelled || !reminders.length) return;
+
+      const tz = profile?.timezone || detectTimezone();
+      const notifications: {
+        id: number;
+        title: string;
+        body: string;
+        schedule: { at: Date };
+        extra: { reminderId: string };
+      }[] = [];
+
+      for (const r of reminders) {
+        if (profile?.notifications_enabled === false) break;
+        let from = new Date();
+        for (let i = 0; i < 7; i++) {
+          const next = nextOccurrence(r as Parameters<typeof nextOccurrence>[0], from);
+          if (!next) break;
+          if (!inQuietHours(next, tz, profile?.quiet_hours_start, profile?.quiet_hours_end)) {
+            notifications.push({
+              id: notificationId(r.id, next),
+              title: r.title,
+              body: r.message ?? typeLabel(r.type),
+              schedule: { at: next },
+              extra: { reminderId: r.id },
+            });
+          }
+          from = new Date(next.getTime() + 1000);
+        }
+      }
+
+      if (notifications.length) {
+        await LocalNotifications.schedule({ notifications });
+      }
+    }
+
+    void syncNativeSchedule();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, remindersQ.data, profileQ.data]);
+}
+
+/** Deterministic positive int32 notification ID from a reminder + occurrence time. */
+function notificationId(reminderId: string, at: Date): number {
+  const key = `${reminderId}:${at.toISOString()}`;
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash * 31 + key.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) || 1;
+}
+
+/** Read-only permission check (no prompt) — safe to call on mount. */
+export async function checkNotificationPermission(): Promise<NotificationPermission> {
+  if (isNative) {
+    const { LocalNotifications } = await import("@capacitor/local-notifications");
+    const current = await LocalNotifications.checkPermissions();
+    return current.display === "granted" ? "granted" : current.display === "denied" ? "denied" : "default";
+  }
+  if (typeof window === "undefined" || !("Notification" in window)) return "denied";
+  return Notification.permission;
 }
 
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
+  if (isNative) {
+    const { LocalNotifications } = await import("@capacitor/local-notifications");
+    const current = await LocalNotifications.checkPermissions();
+    const result =
+      current.display === "prompt" || current.display === "prompt-with-rationale"
+        ? await LocalNotifications.requestPermissions()
+        : current;
+    return result.display === "granted" ? "granted" : result.display === "denied" ? "denied" : "default";
+  }
   if (typeof window === "undefined" || !("Notification" in window)) return "denied";
   if (Notification.permission === "granted" || Notification.permission === "denied") {
     return Notification.permission;
