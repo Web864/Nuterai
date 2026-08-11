@@ -57,30 +57,49 @@ function CallbackPage() {
         hasVerifier,
       });
 
-      let exchangeError: { message: string } | null = null;
+      let exchangeError: { message: string; name?: string; status?: number; code?: string } | null =
+        null;
+      // Trust the session returned directly by the exchange call itself
+      // (already in-memory the instant it resolves) instead of re-reading
+      // getSession() afterwards — that was a needless indirection that only
+      // added a timing dependency without adding correctness.
+      let session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"] = null;
       if (oauthError) {
         exchangeError = { message: oauthError };
       } else if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         exchangeError = error;
+        session = data.session ?? null;
       } else if (access_token && refresh_token) {
-        const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+        const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
         exchangeError = error;
+        session = data.session ?? null;
       }
 
       if (exchangeError) {
-        console.error("[auth/callback] sign-in failed:", exchangeError.message);
+        // status/code/name are structured AuthError fields (never the code,
+        // verifier, or a token) — this is what actually identifies *why*
+        // Supabase rejected the exchange, which .message alone has not been
+        // enough to pin down in prior production failures.
+        console.error("[auth/callback] sign-in failed", {
+          message: exchangeError.message,
+          name: exchangeError.name,
+          status: exchangeError.status,
+          code: exchangeError.code,
+        });
       }
 
-      // Give supabase-js time to persist the session from URL fragment / OAuth
-      let session = null;
-      for (let i = 0; i < 20; i++) {
-        const { data } = await supabase.auth.getSession();
-        if (data.session) {
-          session = data.session;
-          break;
+      // Fallback only: give storage a brief moment in case the exchange
+      // succeeded but didn't hand back a session synchronously.
+      if (!session) {
+        for (let i = 0; i < 10; i++) {
+          const { data } = await supabase.auth.getSession();
+          if (data.session) {
+            session = data.session;
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 150));
         }
-        await new Promise((r) => setTimeout(r, 150));
       }
       if (cancelled) return;
 
