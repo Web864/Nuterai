@@ -44,6 +44,19 @@ function CallbackPage() {
       const access_token = hashParams.get("access_token");
       const refresh_token = hashParams.get("refresh_token");
 
+      // Temporary diagnostics — presence/booleans only, never values. Remove
+      // once the production sign-in failure this was added for is confirmed
+      // fixed or its real cause is captured.
+      const hasVerifier = Object.keys(localStorage).some((k) => k.endsWith("-code-verifier"));
+      console.info("[auth/callback] reached", {
+        origin: window.location.origin,
+        pathname: window.location.pathname,
+        hasCode: !!code,
+        hasOauthError: !!oauthError,
+        hasHashTokens: !!(access_token && refresh_token),
+        hasVerifier,
+      });
+
       let exchangeError: { message: string } | null = null;
       if (oauthError) {
         exchangeError = { message: oauthError };
@@ -70,6 +83,11 @@ function CallbackPage() {
         await new Promise((r) => setTimeout(r, 150));
       }
       if (cancelled) return;
+
+      console.info("[auth/callback] result", {
+        hadExchangeError: !!exchangeError,
+        foundSession: !!session,
+      });
 
       if (!session) {
         toast.error(exchangeError?.message || "Sign-in failed. Please try again.");
