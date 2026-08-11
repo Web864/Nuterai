@@ -1,5 +1,6 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { progressAchievement } from "@/lib/gamification.functions";
 import type { Tables } from "@/integrations/supabase/types";
 import {
   XP_REWARDS,
@@ -218,18 +219,15 @@ export async function recordStreakRaw(
 }
 
 export async function progressAchievementRaw(
-  userId: string,
+  // progress_achievement() is now service_role-only; the server function
+  // derives the real user id from the caller's verified session, so the
+  // client-supplied id here is intentionally unused.
+  _userId: string,
   code: string,
   progress: number,
   mode: "set" | "increment" = "set",
 ): Promise<ProgressResult | null> {
-  const { data, error } = await supabase.rpc("progress_achievement", {
-    _user_id: userId,
-    _code: code,
-    _progress: progress,
-    _mode: mode,
-  });
-  if (error) throw error;
+  const data = await progressAchievement({ data: { code, progress, mode } });
   const r = data as unknown as ProgressResult;
   return r && r.code ? r : null;
 }
