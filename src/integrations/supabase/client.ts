@@ -73,6 +73,15 @@ function createSupabaseClient() {
       storage: typeof window !== "undefined" ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
+      // auth-js defaults this to true, which makes _initialize() *also*
+      // auto-exchange a `?code=` it finds on window.location the moment this
+      // lazily-constructed client is first touched. Every code/token
+      // exchange in this app already happens explicitly in
+      // src/routes/auth.callback.tsx (web) or src/lib/native.ts (Capacitor
+      // deep link), so leaving this on races the auto-detect exchange
+      // against the explicit one for the same single-use PKCE code —
+      // whichever loses fails, silently, with no console output.
+      detectSessionInUrl: false,
       // auth-js defaults to 'implicit', but email confirmation links from
       // this project redirect with a PKCE ?code= param. On a flow-type
       // mismatch, _getSessionFromURL() throws internally and _initialize()

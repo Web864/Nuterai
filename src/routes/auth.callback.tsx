@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Loader2, Leaf } from "lucide-react";
 
 // Captured at module evaluation time, before the router's own hydration can
@@ -36,24 +37,45 @@ function CallbackPage() {
       // snapshot taken at module load. Covers both PKCE (email confirmation,
       // OAuth — this client uses flowType: "pkce") and, defensively, any
       // legacy implicit-flow hash tokens.
-      const code = new URLSearchParams(capturedSearch).get("code");
+      const params = new URLSearchParams(capturedSearch);
+      const code = params.get("code");
+      const oauthError = params.get("error_description") || params.get("error");
       const hashParams = new URLSearchParams(capturedHash.replace(/^#/, ""));
       const access_token = hashParams.get("access_token");
       const refresh_token = hashParams.get("refresh_token");
 
-      if (code) {
-        await supabase.auth.exchangeCodeForSession(code);
+      let exchangeError: { message: string } | null = null;
+      if (oauthError) {
+        exchangeError = { message: oauthError };
+      } else if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        exchangeError = error;
       } else if (access_token && refresh_token) {
-        await supabase.auth.setSession({ access_token, refresh_token });
+        const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+        exchangeError = error;
+      }
+
+      if (exchangeError) {
+        console.error("[auth/callback] sign-in failed:", exchangeError.message);
       }
 
       // Give supabase-js time to persist the session from URL fragment / OAuth
+      let session = null;
       for (let i = 0; i < 20; i++) {
         const { data } = await supabase.auth.getSession();
-        if (data.session) break;
+        if (data.session) {
+          session = data.session;
+          break;
+        }
         await new Promise((r) => setTimeout(r, 150));
       }
       if (cancelled) return;
+
+      if (!session) {
+        toast.error(exchangeError?.message || "Sign-in failed. Please try again.");
+        window.location.replace("/auth");
+        return;
+      }
       const target = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
       window.location.replace(target);
     }
