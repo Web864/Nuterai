@@ -77,7 +77,7 @@ function createSupabaseClient() {
       // auto-exchange a `?code=` it finds on window.location the moment this
       // lazily-constructed client is first touched. Every code/token
       // exchange in this app already happens explicitly in
-      // src/routes/auth.callback.tsx (web) or src/lib/native.ts (Capacitor
+      // src/routes/auth_.callback.tsx (web) or src/lib/native.ts (Capacitor
       // deep link), so leaving this on races the auto-detect exchange
       // against the explicit one for the same single-use PKCE code —
       // whichever loses fails, silently, with no console output.

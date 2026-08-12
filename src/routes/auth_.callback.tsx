@@ -16,7 +16,7 @@ const capturedHash = typeof window !== "undefined" ? window.location.hash : "";
 
 const search = z.object({ next: z.string().optional() });
 
-export const Route = createFileRoute("/auth/callback")({
+export const Route = createFileRoute("/auth_/callback")({
   validateSearch: search,
   head: () => ({
     meta: [{ title: "Signing you in — NutriAI" }, { name: "robots", content: "noindex" }],
