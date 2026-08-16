@@ -6,16 +6,17 @@ import { useGamification } from "@/features/gamification/useGamification";
 import { toast } from "sonner";
 import {
   ArrowLeft,
+  Camera,
   Droplets,
   Flame,
   Leaf,
   Loader2,
+  PenLine,
   Plus,
   Scale,
-  Sparkles,
+  Scan,
   Trash2,
   Utensils,
-  Wand2,
 } from "lucide-react";
 
 import { Route as AuthedRoute } from "./route";
@@ -49,6 +50,8 @@ import {
   weightHistoryQueryOptions,
 } from "@/features/logging/queries";
 import { analyzeMeal, type AnalyzedMeal } from "@/lib/ai-meal.functions";
+import { describeAnalysisError } from "@/lib/utils";
+import { PhotoTab, BarcodeTab } from "@/features/scan/FoodScan";
 
 export const Route = createFileRoute("/_authenticated/log")({
   head: () => ({
@@ -230,6 +233,42 @@ function defaultMealType(): "breakfast" | "lunch" | "dinner" | "snack" {
 }
 
 function MealLogger({ userId }: { userId: string }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 px-1">
+        <Utensils className="h-5 w-5 text-accent" />
+        <h2 className="font-display text-lg">Log a meal</h2>
+      </div>
+      <Tabs defaultValue="text">
+        <TabsList className="grid w-full grid-cols-3 rounded-full bg-secondary p-1">
+          <TabsTrigger value="text" className="rounded-full">
+            <PenLine className="mr-1.5 h-3.5 w-3.5" /> Text
+          </TabsTrigger>
+          <TabsTrigger value="image" className="rounded-full">
+            <Camera className="mr-1.5 h-3.5 w-3.5" /> Image
+          </TabsTrigger>
+          <TabsTrigger value="barcode" className="rounded-full">
+            <Scan className="mr-1.5 h-3.5 w-3.5" /> Barcode
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="text" className="mt-4">
+          <TextMealTab userId={userId} />
+        </TabsContent>
+        <TabsContent value="image" className="mt-4">
+          <PhotoTab userId={userId} />
+        </TabsContent>
+        <TabsContent value="barcode" className="mt-4">
+          <BarcodeTab userId={userId} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+/** Free-text meal description → structured estimate → save. No "AI" framing
+ * in the UI: this is plain meal logging from the user's point of view, even
+ * though the estimate is computed by the same AI model as the other tabs. */
+function TextMealTab({ userId }: { userId: string }) {
   const [description, setDescription] = useState("");
   const [mealType, setMealType] = useState<"breakfast" | "lunch" | "dinner" | "snack">(
     defaultMealType(),
@@ -242,7 +281,7 @@ function MealLogger({ userId }: { userId: string }) {
   const { track } = useGamification(userId);
   const qc = useQueryClient();
 
-  async function handleAnalyze() {
+  async function handleLogMeal() {
     if (description.trim().length < 2) {
       toast.error("Describe what you ate first.");
       return;
@@ -253,7 +292,7 @@ function MealLogger({ userId }: { userId: string }) {
       const result = await runAnalyze({ data: { description: description.trim() } });
       setAnalysis(result);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't analyze that.");
+      toast.error(describeAnalysisError(err));
     } finally {
       setAnalyzing(false);
     }
@@ -262,24 +301,29 @@ function MealLogger({ userId }: { userId: string }) {
   async function handleSaveAll() {
     if (!analysis) return;
     try {
-      for (const item of analysis.items) {
-        await addMeal.mutateAsync({
-          meal_type: mealType,
-          name: item.name,
-          description: description.trim(),
-          serving_qty: item.serving_qty,
-          serving_unit: item.serving_unit,
-          calories_kcal: item.calories_kcal,
-          protein_g: item.protein_g,
-          carbs_g: item.carbs_g,
-          fat_g: item.fat_g,
-          fiber_g: item.fiber_g,
-          source: "ai_text",
-          ai_model: (analysis as AnalyzedMeal & { model?: string }).model ?? null,
-          ai_confidence: analysis.confidence,
-          ai_raw: JSON.parse(JSON.stringify(analysis)),
-        });
-      }
+      // Save every detected item in parallel — the previous sequential
+      // await-in-a-loop made a multi-item meal (e.g. "eggs, toast, coffee")
+      // take 3x as long to save as it needed to.
+      await Promise.all(
+        analysis.items.map((item) =>
+          addMeal.mutateAsync({
+            meal_type: mealType,
+            name: item.name,
+            description: description.trim(),
+            serving_qty: item.serving_qty,
+            serving_unit: item.serving_unit,
+            calories_kcal: item.calories_kcal,
+            protein_g: item.protein_g,
+            carbs_g: item.carbs_g,
+            fat_g: item.fat_g,
+            fiber_g: item.fiber_g,
+            source: "ai_text",
+            ai_model: (analysis as AnalyzedMeal & { model?: string }).model ?? null,
+            ai_confidence: analysis.confidence,
+            ai_raw: JSON.parse(JSON.stringify(analysis)),
+          }),
+        ),
+      );
       toast.success(
         `Logged ${analysis.items.length} item${analysis.items.length === 1 ? "" : "s"}.`,
       );
@@ -288,7 +332,7 @@ function MealLogger({ userId }: { userId: string }) {
       setAnalysis(null);
       qc.invalidateQueries({ queryKey: ["meals", userId] });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't save meal.");
+      toast.error(describeAnalysisError(err));
     }
   }
 
@@ -298,13 +342,7 @@ function MealLogger({ userId }: { userId: string }) {
 
   return (
     <Card className="rounded-3xl border-border/60 shadow-soft">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 font-display text-lg">
-          <Sparkles className="h-5 w-5 text-accent" />
-          Log a meal with AI
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="p-5 sm:p-6 space-y-4">
         <div className="grid gap-3 sm:grid-cols-[1fr_180px]">
           <div className="space-y-1.5">
             <Label htmlFor="meal-desc">What did you eat?</Label>
@@ -336,16 +374,12 @@ function MealLogger({ userId }: { userId: string }) {
 
         <div className="flex flex-wrap gap-2">
           <Button
-            onClick={handleAnalyze}
+            onClick={handleLogMeal}
             disabled={analyzing || description.trim().length < 2}
             className="rounded-full"
           >
-            {analyzing ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Wand2 className="mr-2 h-4 w-4" />
-            )}
-            Analyze with AI
+            {analyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {analyzing ? "Logging…" : "Log meal"}
           </Button>
           {analysis && (
             <Button variant="outline" className="rounded-full" onClick={() => setAnalysis(null)}>

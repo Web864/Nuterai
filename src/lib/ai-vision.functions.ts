@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { fetchWithTimeout, isNetworkOrTimeoutError } from "@/lib/utils";
+
+const NETWORK_ERROR_MESSAGE =
+  "Unable to analyze because your internet connection is unavailable or too slow. Please try again.";
 
 const VISION_MODEL = "gemini-flash-latest";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
@@ -99,25 +103,35 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
       ? `Analyze this food photo. Additional hint from user: ${data.hint}`
       : "Analyze this food photo and estimate nutrition for every visible item.";
 
-    const res = await fetch(GEMINI_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: VISION_MODEL,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: userText },
-              { type: "image_url", image_url: { url: data.image_data_url } },
+    let res: Response;
+    try {
+      res = await fetchWithTimeout(
+        GEMINI_URL,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: VISION_MODEL,
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: userText },
+                  { type: "image_url", image_url: { url: data.image_data_url } },
+                ],
+              },
             ],
-          },
-        ],
-        tools: [PHOTO_TOOL],
-        tool_choice: { type: "function", function: { name: "record_photo_estimate" } },
-      }),
-    });
+            tools: [PHOTO_TOOL],
+            tool_choice: { type: "function", function: { name: "record_photo_estimate" } },
+          }),
+        },
+        25000,
+      );
+    } catch (err) {
+      if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
+      throw err;
+    }
 
     if (res.status === 429) throw new Error("Rate limit reached. Please try again in a moment.");
     if (!res.ok) {
@@ -184,12 +198,20 @@ export const lookupBarcode = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => BarcodeInput.parse(input))
   .handler(async ({ data }): Promise<BarcodeProduct | null> => {
     const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(data.barcode)}.json?fields=product_name,brands,image_front_url,image_url,serving_size,serving_quantity,nutriments,ingredients_text`;
-    const res = await fetch(url, {
-      headers: { "User-Agent": "NutriAI/1.0 (support@nutriai.app)" },
-    });
+    let res: Response;
+    try {
+      res = await fetchWithTimeout(
+        url,
+        { headers: { "User-Agent": "NutriAI/1.0 (support@nutriai.app)" } },
+        12000,
+      );
+    } catch (err) {
+      if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
+      throw err;
+    }
     if (!res.ok) {
       console.error("[lookupBarcode] off error", res.status);
-      throw new Error("Barcode service unavailable. Try again shortly.");
+      throw new Error("We couldn't look up this product right now. Please try again.");
     }
     const body = (await res.json()) as {
       status?: number;
@@ -262,8 +284,14 @@ export const searchFood = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => SearchInput.parse(input))
   .handler(async ({ data }): Promise<SearchProduct[]> => {
     const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(data.query)}&search_simple=1&action=process&json=1&page_size=15&fields=code,product_name,brands,image_front_small_url,nutriments,serving_quantity`;
-    const res = await fetch(url, { headers: { "User-Agent": "NutriAI/1.0" } });
-    if (!res.ok) throw new Error("Search unavailable. Try again shortly.");
+    let res: Response;
+    try {
+      res = await fetchWithTimeout(url, { headers: { "User-Agent": "NutriAI/1.0" } }, 12000);
+    } catch (err) {
+      if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
+      throw err;
+    }
+    if (!res.ok) throw new Error("We couldn't search right now. Please try again.");
     const body = (await res.json()) as {
       products?: Array<{
         code?: string;

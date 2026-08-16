@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { fetchWithTimeout, isNetworkOrTimeoutError } from "@/lib/utils";
+
+const NETWORK_ERROR_MESSAGE =
+  "Unable to analyze because your internet connection is unavailable or too slow. Please try again.";
 
 const MODEL = "gemini-flash-latest";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
@@ -92,22 +96,32 @@ export const analyzeMeal = createServerFn({ method: "POST" })
       throw new Error("AI is not configured. Please contact support.");
     }
 
-    const res = await fetch(GEMINI_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: `Food description: ${data.description}` },
-        ],
-        tools: [TOOL],
-        tool_choice: { type: "function", function: { name: "record_meal_estimate" } },
-      }),
-    });
+    let res: Response;
+    try {
+      res = await fetchWithTimeout(
+        GEMINI_URL,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "user", content: `Food description: ${data.description}` },
+            ],
+            tools: [TOOL],
+            tool_choice: { type: "function", function: { name: "record_meal_estimate" } },
+          }),
+        },
+        20000,
+      );
+    } catch (err) {
+      if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
+      throw err;
+    }
 
     if (res.status === 429) {
       throw new Error("Rate limit reached. Please try again in a moment.");
