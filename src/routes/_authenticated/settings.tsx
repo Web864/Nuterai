@@ -122,6 +122,20 @@ function SettingsPage() {
               <BillingPanel userId={userId} />
             </CardContent>
           </Card>
+
+          <Card className="rounded-3xl border-destructive/40 shadow-soft">
+            <CardHeader>
+              <CardTitle className="font-display text-xl text-destructive">Danger zone</CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between gap-4">
+              <p className="text-sm text-muted-foreground">
+                Permanently delete your account and all your data. This can't be undone.
+              </p>
+              <Button asChild variant="destructive" size="sm" className="rounded-full shrink-0">
+                <Link to="/settings/delete-account">Delete account</Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

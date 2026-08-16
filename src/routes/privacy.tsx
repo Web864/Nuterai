@@ -46,8 +46,22 @@ function PrivacyPage() {
             <h2 className="font-display text-2xl text-foreground">Where it's stored</h2>
             <p className="mt-2">
               Your data lives in secure managed cloud infrastructure with row-level security so only
-              you can access it. You can delete your account and all your data at any time from your
-              settings.
+              you can access it.
+            </p>
+          </section>
+          <section>
+            <h2 className="font-display text-2xl text-foreground">Deleting your account</h2>
+            <p className="mt-2">
+              You can permanently delete your account and data at any time from{" "}
+              <span className="text-foreground">Settings → Delete account</span> while signed in.
+              This removes your profile, goals, nutrition and workout history, AI coach
+              conversations, subscription, and social data. A de-identified record of any
+              admin/moderation actions taken on your account may be retained for audit purposes,
+              with no personal data attached. If you can't sign in, see our{" "}
+              <Link to="/delete-account" className="underline underline-offset-2">
+                account deletion page
+              </Link>{" "}
+              for another way to request deletion.
             </p>
           </section>
           <section>

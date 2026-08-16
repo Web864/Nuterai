@@ -1,6 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { fetchWithTimeout, isNetworkOrTimeoutError } from "@/lib/utils";
+import { enforceAiRateLimit } from "@/lib/rate-limit.server";
+import { classifyHealthRisk, CRISIS_SAFE_RESPONSE } from "@/lib/health-safety";
+import { logAiSafetyEvent } from "@/lib/ai-safety-log.server";
+
+const NETWORK_ERROR_MESSAGE =
+  "Unable to reach the AI service because your internet connection is unavailable or too slow. Please try again.";
 
 const MODEL = "gemini-flash-latest";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
@@ -144,6 +151,13 @@ export const generateWorkoutPlan = createServerFn({ method: "POST" })
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("AI is not configured. Please contact support.");
 
+    await enforceAiRateLimit(context.supabase, "workout");
+
+    if (data.focus_notes && classifyHealthRisk(data.focus_notes).crisis) {
+      void logAiSafetyEvent(context.userId, "workout", "crisis_input");
+      throw new Error(CRISIS_SAFE_RESPONSE);
+    }
+
     const userPrompt = `Generate a workout plan.
 
 Goal: ${data.goal}
@@ -153,22 +167,32 @@ Days per week: ${data.days_per_week}
 Target session length: ${data.minutes_per_session} minutes
 ${data.focus_notes ? `Preferences: ${data.focus_notes}` : ""}`;
 
-    const res = await fetch(GEMINI_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [TOOL],
-        tool_choice: { type: "function", function: { name: "record_workout_plan" } },
-      }),
-    });
+    let res: Response;
+    try {
+      res = await fetchWithTimeout(
+        GEMINI_URL,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "user", content: userPrompt },
+            ],
+            tools: [TOOL],
+            tool_choice: { type: "function", function: { name: "record_workout_plan" } },
+          }),
+        },
+        25000,
+      );
+    } catch (err) {
+      if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
+      throw err;
+    }
 
     if (res.status === 429) throw new Error("Rate limit reached. Please try again in a moment.");
     if (!res.ok) {

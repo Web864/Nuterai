@@ -2,6 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { fetchWithTimeout, isNetworkOrTimeoutError } from "@/lib/utils";
+import { enforceAiRateLimit } from "@/lib/rate-limit.server";
+import { classifyHealthRisk, CRISIS_SAFE_RESPONSE } from "@/lib/health-safety";
+import { logAiSafetyEvent } from "@/lib/ai-safety-log.server";
 
 const NETWORK_ERROR_MESSAGE =
   "Unable to analyze because your internet connection is unavailable or too slow. Please try again.";
@@ -90,10 +93,17 @@ const TOOL = {
 export const analyzeMeal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error("AI is not configured. Please contact support.");
+    }
+
+    await enforceAiRateLimit(context.supabase, "meal_text");
+
+    if (classifyHealthRisk(data.description).crisis) {
+      void logAiSafetyEvent(context.userId, "meal_text", "crisis_input");
+      throw new Error(CRISIS_SAFE_RESPONSE);
     }
 
     let res: Response;
