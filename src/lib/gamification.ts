@@ -4,6 +4,27 @@
  * client can render progress without an extra round-trip.
  */
 
+import {
+  Award,
+  Beef,
+  Bell,
+  Calendar,
+  Camera,
+  Droplets,
+  Dumbbell,
+  Flame,
+  Heart,
+  MessageCircle,
+  Moon,
+  Scale,
+  Sparkles,
+  Target,
+  Trophy,
+  Users,
+  Utensils,
+  type LucideIcon,
+} from "lucide-react";
+
 export type StreakKind = "workout" | "nutrition" | "water" | "login" | "coach" | "reminder";
 export type AchievementCategory =
   | "nutrition"
@@ -111,6 +132,36 @@ export const CATEGORY_LABELS: Record<AchievementCategory, string> = {
   community: "Community",
   milestone: "Milestones",
 };
+
+/**
+ * `achievements.icon` (see supabase/migrations) stores a Lucide icon *name*
+ * (e.g. "utensils", "message-circle"), not a glyph — it must be resolved to
+ * a component and rendered as an icon, never printed as text. Falls back to
+ * Trophy (the column's own SQL default) for any unrecognized/future name.
+ */
+const ACHIEVEMENT_ICONS: Record<string, LucideIcon> = {
+  utensils: Utensils,
+  target: Target,
+  beef: Beef,
+  dumbbell: Dumbbell,
+  flame: Flame,
+  trophy: Trophy,
+  droplets: Droplets,
+  scale: Scale,
+  sparkles: Sparkles,
+  camera: Camera,
+  bell: Bell,
+  calendar: Calendar,
+  "message-circle": MessageCircle,
+  users: Users,
+  heart: Heart,
+  moon: Moon,
+  award: Award,
+};
+
+export function achievementIcon(name: string): LucideIcon {
+  return ACHIEVEMENT_ICONS[name] ?? Trophy;
+}
 
 export const DIFFICULTY_STYLES: Record<
   AchievementDifficulty,

@@ -35,6 +35,7 @@ import {
 } from "@/features/gamification/queries";
 import { LevelCard } from "@/features/gamification/StatsWidgets";
 import {
+  achievementIcon,
   CATEGORY_LABELS,
   DIFFICULTY_STYLES,
   initialsOf,
@@ -247,25 +248,28 @@ function AchievementCard({ achievement: a }: { achievement: AchievementWithProgr
   const target = Number(a.target) || 1;
   const pct = Math.min(100, Math.round((a.progress / target) * 100));
   const style = DIFFICULTY_STYLES[a.difficulty as AchievementDifficulty];
+  const Icon = achievementIcon(a.icon);
 
   return (
     <Card
-      className={`rounded-3xl border-border/60 transition-organic ${
+      className={`h-full rounded-3xl border-border/60 transition-organic ${
         unlocked ? "bg-card shadow-soft" : "bg-card/60"
       }`}
     >
-      <CardContent className="flex gap-4 p-4">
+      <CardContent className="flex min-w-0 items-start gap-3 overflow-hidden p-4 sm:gap-4">
         <div
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl ${
-            unlocked ? "bg-accent/15" : "bg-secondary text-muted-foreground"
+          className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl ${
+            unlocked ? "bg-accent/15 text-accent-foreground" : "bg-secondary text-muted-foreground"
           }`}
           aria-hidden="true"
         >
-          {unlocked ? a.icon : <Lock className="h-4 w-4" />}
+          {unlocked ? <Icon className="h-5 w-5" /> : <Lock className="h-4 w-4" />}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <p className={`font-medium ${unlocked ? "text-foreground" : "text-muted-foreground"}`}>
+          <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+            <p
+              className={`min-w-0 break-words font-medium ${unlocked ? "text-foreground" : "text-muted-foreground"}`}
+            >
               {a.title}
             </p>
             <Badge
@@ -275,14 +279,14 @@ function AchievementCard({ achievement: a }: { achievement: AchievementWithProgr
               {style.label}
             </Badge>
           </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">{a.description}</p>
+          <p className="mt-0.5 break-words text-xs text-muted-foreground">{a.description}</p>
           {unlocked ? (
-            <p className="mt-2 text-xs text-primary">
+            <p className="mt-2 break-words text-xs text-primary">
               Unlocked {relativeTime(a.unlocked_at!)} · +{a.xp_reward} XP
             </p>
           ) : (
-            <div className="mt-2">
-              <div className="mb-1 flex justify-between text-[11px] text-muted-foreground">
+            <div className="mt-2 min-w-0">
+              <div className="mb-1 flex flex-wrap justify-between gap-x-2 text-[11px] text-muted-foreground">
                 <span>
                   {Math.round(a.progress)} / {target}
                 </span>
