@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Loader2, Pencil } from "lucide-react";
 import { BillingPanel } from "@/features/billing/BillingPanel";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -62,6 +63,18 @@ function SettingsPage() {
                 }
               />
               <Field label="Country" value={profile.data?.country ?? "—"} />
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl border-border/60 shadow-soft">
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle className="font-display text-xl">Appearance</CardTitle>
+              <ThemeToggle />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Choose light, dark, or match your device's setting.
+              </p>
             </CardContent>
           </Card>
 

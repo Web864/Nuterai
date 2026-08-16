@@ -15,9 +15,11 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { registerServiceWorker } from "../lib/pwa";
 import { initializeNative } from "../lib/native";
+import { THEME_INIT_SCRIPT } from "../lib/theme";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider, useTheme } from "@/components/theme-provider";
 
 function NotFoundComponent() {
   return (
@@ -129,6 +131,10 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        {/* Sets the .dark class on <html> before first paint, using the same
+            storage key/resolution logic as ThemeProvider — prevents a
+            flash of the wrong theme. Must run before body renders. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {publicEnv.SUPABASE_URL && publicEnv.SUPABASE_PUBLISHABLE_KEY && (
           <script
             dangerouslySetInnerHTML={{
@@ -164,9 +170,19 @@ function RootComponent() {
   }, [router, queryClient]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <Toaster position="top-center" richColors closeButton />
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <Outlet />
+        <AppToaster />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
+}
+
+/** sonner's richColors palette is keyed off its own `theme` prop (defaults
+ * to "light") independent of our .dark class — without wiring it to
+ * resolvedTheme, success/error toasts would stay light-themed in dark mode. */
+function AppToaster() {
+  const { resolvedTheme } = useTheme();
+  return <Toaster position="top-center" richColors closeButton theme={resolvedTheme} />;
 }

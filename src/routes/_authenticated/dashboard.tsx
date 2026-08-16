@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Activity,
   Apple,
@@ -356,6 +357,8 @@ function TopBar({ onSignOut, name }: { onSignOut: () => void; name: string }) {
               <span className="sr-only sm:not-sr-only sm:ml-2">Settings</span>
             </Link>
           </Button>
+
+          <ThemeToggle />
 
           <Button
             variant="ghost"
