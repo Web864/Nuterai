@@ -13,6 +13,7 @@ import { Loader2, Leaf } from "lucide-react";
 // snapshots instead of re-reading window.location live.
 const capturedSearch = typeof window !== "undefined" ? window.location.search : "";
 const capturedHash = typeof window !== "undefined" ? window.location.hash : "";
+const PASSWORD_RECOVERY_STORAGE_KEY = "nutriai:password-recovery-session";
 
 const search = z.object({ next: z.string().optional() });
 
@@ -113,11 +114,17 @@ function CallbackPage() {
       });
 
       if (!session) {
-        toast.error(callbackErrorMessage(exchangeError?.message));
-        window.location.replace("/auth");
+        const isPasswordReset = next === "/auth/reset-password";
+        toast.error(callbackErrorMessage(exchangeError?.message, isPasswordReset));
+        window.location.replace(
+          isPasswordReset ? "/auth/forgot-password?error=invalid-reset-link" : "/auth",
+        );
         return;
       }
       const target = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+      if (target === "/auth/reset-password") {
+        sessionStorage.setItem(PASSWORD_RECOVERY_STORAGE_KEY, "true");
+      }
       window.location.replace(target);
     }
     finish();
@@ -140,24 +147,29 @@ function CallbackPage() {
   );
 }
 
-function callbackErrorMessage(message = ""): string {
+function callbackErrorMessage(message = "", isPasswordReset = false): string {
   const lower = message.toLowerCase();
+  const linkLabel = isPasswordReset ? "password reset link" : "confirmation link";
 
   if (lower.includes("expired")) {
-    return "This confirmation link has expired. Please request a new confirmation email.";
+    return `${linkLabel} has expired. Please request a new ${isPasswordReset ? "reset" : "confirmation"} email.`;
   }
   if (lower.includes("invalid") || lower.includes("token") || lower.includes("otp")) {
-    return "This confirmation link is invalid or has already been used.";
+    return `This ${linkLabel} is invalid or has already been used.`;
   }
   if (lower.includes("code verifier") || lower.includes("pkce")) {
-    return "This confirmation link could not be completed in this browser. Please request a new confirmation email and open it in the same browser.";
+    return `This ${linkLabel} could not be completed in this browser. Please request a new ${isPasswordReset ? "reset" : "confirmation"} email and open it in the same browser.`;
   }
   if (lower.includes("access_denied")) {
     return "Confirmation was cancelled or denied. Please try the confirmation link again.";
   }
   if (lower.includes("network") || lower.includes("fetch") || lower.includes("failed to")) {
-    return "Network error while confirming your account. Check your connection and try again.";
+    return isPasswordReset
+      ? "Network error while resetting your password. Check your connection and try again."
+      : "Network error while confirming your account. Check your connection and try again.";
   }
 
-  return "Confirmation link failed. Please request a new confirmation email.";
+  return isPasswordReset
+    ? "Password reset link failed. Please request a new reset email."
+    : "Confirmation link failed. Please request a new confirmation email.";
 }

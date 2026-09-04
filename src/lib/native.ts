@@ -11,6 +11,7 @@ export const isNative = Capacitor.isNativePlatform();
 
 /** Custom-scheme deep link Google/Supabase redirect back into after native OAuth. */
 export const OAUTH_REDIRECT_URL = "nutriai://auth-callback";
+const PASSWORD_RECOVERY_STORAGE_KEY = "nutriai:password-recovery-session";
 
 let initialized = false;
 
@@ -92,6 +93,8 @@ async function handleOAuthCallback(url: string, router: AnyRouter): Promise<void
   const parsed = new URL(url.replace("nutriai://", "https://placeholder/"));
   const code = parsed.searchParams.get("code");
   const errorDescription = parsed.searchParams.get("error_description");
+  const next = parsed.searchParams.get("next");
+  const target = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
 
   if (errorDescription) {
     const { toast } = await import("sonner");
@@ -106,5 +109,8 @@ async function handleOAuthCallback(url: string, router: AnyRouter): Promise<void
     toast.error("Sign-in failed. Please try again.");
     return;
   }
-  await router.navigate({ to: "/dashboard", replace: true });
+  if (target === "/auth/reset-password") {
+    sessionStorage.setItem(PASSWORD_RECOVERY_STORAGE_KEY, "true");
+  }
+  await router.navigate({ to: target as "/auth/reset-password" | "/dashboard", replace: true });
 }
