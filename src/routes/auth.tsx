@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Leaf, Loader2 } from "lucide-react";
 
+const EMAIL_CONFIRMATION_CALLBACK_URL = "https://nutriai-cyan.vercel.app/auth/callback";
+
 const searchSchema = z.object({
   next: z.string().optional(),
   mode: z.enum(["signin", "signup"]).optional(),
@@ -44,6 +46,9 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendAvailableAt, setResendAvailableAt] = useState(0);
 
   useEffect(() => {
     if (mode) setTab(mode);
@@ -56,7 +61,15 @@ function AuthPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      const message = authErrorMessage(error);
+      toast.error(message);
+      if (isUnconfirmedEmailError(error)) {
+        setPendingConfirmationEmail(email.trim());
+        setTab("signup");
+      }
+      return;
+    }
     toast.success("Welcome back!");
     window.location.href = nextPath;
   }
@@ -64,17 +77,60 @@ function AuthPage() {
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
+    const normalizedEmail = email.trim();
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+        emailRedirectTo: confirmationRedirectUrl(nextPath),
         data: { full_name: name, name },
       },
     });
     setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Account created. Check your email to confirm.");
+    if (error) {
+      toast.error(authErrorMessage(error));
+      return;
+    }
+
+    if (data.session) {
+      toast.success("Account created. You're signed in.");
+      window.location.href = nextPath;
+      return;
+    }
+
+    setPendingConfirmationEmail(normalizedEmail);
+    toast.success("Confirmation email sent. Check your email to confirm your account.");
+  }
+
+  async function handleResendConfirmation() {
+    const normalizedEmail = pendingConfirmationEmail.trim() || email.trim();
+    if (!normalizedEmail) {
+      toast.error("Enter your email address first.");
+      return;
+    }
+    if (Date.now() < resendAvailableAt) {
+      toast.info("Please wait a moment before requesting another confirmation email.");
+      return;
+    }
+
+    setResendLoading(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: normalizedEmail,
+      options: {
+        emailRedirectTo: confirmationRedirectUrl(nextPath),
+      },
+    });
+    setResendLoading(false);
+
+    if (error) {
+      toast.error(authErrorMessage(error));
+      return;
+    }
+
+    setPendingConfirmationEmail(normalizedEmail);
+    setResendAvailableAt(Date.now() + 60_000);
+    toast.success("Confirmation email sent. Check your email to confirm your account.");
   }
 
   async function handleGoogle() {
@@ -215,6 +271,27 @@ function AuthPage() {
                   Create account
                 </Button>
               </form>
+              {pendingConfirmationEmail && (
+                <div className="mt-5 rounded-lg border border-border bg-secondary/50 p-4 text-sm">
+                  <p className="font-medium text-foreground">
+                    Check your email to confirm your account.
+                  </p>
+                  <p className="mt-1 text-muted-foreground">
+                    We sent a confirmation link to {pendingConfirmationEmail}.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 w-full"
+                    onClick={handleResendConfirmation}
+                    disabled={resendLoading || Date.now() < resendAvailableAt}
+                  >
+                    {resendLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Resend confirmation email
+                  </Button>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
 
@@ -257,6 +334,49 @@ function safeNext(next: string | undefined): string {
   if (!next) return "/dashboard";
   if (!next.startsWith("/") || next.startsWith("//")) return "/dashboard";
   return next;
+}
+
+function confirmationRedirectUrl(nextPath: string): string {
+  const url = new URL(EMAIL_CONFIRMATION_CALLBACK_URL);
+  url.searchParams.set("next", nextPath);
+  return url.toString();
+}
+
+function isUnconfirmedEmailError(error: { message?: string; code?: string }): boolean {
+  const lower = (error.message ?? "").toLowerCase();
+  return error.code === "email_not_confirmed" || lower.includes("email not confirmed");
+}
+
+function authErrorMessage(error: { message?: string; status?: number; code?: string }): string {
+  const raw = error.message ?? "";
+  const lower = raw.toLowerCase();
+
+  if (isUnconfirmedEmailError(error)) {
+    return "Check your email to confirm your account before signing in.";
+  }
+  if (lower.includes("already confirmed")) {
+    return "This email is already confirmed. Please sign in.";
+  }
+  if (lower.includes("already registered") || lower.includes("already exists")) {
+    return "That email already has an account. Sign in, or resend the confirmation email if you have not confirmed it yet.";
+  }
+  if (lower.includes("rate") || error.status === 429) {
+    return "Too many confirmation emails were requested. Please wait a minute and try again.";
+  }
+  if (lower.includes("invalid login credentials")) {
+    return "The email or password is incorrect.";
+  }
+  if (lower.includes("email") && lower.includes("invalid")) {
+    return "Enter a valid email address.";
+  }
+  if (lower.includes("fetch") || lower.includes("network") || lower.includes("failed to")) {
+    return "Network error. Check your connection and try again.";
+  }
+  if (lower.includes("smtp") || lower.includes("email provider") || lower.includes("mail")) {
+    return "Email delivery is not configured correctly. Please contact support.";
+  }
+
+  return raw || "Authentication failed. Please try again.";
 }
 
 function GoogleIcon({ className }: { className?: string }) {

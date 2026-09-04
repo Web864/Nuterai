@@ -41,6 +41,10 @@ function CallbackPage() {
       const code = params.get("code");
       const oauthError = params.get("error_description") || params.get("error");
       const hashParams = new URLSearchParams(capturedHash.replace(/^#/, ""));
+      const hashError =
+        hashParams.get("error_description") ||
+        hashParams.get("error_code") ||
+        hashParams.get("error");
       const access_token = hashParams.get("access_token");
       const refresh_token = hashParams.get("refresh_token");
 
@@ -52,7 +56,7 @@ function CallbackPage() {
         origin: window.location.origin,
         pathname: window.location.pathname,
         hasCode: !!code,
-        hasOauthError: !!oauthError,
+        hasAuthError: !!(oauthError || hashError),
         hasHashTokens: !!(access_token && refresh_token),
         hasVerifier,
       });
@@ -64,8 +68,8 @@ function CallbackPage() {
       // getSession() afterwards — that was a needless indirection that only
       // added a timing dependency without adding correctness.
       let session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"] = null;
-      if (oauthError) {
-        exchangeError = { message: oauthError };
+      if (oauthError || hashError) {
+        exchangeError = { message: oauthError || hashError || "Authentication link failed." };
       } else if (code) {
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         exchangeError = error;
@@ -109,7 +113,7 @@ function CallbackPage() {
       });
 
       if (!session) {
-        toast.error(exchangeError?.message || "Sign-in failed. Please try again.");
+        toast.error(callbackErrorMessage(exchangeError?.message));
         window.location.replace("/auth");
         return;
       }
@@ -134,4 +138,26 @@ function CallbackPage() {
       </div>
     </div>
   );
+}
+
+function callbackErrorMessage(message = ""): string {
+  const lower = message.toLowerCase();
+
+  if (lower.includes("expired")) {
+    return "This confirmation link has expired. Please request a new confirmation email.";
+  }
+  if (lower.includes("invalid") || lower.includes("token") || lower.includes("otp")) {
+    return "This confirmation link is invalid or has already been used.";
+  }
+  if (lower.includes("code verifier") || lower.includes("pkce")) {
+    return "This confirmation link could not be completed in this browser. Please request a new confirmation email and open it in the same browser.";
+  }
+  if (lower.includes("access_denied")) {
+    return "Confirmation was cancelled or denied. Please try the confirmation link again.";
+  }
+  if (lower.includes("network") || lower.includes("fetch") || lower.includes("failed to")) {
+    return "Network error while confirming your account. Check your connection and try again.";
+  }
+
+  return "Confirmation link failed. Please request a new confirmation email.";
 }
