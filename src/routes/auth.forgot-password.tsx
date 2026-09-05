@@ -119,15 +119,8 @@ function ForgotPasswordPage() {
 }
 
 function passwordResetRedirectUrl(): string {
-  if (isNative) {
-    const url = new URL(OAUTH_REDIRECT_URL);
-    url.searchParams.set("next", "/auth/reset-password");
-    return url.toString();
-  }
-
-  const url = new URL(PASSWORD_RESET_CALLBACK_URL);
-  url.searchParams.set("next", "/auth/reset-password");
-  return url.toString();
+  const callbackUrl = isNative ? OAUTH_REDIRECT_URL : PASSWORD_RESET_CALLBACK_URL;
+  return `${callbackUrl}?next=/auth/reset-password`;
 }
 
 function shouldShowRequestError(error: { message?: string; status?: number }): boolean {

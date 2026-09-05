@@ -7,10 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Leaf, Loader2 } from "lucide-react";
 
 const EMAIL_CONFIRMATION_CALLBACK_URL = "https://nutriai-cyan.vercel.app/auth/callback";
+const PASSWORD_RESET_CALLBACK_URL = "https://nutriai-cyan.vercel.app/auth/callback";
+const forgotEmailSchema = z.string().trim().email();
 
 const searchSchema = z.object({
   next: z.string().optional(),
@@ -49,6 +60,11 @@ function AuthPage() {
   const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState("");
   const [resendLoading, setResendLoading] = useState(false);
   const [resendAvailableAt, setResendAvailableAt] = useState(0);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotError, setForgotError] = useState<string | null>(null);
 
   useEffect(() => {
     if (mode) setTab(mode);
@@ -133,6 +149,42 @@ function AuthPage() {
     toast.success("Confirmation email sent. Check your email to confirm your account.");
   }
 
+  function handleForgotOpenChange(open: boolean) {
+    setForgotOpen(open);
+    if (open) {
+      setForgotEmail(email.trim());
+      setForgotError(null);
+      setForgotSent(false);
+      return;
+    }
+    setForgotLoading(false);
+  }
+
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (forgotLoading) return;
+
+    const parsed = forgotEmailSchema.safeParse(forgotEmail);
+    if (!parsed.success) {
+      setForgotError("Enter a valid email address.");
+      return;
+    }
+
+    setForgotError(null);
+    setForgotLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, {
+      redirectTo: passwordResetRedirectUrl(),
+    });
+    setForgotLoading(false);
+
+    if (error && shouldShowPasswordResetRequestError(error)) {
+      setForgotError(passwordResetRequestErrorMessage(error));
+      return;
+    }
+
+    setForgotSent(true);
+  }
+
   async function handleGoogle() {
     setLoading(true);
 
@@ -207,12 +259,13 @@ function AuthPage() {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">Password</Label>
-                    <Link
-                      to="/auth/forgot-password"
-                      className="text-xs text-muted-foreground underline underline-offset-2"
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      onClick={() => handleForgotOpenChange(true)}
                     >
                       Forgot password?
-                    </Link>
+                    </button>
                   </div>
                   <Input
                     id="password"
@@ -325,6 +378,58 @@ function AuthPage() {
             .
           </p>
         </div>
+
+        <Dialog open={forgotOpen} onOpenChange={handleForgotOpenChange}>
+          <DialogContent className="mx-4 max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-lg">
+            <DialogHeader>
+              <DialogTitle>Forgot Password</DialogTitle>
+              <DialogDescription>
+                Enter your email address and we'll send you a password reset link.
+              </DialogDescription>
+            </DialogHeader>
+
+            {forgotSent ? (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Password reset link sent. Please check your email.
+                </p>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" className="w-full sm:w-auto">
+                      Close
+                    </Button>
+                  </DialogClose>
+                </DialogFooter>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="forgot-password-email">Email</Label>
+                  <Input
+                    id="forgot-password-email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                  />
+                </div>
+                {forgotError && <p className="text-sm text-destructive">{forgotError}</p>}
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <DialogClose asChild>
+                    <Button type="button" variant="outline" disabled={forgotLoading}>
+                      Close
+                    </Button>
+                  </DialogClose>
+                  <Button type="submit" disabled={forgotLoading}>
+                    {forgotLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Send Reset Link
+                  </Button>
+                </DialogFooter>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
@@ -336,10 +441,47 @@ function safeNext(next: string | undefined): string {
   return next;
 }
 
+function passwordResetRedirectUrl(): string {
+  const callbackUrl = isNative ? OAUTH_REDIRECT_URL : PASSWORD_RESET_CALLBACK_URL;
+  return `${callbackUrl}?next=/auth/reset-password`;
+}
+
 function confirmationRedirectUrl(nextPath: string): string {
   const url = new URL(EMAIL_CONFIRMATION_CALLBACK_URL);
   url.searchParams.set("next", nextPath);
   return url.toString();
+}
+
+function shouldShowPasswordResetRequestError(error: {
+  message?: string;
+  status?: number;
+}): boolean {
+  const lower = (error.message ?? "").toLowerCase();
+  return (
+    error.status === 429 ||
+    lower.includes("rate") ||
+    lower.includes("network") ||
+    lower.includes("fetch") ||
+    lower.includes("failed to") ||
+    lower.includes("smtp") ||
+    lower.includes("mail")
+  );
+}
+
+function passwordResetRequestErrorMessage(error: { message?: string; status?: number }): string {
+  const lower = (error.message ?? "").toLowerCase();
+
+  if (error.status === 429 || lower.includes("rate")) {
+    return "Too many reset emails were requested. Please wait a minute and try again.";
+  }
+  if (lower.includes("network") || lower.includes("fetch") || lower.includes("failed to")) {
+    return "Network error. Check your connection and try again.";
+  }
+  if (lower.includes("smtp") || lower.includes("mail")) {
+    return "Password reset email delivery is not configured correctly. Please contact support.";
+  }
+
+  return "We couldn't send the reset email right now. Please try again.";
 }
 
 function isUnconfirmedEmailError(error: { message?: string; code?: string }): boolean {
