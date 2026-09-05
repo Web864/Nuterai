@@ -9,6 +9,8 @@ export type Theme = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";
 
 export const THEME_STORAGE_KEY = "nutriai-theme";
+export const LIGHT_THEME_COLOR = "#F5F1E8";
+export const DARK_THEME_COLOR = "#18251F";
 
 export function isTheme(value: unknown): value is Theme {
   return value === "light" || value === "dark" || value === "system";
@@ -40,6 +42,9 @@ export function readStoredTheme(): Theme {
 export function applyResolvedTheme(resolved: ResolvedTheme): void {
   document.documentElement.classList.toggle("dark", resolved === "dark");
   document.documentElement.style.colorScheme = resolved;
+  document
+    .querySelector('meta[name="theme-color"]:not([media])')
+    ?.setAttribute("content", resolved === "dark" ? DARK_THEME_COLOR : LIGHT_THEME_COLOR);
 }
 
 /**
@@ -53,4 +58,4 @@ export function applyResolvedTheme(resolved: ResolvedTheme): void {
  */
 export const THEME_INIT_SCRIPT = `(function(){try{var k=${JSON.stringify(
   THEME_STORAGE_KEY,
-)},s=localStorage.getItem(k),m=(s==="light"||s==="dark")?s:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");if(m==="dark")document.documentElement.classList.add("dark");document.documentElement.style.colorScheme=m;}catch(e){}})();`;
+)},s=localStorage.getItem(k),m=(s==="light"||s==="dark")?s:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");if(m==="dark")document.documentElement.classList.add("dark");document.documentElement.style.colorScheme=m;var t=document.querySelector('meta[name="theme-color"]:not([media])');if(t)t.setAttribute("content",m==="dark"?"#18251F":"#F5F1E8");}catch(e){}})();`;

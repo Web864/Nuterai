@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { applyNativeTheme } from "@/lib/native";
 import {
   applyResolvedTheme,
   readStoredTheme,
@@ -34,6 +35,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const applyTheme = useCallback((next: Theme) => {
     const resolved = resolveTheme(next);
     applyResolvedTheme(resolved);
+    void applyNativeTheme(resolved);
     setResolvedTheme(resolved);
   }, []);
 
@@ -78,7 +80,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     [applyTheme],
   );
 
-  const value = useMemo(() => ({ theme, resolvedTheme, setTheme }), [theme, resolvedTheme, setTheme]);
+  const value = useMemo(
+    () => ({ theme, resolvedTheme, setTheme }),
+    [theme, resolvedTheme, setTheme],
+  );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

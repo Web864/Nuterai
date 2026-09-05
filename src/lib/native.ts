@@ -6,6 +6,7 @@
 import { Capacitor } from "@capacitor/core";
 import type { AnyRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { DARK_THEME_COLOR, LIGHT_THEME_COLOR, type ResolvedTheme } from "@/lib/theme";
 
 export const isNative = Capacitor.isNativePlatform();
 
@@ -19,17 +20,12 @@ export async function initializeNative(router: AnyRouter): Promise<void> {
   if (!isNative || initialized) return;
   initialized = true;
 
-  const [{ StatusBar, Style }, { SplashScreen }, { App }] = await Promise.all([
-    import("@capacitor/status-bar"),
+  const [{ SplashScreen }, { App }] = await Promise.all([
     import("@capacitor/splash-screen"),
     import("@capacitor/app"),
   ]);
 
-  // Status bar is brand dark-green, so use the "Dark" style — Capacitor's
-  // naming refers to the background, and it renders light/white icon+text
-  // content, which is what's legible against a dark bar.
-  await StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
-  await StatusBar.setBackgroundColor({ color: "#0F3D2E" }).catch(() => {});
+  await applyNativeTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
 
   void setupNetworkStatus();
 
@@ -67,6 +63,18 @@ export async function initializeNative(router: AnyRouter): Promise<void> {
  * silently breaks its automatic refetch-on-reconnect behavior. Capacitor's
  * Network plugin reads the OS-level connection state instead.
  */
+export async function applyNativeTheme(resolved: ResolvedTheme): Promise<void> {
+  if (!isNative) return;
+
+  const { StatusBar, Style } = await import("@capacitor/status-bar");
+  await StatusBar.setStyle({ style: resolved === "dark" ? Style.Dark : Style.Light }).catch(
+    () => {},
+  );
+  await StatusBar.setBackgroundColor({
+    color: resolved === "dark" ? DARK_THEME_COLOR : LIGHT_THEME_COLOR,
+  }).catch(() => {});
+}
+
 async function setupNetworkStatus(): Promise<void> {
   const [{ Network }, { onlineManager }] = await Promise.all([
     import("@capacitor/network"),

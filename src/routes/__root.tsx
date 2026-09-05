@@ -15,7 +15,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { registerServiceWorker } from "../lib/pwa";
 import { initializeNative } from "../lib/native";
-import { THEME_INIT_SCRIPT } from "../lib/theme";
+import { DARK_THEME_COLOR, LIGHT_THEME_COLOR, THEME_INIT_SCRIPT } from "../lib/theme";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
@@ -79,7 +79,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "theme-color", content: "#0F3D2E" },
+      { name: "theme-color", content: LIGHT_THEME_COLOR },
+      { name: "theme-color", media: "(prefers-color-scheme: light)", content: LIGHT_THEME_COLOR },
+      { name: "theme-color", media: "(prefers-color-scheme: dark)", content: DARK_THEME_COLOR },
       { title: "NutriAI — Your Personal AI Health & Lifestyle Coach" },
       {
         name: "description",
@@ -97,7 +99,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@NutriAI" },
       { name: "twitter:title", content: "NutriAI — Your Personal AI Health & Lifestyle Coach" },
-      { name: "twitter:description", content: "NutriAI adapts to your body, goals, and lifestyle to create the perfect nutrition, fitness, and wellness plan — powered by AI." },
+      {
+        name: "twitter:description",
+        content:
+          "NutriAI adapts to your body, goals, and lifestyle to create the perfect nutrition, fitness, and wellness plan — powered by AI.",
+      },
       { property: "og:image", content: "/og-image.jpg" },
       { name: "twitter:image", content: "/og-image.jpg" },
     ],

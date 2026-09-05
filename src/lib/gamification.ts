@@ -27,12 +27,7 @@ import {
 
 export type StreakKind = "workout" | "nutrition" | "water" | "login" | "coach" | "reminder";
 export type AchievementCategory =
-  | "nutrition"
-  | "workout"
-  | "hydration"
-  | "consistency"
-  | "community"
-  | "milestone";
+  "nutrition" | "workout" | "hydration" | "consistency" | "community" | "milestone";
 export type AchievementDifficulty = "bronze" | "silver" | "gold" | "platinum";
 
 /** Cumulative XP required to *reach* a level. Level 1 = 0, 2 = 100, 3 = 300, 4 = 600... */
@@ -169,7 +164,7 @@ export const DIFFICULTY_STYLES: Record<
 > = {
   bronze: {
     label: "Bronze",
-    className: "bg-[#B87333]/15 text-[#8a5522] border-[#B87333]/30 dark:text-[#D9A066]",
+    className: "bg-warning/20 text-warning-foreground border-warning/40",
   },
   silver: { label: "Silver", className: "bg-muted text-muted-foreground border-border" },
   gold: { label: "Gold", className: "bg-accent/20 text-accent-foreground border-accent/40" },
