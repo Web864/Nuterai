@@ -19,6 +19,9 @@ const NETWORK_ERROR_MESSAGE =
 
 const MODEL = "gemini-flash-latest";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+const COACH_TIMEOUT_MS = 40_000;
+const MAX_HISTORY_MESSAGES = 8;
+const MAX_HISTORY_MESSAGE_CHARS = 1_200;
 
 const InputSchema = z.object({
   thread_id: z.string().uuid(),
@@ -55,19 +58,19 @@ async function buildUserContext(
       .select("name, calories_kcal, protein_g, carbs_g, fat_g, logged_at")
       .eq("user_id", userId)
       .order("logged_at", { ascending: false })
-      .limit(10),
+      .limit(3),
     supabase
       .from("workout_sessions")
       .select("name, duration_minutes, calories_kcal, logged_at")
       .eq("user_id", userId)
       .order("logged_at", { ascending: false })
-      .limit(5),
+      .limit(3),
     supabase
       .from("weight_logs")
       .select("weight_kg, logged_at")
       .eq("user_id", userId)
       .order("logged_at", { ascending: false })
-      .limit(5),
+      .limit(3),
   ]);
 
   if (import.meta.env.DEV) {
@@ -137,149 +140,202 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("AI is not configured. Please contact support.");
 
     const { supabase, userId } = context;
+    const requestStarted = performance.now();
+    if (import.meta.env.DEV) console.info("[timing] ai.coach.request start");
 
-    await enforceAiRateLimit(supabase, "coach");
+    try {
+      await enforceAiRateLimit(supabase, "coach");
 
-    // Verify thread ownership
-    const { data: thread, error: threadErr } = await supabase
-      .from("coach_threads")
-      .select("id, user_id, title")
-      .eq("id", data.thread_id)
-      .maybeSingle();
-    if (threadErr || !thread || thread.user_id !== userId) {
-      throw new Error("Thread not found.");
-    }
+      // Verify thread ownership
+      const { data: thread, error: threadErr } = await supabase
+        .from("coach_threads")
+        .select("id, user_id, title")
+        .eq("id", data.thread_id)
+        .maybeSingle();
+      if (threadErr || !thread || thread.user_id !== userId) {
+        throw new Error("Thread not found.");
+      }
 
-    // Fetch prior messages (last 12 for context — see Phase 1 data-minimization
-    // note: fewer raw historical turns re-sent to the AI provider on every
-    // request, while still enough for the common follow-up-question case).
-    const { data: history } = await supabase
-      .from("coach_messages")
-      .select("role, content")
-      .eq("thread_id", data.thread_id)
-      .order("created_at", { ascending: true })
-      .limit(12);
+      // Keep the latest useful conversation context bounded so it cannot make
+      // otherwise simple Coach requests slow or exceed the provider's limits.
+      const { data: history } = await supabase
+        .from("coach_messages")
+        .select("role, content")
+        .eq("thread_id", data.thread_id)
+        .order("created_at", { ascending: false })
+        .limit(MAX_HISTORY_MESSAGES);
 
-    // Persist the user message
-    const { error: insertUserErr } = await supabase.from("coach_messages").insert({
-      thread_id: data.thread_id,
-      user_id: userId,
-      role: "user",
-      content: data.message,
-    });
-    if (insertUserErr) throw new Error(insertUserErr.message);
+      // Persist the user message
+      const { error: insertUserErr } = await supabase.from("coach_messages").insert({
+        thread_id: data.thread_id,
+        user_id: userId,
+        role: "user",
+        content: data.message,
+      });
+      if (insertUserErr) throw new Error(insertUserErr.message);
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const risk = classifyHealthRisk(data.message);
+      const risk = classifyHealthRisk(data.message);
 
-    if (risk.crisis) {
-      void logAiSafetyEvent(userId, "coach", "crisis_input");
-      const { data: safeMsg, error: insertSafeErr } = await supabaseAdmin
+      if (risk.crisis) {
+        void logAiSafetyEvent(userId, "coach", "crisis_input");
+        const { data: safeMsg, error: insertSafeErr } = await supabaseAdmin
+          .from("coach_messages")
+          .insert({
+            thread_id: data.thread_id,
+            user_id: userId,
+            role: "assistant",
+            content: CRISIS_SAFE_RESPONSE,
+            model: MODEL,
+          })
+          .select()
+          .single();
+        if (insertSafeErr) throw new Error(insertSafeErr.message);
+
+        await supabase
+          .from("coach_threads")
+          .update({
+            last_message_preview: CRISIS_SAFE_RESPONSE.slice(0, 140),
+            last_message_at: new Date().toISOString(),
+          })
+          .eq("id", data.thread_id);
+
+        return { message: safeMsg, model: MODEL };
+      }
+
+      if (risk.medical) void logAiSafetyEvent(userId, "coach", "medical_input");
+
+      const promptStarted = performance.now();
+      // Build user context
+      const userContext = await buildUserContext(supabase, userId);
+      const systemContent = risk.medical
+        ? `${SYSTEM_PROMPT}\n\n${MEDICAL_INPUT_REINFORCEMENT}\n\n${userContext}`
+        : `${SYSTEM_PROMPT}\n\n${userContext}`;
+
+      const messages: Array<{ role: string; content: string }> = [
+        { role: "system", content: systemContent },
+        ...(history ?? [])
+          .slice()
+          .reverse()
+          .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_HISTORY_MESSAGE_CHARS) })),
+        { role: "user", content: data.message },
+      ];
+      if (import.meta.env.DEV) {
+        console.info("[timing] ai.coach.prompt_prepared", {
+          durationMs: Math.round(performance.now() - promptStarted),
+          historyMessages: history?.length ?? 0,
+          promptChars: messages.reduce((total, message) => total + message.content.length, 0),
+        });
+      }
+
+      let res: Response;
+      try {
+        res = await fetchWithTimeout(
+          GEMINI_URL,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ model: MODEL, messages }),
+          },
+          { timeoutMs: COACH_TIMEOUT_MS, label: "ai.coach.gemini" },
+        );
+      } catch (err) {
+        if (isTimeoutError(err)) {
+          throw new Error("The AI Coach took too long to respond. Please try again.");
+        }
+        if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
+        throw err;
+      }
+
+      if (res.status === 429) throw new Error("Rate limit reached. Please try again in a moment.");
+      if (!res.ok) {
+        const providerError = await readProviderError(res);
+        if (import.meta.env.DEV) {
+          console.info("[timing] ai.coach.provider_error", { status: res.status, providerError });
+        }
+        if (res.status === 408 || res.status === 504) {
+          throw new Error("The AI Coach took too long to respond. Please try again.");
+        }
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("The AI Coach is temporarily unavailable. Please try again later.");
+        }
+        if (res.status >= 500) {
+          throw new Error("The AI provider is temporarily unavailable. Please try again shortly.");
+        }
+        throw new Error("The AI Coach couldn't process this request. Please try again.");
+      }
+
+      let payload: {
+        choices?: Array<{ message?: { content?: string } }>;
+        usage?: { prompt_tokens?: number; completion_tokens?: number };
+      };
+      try {
+        payload = (await res.json()) as typeof payload;
+      } catch {
+        throw new Error("The AI Coach returned an invalid response. Please try again.");
+      }
+
+      let reply = payload.choices?.[0]?.message?.content?.trim();
+      if (!reply) throw new Error("The AI didn't return a response. Please try again.");
+
+      if (scanReplyForUnsafePatterns(reply)) {
+        void logAiSafetyEvent(userId, "coach", "unsafe_output");
+        reply = UNSAFE_OUTPUT_FALLBACK;
+      }
+
+      // Persist assistant message via the service-role client: RLS restricts
+      // client-authenticated inserts to role = 'user' so a browser can't forge
+      // assistant/system turns and inject instructions into the AI prompt.
+      const { data: assistantMsg, error: insertAiErr } = await supabaseAdmin
         .from("coach_messages")
         .insert({
           thread_id: data.thread_id,
           user_id: userId,
           role: "assistant",
-          content: CRISIS_SAFE_RESPONSE,
+          content: reply,
           model: MODEL,
+          tokens_in: payload.usage?.prompt_tokens ?? null,
+          tokens_out: payload.usage?.completion_tokens ?? null,
         })
         .select()
         .single();
-      if (insertSafeErr) throw new Error(insertSafeErr.message);
+      if (insertAiErr) throw new Error(insertAiErr.message);
 
-      await supabase
-        .from("coach_threads")
-        .update({
-          last_message_preview: CRISIS_SAFE_RESPONSE.slice(0, 140),
-          last_message_at: new Date().toISOString(),
-        })
-        .eq("id", data.thread_id);
+      // Update thread preview + auto-title first message
+      const preview = reply.slice(0, 140);
+      const patch: { last_message_preview: string; last_message_at: string; title?: string } = {
+        last_message_preview: preview,
+        last_message_at: new Date().toISOString(),
+      };
+      if ((!thread.title || thread.title === "New conversation") && !history?.length) {
+        patch.title = data.message.slice(0, 60);
+      }
+      await supabase.from("coach_threads").update(patch).eq("id", data.thread_id);
 
-      return { message: safeMsg, model: MODEL };
+      return { message: assistantMsg, model: MODEL };
+    } finally {
+      if (import.meta.env.DEV) {
+        console.info("[timing] ai.coach.request end", {
+          durationMs: Math.round(performance.now() - requestStarted),
+        });
+      }
     }
-
-    if (risk.medical) void logAiSafetyEvent(userId, "coach", "medical_input");
-
-    // Build user context
-    const userContext = await buildUserContext(supabase, userId);
-    const systemContent = risk.medical
-      ? `${SYSTEM_PROMPT}\n\n${MEDICAL_INPUT_REINFORCEMENT}\n\n${userContext}`
-      : `${SYSTEM_PROMPT}\n\n${userContext}`;
-
-    const messages: Array<{ role: string; content: string }> = [
-      { role: "system", content: systemContent },
-      ...(history ?? []).map((m) => ({ role: m.role, content: m.content })),
-      { role: "user", content: data.message },
-    ];
-
-    let res: Response;
-    try {
-      res = await fetchWithTimeout(
-        GEMINI_URL,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ model: MODEL, messages }),
-        },
-        { timeoutMs: 25000, label: "ai.coach.gemini" },
-      );
-    } catch (err) {
-      if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
-      throw err;
-    }
-
-    if (res.status === 429) throw new Error("Rate limit reached. Please try again in a moment.");
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error("[sendCoachMessage] gateway error", res.status, text);
-      throw new Error("Couldn't reach the AI service. Please try again.");
-    }
-
-    const payload = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-      usage?: { prompt_tokens?: number; completion_tokens?: number };
-    };
-
-    let reply = payload.choices?.[0]?.message?.content?.trim();
-    if (!reply) throw new Error("The AI didn't return a response. Please try again.");
-
-    if (scanReplyForUnsafePatterns(reply)) {
-      void logAiSafetyEvent(userId, "coach", "unsafe_output");
-      reply = UNSAFE_OUTPUT_FALLBACK;
-    }
-
-    // Persist assistant message via the service-role client: RLS restricts
-    // client-authenticated inserts to role = 'user' so a browser can't forge
-    // assistant/system turns and inject instructions into the AI prompt.
-    const { data: assistantMsg, error: insertAiErr } = await supabaseAdmin
-      .from("coach_messages")
-      .insert({
-        thread_id: data.thread_id,
-        user_id: userId,
-        role: "assistant",
-        content: reply,
-        model: MODEL,
-        tokens_in: payload.usage?.prompt_tokens ?? null,
-        tokens_out: payload.usage?.completion_tokens ?? null,
-      })
-      .select()
-      .single();
-    if (insertAiErr) throw new Error(insertAiErr.message);
-
-    // Update thread preview + auto-title first message
-    const preview = reply.slice(0, 140);
-    const patch: { last_message_preview: string; last_message_at: string; title?: string } = {
-      last_message_preview: preview,
-      last_message_at: new Date().toISOString(),
-    };
-    if ((!thread.title || thread.title === "New conversation") && !history?.length) {
-      patch.title = data.message.slice(0, 60);
-    }
-    await supabase.from("coach_threads").update(patch).eq("id", data.thread_id);
-
-    return { message: assistantMsg, model: MODEL };
   });
+
+function isTimeoutError(err: unknown): boolean {
+  return err instanceof DOMException && (err.name === "TimeoutError" || err.name === "AbortError");
+}
+
+async function readProviderError(response: Response): Promise<string | number | undefined> {
+  const text = await response.text().catch(() => "");
+  try {
+    const payload = JSON.parse(text) as { error?: { code?: string | number; status?: string } };
+    return payload.error?.code ?? payload.error?.status;
+  } catch {
+    return undefined;
+  }
+}

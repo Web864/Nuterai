@@ -227,6 +227,7 @@ function ChatPanel({
   const { track } = useGamification(userId);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const sendInFlightRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -238,7 +239,8 @@ function ChatPanel({
 
   async function handleSend(text?: string) {
     const content = (text ?? input).trim();
-    if (!content || sending) return;
+    if (!content || sendInFlightRef.current) return;
+    sendInFlightRef.current = true;
     setInput("");
     setSending(true);
     // Optimistic append
@@ -269,6 +271,7 @@ function ChatPanel({
       // rollback optimistic
       await qc.invalidateQueries({ queryKey: ["coach-messages", threadId] });
     } finally {
+      sendInFlightRef.current = false;
       setSending(false);
     }
   }
@@ -288,6 +291,7 @@ function ChatPanel({
                 <button
                   key={s}
                   onClick={() => handleSend(s)}
+                  disabled={sending}
                   className="rounded-2xl border border-border/60 bg-card px-4 py-3 text-left text-sm transition-organic hover:border-accent/40 hover:bg-secondary/50"
                 >
                   {s}
