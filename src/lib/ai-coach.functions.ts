@@ -229,58 +229,8 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
         });
       }
 
-      let res: Response;
-      try {
-        res = await fetchWithTimeout(
-          GEMINI_URL,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ model: MODEL, messages }),
-          },
-          { timeoutMs: COACH_TIMEOUT_MS, label: "ai.coach.gemini" },
-        );
-      } catch (err) {
-        if (isTimeoutError(err)) {
-          throw new Error("The AI Coach took too long to respond. Please try again.");
-        }
-        if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
-        throw err;
-      }
-
-      if (res.status === 429) throw new Error("Rate limit reached. Please try again in a moment.");
-      if (!res.ok) {
-        const providerError = await readProviderError(res);
-        if (import.meta.env.DEV) {
-          console.info("[timing] ai.coach.provider_error", { status: res.status, providerError });
-        }
-        if (res.status === 408 || res.status === 504) {
-          throw new Error("The AI Coach took too long to respond. Please try again.");
-        }
-        if (res.status === 401 || res.status === 403) {
-          throw new Error("The AI Coach is temporarily unavailable. Please try again later.");
-        }
-        if (res.status >= 500) {
-          throw new Error("The AI provider is temporarily unavailable. Please try again shortly.");
-        }
-        throw new Error("The AI Coach couldn't process this request. Please try again.");
-      }
-
-      let payload: {
-        choices?: Array<{ message?: { content?: string } }>;
-        usage?: { prompt_tokens?: number; completion_tokens?: number };
-      };
-      try {
-        payload = (await res.json()) as typeof payload;
-      } catch {
-        throw new Error("The AI Coach returned an invalid response. Please try again.");
-      }
-
-      let reply = payload.choices?.[0]?.message?.content?.trim();
-      if (!reply) throw new Error("The AI didn't return a response. Please try again.");
+      const generation = await generateCoachResponse(messages, apiKey);
+      let reply = generation.reply;
 
       if (scanReplyForUnsafePatterns(reply)) {
         void logAiSafetyEvent(userId, "coach", "unsafe_output");
@@ -316,7 +266,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
       }
       await supabase.from("coach_threads").update(patch).eq("id", data.thread_id);
 
-      return { message: assistantMsg, model: MODEL };
+      return { message: assistantMsg, model: generation.model };
     } finally {
       if (import.meta.env.DEV) {
         console.info("[timing] ai.coach.request end", {
@@ -326,8 +276,195 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     }
   });
 
+type CoachMessage = { role: string; content: string };
+type ProviderName = "gemini" | "openai";
+
+type CoachGeneration = {
+  reply: string;
+  model: string;
+  tokensIn: number | null;
+  tokensOut: number | null;
+};
+
+class CoachProviderError extends Error {
+  constructor(
+    message: string,
+    readonly transient: boolean,
+    readonly status?: number,
+    readonly code?: string | number,
+  ) {
+    super(message);
+  }
+}
+
+async function generateCoachResponse(
+  messages: CoachMessage[],
+  geminiApiKey: string,
+): Promise<CoachGeneration> {
+  let failure: unknown;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      return await generateFromProvider({
+        provider: "gemini",
+        model: MODEL,
+        apiKey: geminiApiKey,
+        messages,
+        timeoutMs: GEMINI_TIMEOUT_MS,
+        fallbackUsed: false,
+        attempt,
+      });
+    } catch (err) {
+      failure = err;
+      if (!isTransientProviderFailure(err) || attempt === 2) break;
+    }
+  }
+
+  if (!isTransientProviderFailure(failure)) throw failure;
+  const openAiApiKey = process.env.OPENAI_API_KEY;
+  if (!openAiApiKey) throw new Error("AI Coach is temporarily unavailable. Please try again.");
+
+  try {
+    return await generateFromProvider({
+      provider: "openai",
+      model: OPENAI_MODEL,
+      apiKey: openAiApiKey,
+      messages,
+      timeoutMs: OPENAI_TIMEOUT_MS,
+      fallbackUsed: true,
+      attempt: 1,
+    });
+  } catch {
+    throw new Error("AI Coach is temporarily unavailable. Please try again.");
+  }
+}
+
+async function generateFromProvider({
+  provider,
+  model,
+  apiKey,
+  messages,
+  timeoutMs,
+  fallbackUsed,
+  attempt,
+}: {
+  provider: ProviderName;
+  model: string;
+  apiKey: string;
+  messages: CoachMessage[];
+  timeoutMs: number;
+  fallbackUsed: boolean;
+  attempt: number;
+}): Promise<CoachGeneration> {
+  const started = performance.now();
+  const url = provider === "gemini" ? GEMINI_URL : OPENAI_URL;
+  if (import.meta.env.DEV) {
+    console.info("[timing] ai.coach.provider_start", { provider, model, fallbackUsed, attempt });
+  }
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model, messages }),
+      },
+      { timeoutMs, label: `ai.coach.${provider}.${attempt}` },
+    );
+    if (!response.ok) {
+      const code = await readProviderError(response);
+      throw new CoachProviderError(
+        providerStatusMessage(response.status),
+        isTransientStatus(response.status),
+        response.status,
+        code,
+      );
+    }
+
+    let payload: {
+      choices?: Array<{ message?: { content?: string } }>;
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
+    };
+    try {
+      payload = (await response.json()) as typeof payload;
+    } catch {
+      throw new CoachProviderError(
+        "The AI Coach returned an invalid response. Please try again.",
+        false,
+      );
+    }
+    const reply = payload.choices?.[0]?.message?.content?.trim();
+    if (!reply)
+      throw new CoachProviderError(
+        "The AI Coach returned an invalid response. Please try again.",
+        false,
+      );
+
+    if (import.meta.env.DEV) {
+      console.info("[timing] ai.coach.provider_end", {
+        provider,
+        model,
+        status: response.status,
+        durationMs: Math.round(performance.now() - started),
+        fallbackUsed,
+      });
+    }
+    return {
+      reply,
+      model,
+      tokensIn: payload.usage?.prompt_tokens ?? null,
+      tokensOut: payload.usage?.completion_tokens ?? null,
+    };
+  } catch (err) {
+    const failure = toCoachProviderError(err);
+    if (import.meta.env.DEV) {
+      console.info("[timing] ai.coach.provider_failed", {
+        provider,
+        model,
+        status: failure.status,
+        code: failure.code,
+        durationMs: Math.round(performance.now() - started),
+        fallbackUsed,
+      });
+    }
+    throw failure;
+  }
+}
+
 function isTimeoutError(err: unknown): boolean {
   return err instanceof DOMException && (err.name === "TimeoutError" || err.name === "AbortError");
+}
+
+function isTransientStatus(status: number): boolean {
+  return status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+}
+
+function isTransientProviderFailure(err: unknown): boolean {
+  return err instanceof CoachProviderError && err.transient;
+}
+
+function toCoachProviderError(err: unknown): CoachProviderError {
+  if (err instanceof CoachProviderError) return err;
+  if (isTimeoutError(err)) {
+    return new CoachProviderError(
+      "The AI Coach took too long to respond. Please try again.",
+      true,
+      408,
+      "timeout",
+    );
+  }
+  if (isNetworkOrTimeoutError(err)) {
+    return new CoachProviderError(NETWORK_ERROR_MESSAGE, true, undefined, "network");
+  }
+  return new CoachProviderError("AI Coach is temporarily unavailable. Please try again.", false);
+}
+
+function providerStatusMessage(status: number): string {
+  if (status === 429) return "The AI Coach is busy. Please wait a moment and try again.";
+  if (status === 401 || status === 403)
+    return "The AI Coach configuration needs attention. Please contact support.";
+  if (status >= 500) return "The AI provider is temporarily unavailable. Please try again shortly.";
+  return "The AI Coach couldn't process this request. Please try again.";
 }
 
 async function readProviderError(response: Response): Promise<string | number | undefined> {

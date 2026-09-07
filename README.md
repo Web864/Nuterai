@@ -19,7 +19,7 @@ npm run dev
 ```
 
 Copy `.env.example` to `.env` and fill in your own Supabase project URL/keys
-and `GEMINI_API_KEY` before running the app.
+and `GEMINI_API_KEY` before running the app. Set `OPENAI_API_KEY` to enable the Coach fallback provider.
 
 ## Scripts
 
