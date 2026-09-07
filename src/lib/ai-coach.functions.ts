@@ -19,7 +19,8 @@ const NETWORK_ERROR_MESSAGE =
 
 const MODEL = "gemini-flash-latest";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-const COACH_TIMEOUT_MS = 40_000;
+const GEMINI_TIMEOUT_MS = 20_000;
+const OPENAI_TIMEOUT_MS = 20_000;
 const MAX_HISTORY_MESSAGES = 8;
 const MAX_HISTORY_MESSAGE_CHARS = 1_200;
 
