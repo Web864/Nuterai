@@ -41,6 +41,7 @@ async function buildUserContext(
   supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<string> {
+  const started = performance.now();
   const [goalsRes, mealsRes, workoutsRes, weightRes] = await Promise.all([
     supabase
       .from("user_goals")
@@ -69,6 +70,11 @@ async function buildUserContext(
       .limit(5),
   ]);
 
+  if (import.meta.env.DEV) {
+    console.info("[timing] ai.coach.supabase_context end", {
+      durationMs: Math.round(performance.now() - started),
+    });
+  }
   const goals = goalsRes.data;
   const meals = mealsRes.data ?? [];
   const workouts = workoutsRes.data ?? [];
@@ -219,7 +225,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
           },
           body: JSON.stringify({ model: MODEL, messages }),
         },
-        25000,
+        { timeoutMs: 25000, label: "ai.coach.gemini" },
       );
     } catch (err) {
       if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);

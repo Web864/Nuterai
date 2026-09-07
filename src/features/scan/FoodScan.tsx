@@ -60,6 +60,8 @@ export function currentMealType(): MealType {
 }
 
 const BARCODE_RE = /^\d{6,14}$/;
+const MAX_SOURCE_IMAGE_BYTES = 20 * 1024 * 1024;
+const MAX_ANALYSIS_IMAGE_DATA_URL_BYTES = 1_500_000;
 
 // ============================================================
 // PHOTO TAB
@@ -98,18 +100,22 @@ export function PhotoTab({ userId }: { userId: string }) {
       toast.error("Please select a valid image.");
       return;
     }
-    if (f.size > 8 * 1024 * 1024) {
-      toast.error("Image is too large. Please choose a smaller image (max 8MB).");
+    if (f.size > MAX_SOURCE_IMAGE_BYTES) {
+      toast.error("Image is too large. Please choose a photo under 20MB.");
       return;
     }
-    // Show the picked image immediately, before any processing/analysis.
-    const dataUrl = await downscaleImage(f, 1280);
+    // Show the picked image immediately, after shrinking it to keep AI upload latency low.
+    const dataUrl = await downscaleImage(f, {
+      maxDim: 1024,
+      maxBytes: MAX_ANALYSIS_IMAGE_DATA_URL_BYTES,
+    });
     setPreview(dataUrl);
     setResult(null);
     setItems([]);
   }
 
   async function runAnalyze() {
+    if (busy) return;
     if (!preview) {
       toast.error("Please select or take a food image.");
       return;
@@ -156,6 +162,7 @@ export function PhotoTab({ userId }: { userId: string }) {
   }
 
   async function saveAll() {
+    if (busy) return;
     const chosen = items.filter((i) => i.selected);
     if (!chosen.length) {
       toast.error("Select at least one item.");
@@ -474,6 +481,7 @@ export function BarcodeTab({ userId }: { userId: string }) {
   }, []);
 
   async function handleBarcode(code: string) {
+    if (busy) return;
     const trimmed = code.trim();
     if (!BARCODE_RE.test(trimmed)) {
       toast.error("That doesn't look like a valid barcode. Please try again or enter it manually.");
@@ -499,6 +507,7 @@ export function BarcodeTab({ userId }: { userId: string }) {
   }
 
   async function startScan() {
+    if (busy || scanning) return;
     setScanning(true);
     setProduct(null);
     setNotFound(null);
@@ -650,6 +659,7 @@ function ProductCard({
   const f = Math.round(product.fat_g * qty * 10) / 10;
 
   async function save() {
+    if (busy) return;
     setBusy(true);
     try {
       const row: TablesInsert<"meal_entries"> = {
@@ -807,6 +817,7 @@ function CustomFoodForm({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     if (!name.trim() || !cal) {
       toast.error("Name and calories are required.");
       return;
@@ -911,7 +922,7 @@ export function SearchTab({ userId }: { userId: string }) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (q.trim().length < 2) return;
+    if (busy || q.trim().length < 2) return;
     setBusy(true);
     try {
       const r = await search({ data: { query: q.trim() } });
@@ -1044,25 +1055,56 @@ export function SearchTab({ userId }: { userId: string }) {
 // UTILS
 // ============================================================
 
-async function downscaleImage(file: File, maxDim: number): Promise<string> {
+async function downscaleImage(
+  file: File,
+  options: { maxDim: number; maxBytes: number },
+): Promise<string> {
+  const started = performance.now();
   const bitmap = await createImageBitmap(file).catch(() => null);
-  if (!bitmap) {
-    // Fallback: read as data URL directly
-    return await new Promise((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = () => resolve(r.result as string);
-      r.onerror = () => reject(new Error("Read failed"));
-      r.readAsDataURL(file);
-    });
-  }
-  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
-  const w = Math.round(bitmap.width * scale);
-  const h = Math.round(bitmap.height * scale);
+  const source = bitmap ?? (await loadImage(file));
+  const scale = Math.min(1, options.maxDim / Math.max(source.width, source.height));
+  const w = Math.round(source.width * scale);
+  const h = Math.round(source.height * scale);
   const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas not supported");
-  ctx.drawImage(bitmap, 0, 0, w, h);
-  return canvas.toDataURL("image/jpeg", 0.85);
+  ctx.drawImage(source, 0, 0, w, h);
+
+  for (const quality of [0.78, 0.68, 0.58]) {
+    const dataUrl = canvas.toDataURL("image/jpeg", quality);
+    if (dataUrl.length <= options.maxBytes) {
+      logImageTiming(file, dataUrl, started);
+      bitmap?.close();
+      return dataUrl;
+    }
+  }
+
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
+  logImageTiming(file, dataUrl, started);
+  bitmap?.close();
+  return dataUrl;
+}
+
+async function loadImage(file: File): Promise<HTMLImageElement> {
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    image.src = objectUrl;
+    await image.decode();
+    return image;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+function logImageTiming(file: File, dataUrl: string, started: number) {
+  if (import.meta.env.DEV) {
+    console.info("[timing] ai.image_preprocess end", {
+      durationMs: Math.round(performance.now() - started),
+      sourceBytes: file.size,
+      outputBytes: Math.round((dataUrl.length * 3) / 4),
+    });
+  }
 }

@@ -187,7 +187,7 @@ ${data.focus_notes ? `Preferences: ${data.focus_notes}` : ""}`;
             tool_choice: { type: "function", function: { name: "record_workout_plan" } },
           }),
         },
-        25000,
+        { timeoutMs: 25000, label: "ai.workout.gemini" },
       );
     } catch (err) {
       if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);

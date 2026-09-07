@@ -136,7 +136,7 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
             tool_choice: { type: "function", function: { name: "record_photo_estimate" } },
           }),
         },
-        25000,
+        { timeoutMs: 25000, label: "ai.meal_photo.gemini" },
       );
     } catch (err) {
       if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
@@ -213,7 +213,7 @@ export const lookupBarcode = createServerFn({ method: "POST" })
       res = await fetchWithTimeout(
         url,
         { headers: { "User-Agent": "NutriAI/1.0 (support@nutriai.app)" } },
-        12000,
+        { timeoutMs: 12000, label: "barcode.lookup.openfoodfacts" },
       );
     } catch (err) {
       if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
@@ -296,7 +296,11 @@ export const searchFood = createServerFn({ method: "POST" })
     const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(data.query)}&search_simple=1&action=process&json=1&page_size=15&fields=code,product_name,brands,image_front_small_url,nutriments,serving_quantity`;
     let res: Response;
     try {
-      res = await fetchWithTimeout(url, { headers: { "User-Agent": "NutriAI/1.0" } }, 12000);
+      res = await fetchWithTimeout(
+        url,
+        { headers: { "User-Agent": "NutriAI/1.0" } },
+        { timeoutMs: 12000, label: "food.search.openfoodfacts" },
+      );
     } catch (err) {
       if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
       throw err;

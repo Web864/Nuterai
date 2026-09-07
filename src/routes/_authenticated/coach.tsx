@@ -27,6 +27,7 @@ import {
   type CoachThread,
 } from "@/features/coach/queries";
 import { sendCoachMessage } from "@/lib/ai-coach.functions";
+import { describeAiActionError } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/coach")({
   head: () => ({
@@ -264,7 +265,7 @@ function ChatPanel({
       await qc.invalidateQueries({ queryKey: ["coach-messages", threadId] });
       await qc.invalidateQueries({ queryKey: ["coach-threads", userId] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to send message");
+      toast.error(describeAiActionError(e, "Failed to send message."));
       // rollback optimistic
       await qc.invalidateQueries({ queryKey: ["coach-messages", threadId] });
     } finally {

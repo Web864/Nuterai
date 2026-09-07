@@ -10,12 +10,46 @@ export function cn(...inputs: ClassValue[]) {
  * have no built-in timeout, so a stalled upstream would otherwise hang the
  * request indefinitely instead of surfacing a timely, actionable error.
  */
+type FetchWithTimeoutOptions = {
+  timeoutMs?: number;
+  label?: string;
+};
+
 export async function fetchWithTimeout(
   input: string,
   init: RequestInit = {},
-  timeoutMs = 15000,
+  timeoutOrOptions: number | FetchWithTimeoutOptions = 15000,
 ): Promise<Response> {
-  return fetch(input, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+  const options =
+    typeof timeoutOrOptions === "number" ? { timeoutMs: timeoutOrOptions } : timeoutOrOptions;
+  const timeoutMs = options.timeoutMs ?? 15000;
+  const label = options.label;
+  const started = performance.now();
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
+  const signal = init.signal ? AbortSignal.any([init.signal, timeoutSignal]) : timeoutSignal;
+
+  if (import.meta.env.DEV && label) {
+    console.info(`[timing] ${label} start`, { timeoutMs });
+  }
+
+  try {
+    const response = await fetch(input, { ...init, signal });
+    if (import.meta.env.DEV && label) {
+      console.info(`[timing] ${label} end`, {
+        status: response.status,
+        durationMs: Math.round(performance.now() - started),
+      });
+    }
+    return response;
+  } catch (err) {
+    if (import.meta.env.DEV && label) {
+      console.info(`[timing] ${label} failed`, {
+        durationMs: Math.round(performance.now() - started),
+        timeout: isNetworkOrTimeoutError(err),
+      });
+    }
+    throw err;
+  }
 }
 
 /** True for a fetch()-level network failure or fetchWithTimeout's signal firing. */
@@ -44,4 +78,32 @@ export function describeAnalysisError(err: unknown): string {
   if (isNetworkOrTimeoutError(err)) return NETWORK_ERROR_MESSAGE;
   if (err instanceof Error && err.message) return err.message;
   return "Couldn't complete that. Please try again.";
+}
+
+export function describeAiActionError(
+  err: unknown,
+  fallback = "The AI request failed. Please try again.",
+): string {
+  if (import.meta.env.DEV) console.error("[ai action error]", err);
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return "You're offline. Reconnect and try again.";
+  }
+  if (isNetworkOrTimeoutError(err)) {
+    return "The request timed out or the network dropped. Please try again.";
+  }
+  if (!(err instanceof Error) || !err.message) return fallback;
+
+  const lower = err.message.toLowerCase();
+  if (lower.includes("rate limit") || lower.includes("too many")) {
+    return "Too many AI requests were sent. Please wait a moment and try again.";
+  }
+  if (lower.includes("jwt") || lower.includes("session") || lower.includes("auth")) {
+    return "Your session expired. Please sign in again.";
+  }
+  if (lower.includes("not configured")) return err.message;
+  if (lower.includes("malformed") || lower.includes("usable") || lower.includes("invalid")) {
+    return err.message;
+  }
+  if (lower.includes("couldn't reach") || lower.includes("ai service")) return err.message;
+  return err.message || fallback;
 }

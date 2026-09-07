@@ -50,6 +50,7 @@ import {
   type WorkoutPlan,
 } from "@/features/workout/queries";
 import { generateWorkoutPlan } from "@/lib/ai-workout.functions";
+import { describeAiActionError } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/workout")({
   head: () => ({
@@ -166,6 +167,7 @@ function AIGeneratorCard({
   const [loading, setLoading] = useState(false);
 
   async function handleGenerate() {
+    if (loading) return;
     setLoading(true);
     try {
       const res = await generate({
@@ -183,7 +185,7 @@ function AIGeneratorCard({
       qc.invalidateQueries({ queryKey: ["workout-plans", userId] });
       setNotes("");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to generate plan");
+      toast.error(describeAiActionError(e, "Failed to generate plan."));
     } finally {
       setLoading(false);
     }

@@ -282,6 +282,7 @@ function TextMealTab({ userId }: { userId: string }) {
   const qc = useQueryClient();
 
   async function handleLogMeal() {
+    if (analyzing) return;
     if (description.trim().length < 2) {
       toast.error("Describe what you ate first.");
       return;
@@ -299,7 +300,7 @@ function TextMealTab({ userId }: { userId: string }) {
   }
 
   async function handleSaveAll() {
-    if (!analysis) return;
+    if (!analysis || addMeal.isPending) return;
     try {
       // Save every detected item in parallel — the previous sequential
       // await-in-a-loop made a multi-item meal (e.g. "eggs, toast, coffee")

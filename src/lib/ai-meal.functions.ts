@@ -126,7 +126,7 @@ export const analyzeMeal = createServerFn({ method: "POST" })
             tool_choice: { type: "function", function: { name: "record_meal_estimate" } },
           }),
         },
-        20000,
+        { timeoutMs: 20000, label: "ai.meal_text.gemini" },
       );
     } catch (err) {
       if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
