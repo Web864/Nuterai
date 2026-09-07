@@ -8,6 +8,16 @@ type ServerEntry = {
 };
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
+const AI_RUNTIME_ENV_KEYS = ["GEMINI_API_KEY", "OPENAI_API_KEY"] as const;
+
+function applyAiRuntimeEnv(env: unknown) {
+  if (!env || typeof env !== "object") return;
+  const runtimeEnv = env as Record<string, unknown>;
+  for (const key of AI_RUNTIME_ENV_KEYS) {
+    const value = runtimeEnv[key];
+    if (typeof value === "string" && value) process.env[key] = value;
+  }
+}
 
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
@@ -47,6 +57,7 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      applyAiRuntimeEnv(env);
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

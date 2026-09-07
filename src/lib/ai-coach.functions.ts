@@ -136,6 +136,10 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
+    console.info("[ai.coach.config]", {
+      "GEMINI_API_KEY present": Boolean(process.env.GEMINI_API_KEY),
+      "OPENAI_API_KEY present": Boolean(process.env.OPENAI_API_KEY),
+    });
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("AI is not configured. Please contact support.");
 
