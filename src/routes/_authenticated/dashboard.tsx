@@ -108,25 +108,25 @@ function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="dashboard-shell min-h-screen">
       <TopBar onSignOut={handleSignOut} name={firstName} />
 
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-8 sm:px-6 lg:px-8">
-        <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <main className="dashboard-main mx-auto max-w-[1440px] px-4 pb-20 pt-8 sm:px-7 lg:px-10">
+        <header className="dashboard-hero mb-7 flex flex-wrap items-end justify-between gap-5">
           <div>
-            <p className="text-sm text-muted-foreground">
+            <p className="dashboard-eyebrow">
               {new Date().toLocaleDateString(undefined, {
                 weekday: "long",
                 month: "long",
                 day: "numeric",
               })}
             </p>
-            <h1 className="mt-1 font-display text-4xl text-foreground sm:text-5xl">
-              {greeting}, {firstName}.
+            <h1 className="mt-2 font-display text-4xl text-foreground sm:text-5xl">
+              {greeting}, <span className="emerald-text">{firstName}</span>.
             </h1>
             <p className="mt-2 text-muted-foreground">Here's your personalized plan for today.</p>
           </div>
-          <Button asChild size="lg" className="rounded-full">
+          <Button asChild size="lg" className="rounded-xl">
             <Link to="/log">
               <Plus className="mr-2 h-4 w-4" />
               Log now
@@ -136,7 +136,7 @@ function Dashboard() {
 
         {g ? (
           <>
-            <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <section className="dashboard-metrics grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 icon={<Flame className="h-5 w-5" />}
                 label="Calories today"
@@ -168,20 +168,20 @@ function Dashboard() {
               />
             </section>
 
-            <section className="mt-8 grid gap-4 lg:grid-cols-[2fr_1fr]">
+            <section className="dashboard-level mt-7 grid gap-4 lg:grid-cols-[2fr_1fr]">
               <LevelCard userId={userId} />
               <BadgeShelf userId={userId} />
             </section>
 
-            <section className="mt-8 grid gap-4 lg:grid-cols-3">
-              <Card className="lg:col-span-2 rounded-3xl border-border/60 shadow-soft">
-                <CardHeader className="pb-3">
+            <section className="mt-7 grid gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,1fr)]">
+              <Card className="dashboard-panel lg:col-span-1">
+                <CardHeader className="pb-3 sm:p-7 sm:pb-3">
                   <CardTitle className="flex items-center gap-2 font-display text-xl">
                     <Sparkles className="h-5 w-5 text-accent" />
                     Today's macros
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-5">
+                <CardContent className="space-y-5 sm:p-7 sm:pt-3">
                   <MacroRow
                     label="Protein"
                     value={totals.protein}
@@ -201,7 +201,7 @@ function Dashboard() {
                     unit="g"
                   />
                   <MacroRow label="Fiber" value={totals.fiber} target={g.fiber_g ?? 0} unit="g" />
-                  <div className="rounded-2xl bg-secondary/60 p-4 text-sm">
+                  <div className="dashboard-info rounded-2xl p-4 text-sm">
                     <p className="font-medium text-foreground">
                       Your maintenance is {g.tdee_kcal} kcal.
                     </p>
@@ -274,8 +274,8 @@ function Dashboard() {
               </div>
             </section>
 
-            <section className="mt-8 grid gap-4 sm:grid-cols-2">
-              <Card className="rounded-3xl border-border/60 shadow-soft">
+            <section className="mt-7 grid gap-4 sm:grid-cols-2">
+              <Card className="dashboard-panel">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 font-display text-lg">
                     <Award className="h-5 w-5 text-accent" />
@@ -290,7 +290,7 @@ function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="rounded-3xl border-border/60 shadow-soft">
+              <Card className="dashboard-panel">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 font-display text-lg">
                     <Calendar className="h-5 w-5 text-accent" />
@@ -298,11 +298,11 @@ function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="dashboard-eyebrow">
                     Your weekly nutrition, workouts, sleep and mood trends will appear here once you
                     start logging.
                   </p>
-                  <Button asChild variant="outline" className="mt-4 rounded-full">
+                  <Button asChild variant="outline" className="mt-4 rounded-xl">
                     <Link to="/settings">
                       <Settings className="mr-2 h-4 w-4" />
                       Adjust goals
@@ -313,7 +313,7 @@ function Dashboard() {
             </section>
           </>
         ) : (
-          <Card className="rounded-3xl border-dashed border-border/70 bg-card/50 p-8 text-center">
+          <Card className="rounded-2xl border-dashed border-primary/35 bg-card/70 p-8 text-center shadow-soft">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/15">
               <Activity className="h-6 w-6 text-accent" />
             </div>
@@ -321,7 +321,7 @@ function Dashboard() {
             <p className="mt-2 text-sm text-muted-foreground">
               Complete your health profile so NutriAI can build your personalized plan.
             </p>
-            <Button asChild size="lg" className="mt-6 rounded-full">
+            <Button asChild size="lg" className="mt-6 rounded-xl">
               <Link to="/onboarding">Continue onboarding</Link>
             </Button>
           </Card>
@@ -334,24 +334,24 @@ function Dashboard() {
 function TopBar({ onSignOut, name }: { onSignOut: () => void; name: string }) {
   const who = useQuery(adminWhoAmIQueryOptions());
   return (
-    <div className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+    <div className="dashboard-nav sticky top-0 z-30 border-b border-border/60 bg-background/75 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 py-4 sm:px-7 lg:px-10">
         <Link to="/dashboard" className="flex items-center gap-2 text-foreground">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_22px_color-mix(in_oklch,var(--color-primary)_38%,transparent)]">
             <Leaf className="h-4 w-4" />
           </span>
-          <span className="font-display text-lg tracking-tight">NutriAI</span>
+          <span className="font-display text-lg">NutriAI</span>
         </Link>
         <div className="flex items-center gap-2">
           {who.data?.isAdmin && (
-            <Button asChild variant="ghost" size="sm" className="rounded-full">
+            <Button asChild variant="ghost" size="sm" className="rounded-xl">
               <Link to="/admin">
                 <ShieldCheck className="h-4 w-4" />
                 <span className="sr-only sm:not-sr-only sm:ml-2">Admin</span>
               </Link>
             </Button>
           )}
-          <Button asChild variant="ghost" size="sm" className="rounded-full">
+          <Button asChild variant="ghost" size="sm" className="rounded-xl">
             <Link to="/settings">
               <Settings className="h-4 w-4" />
               <span className="sr-only sm:not-sr-only sm:ml-2">Settings</span>
@@ -363,7 +363,7 @@ function TopBar({ onSignOut, name }: { onSignOut: () => void; name: string }) {
           <Button
             variant="ghost"
             size="sm"
-            className="rounded-full"
+            className="rounded-xl"
             onClick={onSignOut}
             aria-label={`Sign ${name} out`}
           >
@@ -393,14 +393,14 @@ function StatCard({
 }) {
   const pct = target && target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
   return (
-    <Card className="rounded-3xl border-border/60 shadow-soft transition-organic hover:shadow-elevated">
+    <Card className="dashboard-action premium-card-hover">
       <CardContent className="p-5">
         <div
-          className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${accent ?? "bg-secondary text-primary"}`}
+          className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${accent ?? "bg-secondary text-primary"}`}
         >
           {accent ? <span className="text-primary-foreground">{icon}</span> : icon}
         </div>
-        <p className="mt-4 text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
         <p className="mt-1 font-display text-3xl text-foreground">
           {value.toLocaleString()}
           {target ? (
@@ -455,7 +455,7 @@ function FeatureCard({
   soon?: boolean;
 }) {
   return (
-    <Card className="rounded-3xl border-border/60 shadow-soft transition-organic hover:shadow-elevated">
+    <Card className="dashboard-action premium-card-hover">
       <CardContent className="flex items-center gap-4 p-4">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-primary">
           {icon}
@@ -464,8 +464,9 @@ function FeatureCard({
           <p className="font-medium text-foreground">{title}</p>
           <p className="truncate text-xs text-muted-foreground">{description}</p>
         </div>
+        <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         {soon && (
-          <span className="rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent-foreground">
+          <span className="rounded-xl bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent-foreground">
             Soon
           </span>
         )}

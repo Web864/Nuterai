@@ -24,21 +24,21 @@ export const Route = createFileRoute("/pricing")({
 
 function PricingPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
-        <Link to="/" className="mb-10 inline-flex items-center gap-2 text-sm text-muted-foreground">
+    <div className="premium-shell min-h-screen">
+      <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
+        <Link to="/" className="mb-12 inline-flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-2 text-sm text-muted-foreground">
           <Leaf className="h-4 w-4 text-primary" /> NutriAI
         </Link>
         <div className="text-center">
-          <p className="text-xs font-medium uppercase tracking-wider text-accent">Pricing</p>
-          <h1 className="mt-2 font-display text-5xl">Simple, honest pricing.</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Pricing</p>
+          <h1 className="mt-3 text-balance font-display text-5xl sm:text-6xl">Simple, honest pricing.</h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
             Start free with everything you need. Upgrade to Pro when you want unlimited AI coaching
             and advanced insights.
           </p>
         </div>
 
-        <div className="mt-14 grid gap-6 md:grid-cols-2">
+        <div className="mx-auto mt-14 grid max-w-4xl gap-5 md:grid-cols-2">
           <Plan
             name={PLANS.free.name}
             price="$0"
@@ -88,8 +88,8 @@ function Plan({
     <div
       className={
         highlight
-          ? "rounded-3xl bg-gradient-hero p-8 text-primary-foreground shadow-hero"
-          : "rounded-3xl border border-border/60 bg-card p-8 shadow-soft"
+          ? "rounded-[2rem] border border-primary/35 bg-gradient-hero p-7 text-foreground shadow-hero sm:p-8"
+          : "premium-card-hover rounded-[2rem] border border-border/70 bg-card/90 p-7 shadow-soft sm:p-8"
       }
     >
       <p
@@ -118,7 +118,7 @@ function Plan({
       <Button
         asChild
         size="lg"
-        className="mt-8 w-full rounded-full"
+        className="mt-8 w-full rounded-xl"
         variant={highlight ? "secondary" : "default"}
       >
         {cta}

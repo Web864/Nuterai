@@ -221,24 +221,24 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-glow opacity-70" />
+    <div className="premium-shell relative min-h-screen overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-hero opacity-75" />
       <div className="relative mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 py-16">
-        <Link to="/" className="mb-10 flex items-center gap-2 text-primary-foreground">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-foreground/10 backdrop-blur">
+        <Link to="/" className="mb-10 flex items-center gap-2 text-foreground">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-primary/30 bg-primary/15 text-primary backdrop-blur">
             <Leaf className="h-5 w-5" />
           </span>
           <span className="font-display text-2xl tracking-tight">NutriAI</span>
         </Link>
 
         <h1 className="sr-only">Sign in to NutriAI</h1>
-        <div className="w-full rounded-3xl bg-card p-8 shadow-hero">
+        <div className="premium-glass w-full rounded-[2rem] p-6 shadow-hero sm:p-8">
           <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
-            <TabsList className="grid w-full grid-cols-2 rounded-full">
-              <TabsTrigger value="signin" className="rounded-full">
+            <TabsList className="grid w-full grid-cols-2 rounded-xl bg-secondary/70 p-1">
+              <TabsTrigger value="signin" className="rounded-2xl">
                 Sign in
               </TabsTrigger>
-              <TabsTrigger value="signup" className="rounded-full">
+              <TabsTrigger value="signup" className="rounded-2xl">
                 Create account
               </TabsTrigger>
             </TabsList>
@@ -325,7 +325,7 @@ function AuthPage() {
                 </Button>
               </form>
               {pendingConfirmationEmail && (
-                <div className="mt-5 rounded-lg border border-border bg-secondary/50 p-4 text-sm">
+                <div className="mt-5 rounded-xl border border-primary/25 bg-secondary/50 p-4 text-sm">
                   <p className="font-medium text-foreground">
                     Check your email to confirm your account.
                   </p>
@@ -380,7 +380,7 @@ function AuthPage() {
         </div>
 
         <Dialog open={forgotOpen} onOpenChange={handleForgotOpenChange}>
-          <DialogContent className="mx-4 max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-lg">
+          <DialogContent className="mx-4 max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-2xl">
             <DialogHeader>
               <DialogTitle>Forgot Password</DialogTitle>
               <DialogDescription>

@@ -134,7 +134,7 @@ function RootShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
         {/* Sets the .dark class on <html> before first paint, using the same
@@ -149,7 +149,7 @@ function RootShell({ children }: { children: ReactNode }) {
           />
         )}
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <Scripts />
       </body>
