@@ -19,6 +19,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Activity,
   Apple,
+  ArrowRight,
   Award,
   Bell,
   Calendar,
@@ -112,7 +113,7 @@ function Dashboard() {
       <TopBar onSignOut={handleSignOut} name={firstName} />
 
       <main className="dashboard-main mx-auto max-w-[1440px] px-4 pb-20 pt-8 sm:px-7 lg:px-10">
-        <header className="dashboard-hero mb-7 flex flex-wrap items-end justify-between gap-5">
+        <header className="dashboard-hero dashboard-reference-hero mb-7 flex flex-wrap items-end justify-between gap-5">
           <div>
             <p className="dashboard-eyebrow">
               {new Date().toLocaleDateString(undefined, {
@@ -136,7 +137,7 @@ function Dashboard() {
 
         {g ? (
           <>
-            <section className="dashboard-metrics grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <section className="dashboard-metrics dashboard-reference-metrics grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 icon={<Flame className="h-5 w-5" />}
                 label="Calories today"
@@ -168,13 +169,13 @@ function Dashboard() {
               />
             </section>
 
-            <section className="dashboard-level mt-7 grid gap-4 lg:grid-cols-[2fr_1fr]">
+            <section className="dashboard-level dashboard-reference-level mt-5 grid gap-4 lg:grid-cols-[1.7fr_1fr]">
               <LevelCard userId={userId} />
               <BadgeShelf userId={userId} />
             </section>
 
-            <section className="mt-7 grid gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,1fr)]">
-              <Card className="dashboard-panel lg:col-span-1">
+            <section className="dashboard-workspace mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.72fr)_minmax(330px,1fr)]">
+              <Card className="dashboard-panel dashboard-macros-panel lg:col-span-1">
                 <CardHeader className="pb-3 sm:p-7 sm:pb-3">
                   <CardTitle className="flex items-center gap-2 font-display text-xl">
                     <Sparkles className="h-5 w-5 text-accent" />
@@ -214,7 +215,7 @@ function Dashboard() {
                 </CardContent>
               </Card>
 
-              <div className="space-y-4">
+              <div className="dashboard-action-rail space-y-2">
                 <Link to="/log" className="block">
                   <FeatureCard
                     icon={<Utensils className="h-5 w-5" />}
@@ -274,9 +275,8 @@ function Dashboard() {
               </div>
             </section>
 
-            <section className="mt-7 grid gap-4 sm:grid-cols-2">
-              <Card className="dashboard-panel">
-                <CardHeader className="pb-2">
+            <section className="dashboard-bottom-grid mt-5 grid gap-4 sm:grid-cols-2">
+              <Card className="dashboard-panel dashboard-plan-panel">`r`n                <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 font-display text-lg">
                     <Award className="h-5 w-5 text-accent" />
                     Your plan
@@ -290,8 +290,7 @@ function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="dashboard-panel">
-                <CardHeader className="pb-2">
+              <Card className="dashboard-panel dashboard-plan-panel">`r`n                <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 font-display text-lg">
                     <Calendar className="h-5 w-5 text-accent" />
                     Weekly summary
@@ -393,7 +392,7 @@ function StatCard({
 }) {
   const pct = target && target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
   return (
-    <Card className="dashboard-action premium-card-hover">
+    <Card className="dashboard-action-card premium-card-hover">
       <CardContent className="p-5">
         <div
           className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${accent ?? "bg-secondary text-primary"}`}
@@ -455,7 +454,7 @@ function FeatureCard({
   soon?: boolean;
 }) {
   return (
-    <Card className="dashboard-action premium-card-hover">
+    <Card className="dashboard-action-card premium-card-hover">
       <CardContent className="flex items-center gap-4 p-4">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-primary">
           {icon}

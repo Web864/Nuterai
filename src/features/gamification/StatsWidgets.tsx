@@ -25,7 +25,7 @@ export function LevelCard({ userId }: { userId: string | undefined }) {
   const lp = levelProgress(stats.data?.xp ?? 0);
 
   return (
-    <Card className="rounded-3xl border-border/60 shadow-soft">
+    <Card className="dashboard-level-card">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -57,7 +57,7 @@ export function LevelCard({ userId }: { userId: string | undefined }) {
 
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {STREAKS.map((k) => (
-            <div key={k} className="rounded-2xl border border-border/40 px-3 py-2">
+            <div key={k} className="dashboard-streak-card rounded-2xl px-3 py-2">
               <p className="flex items-center gap-1 text-[11px] uppercase tracking-wider text-muted-foreground">
                 <Flame className="h-3 w-3 text-accent" />
                 {STREAK_LABELS[k]}
@@ -85,7 +85,7 @@ export function BadgeShelf({ userId, limit = 6 }: { userId: string | undefined; 
   if (achievements.isLoading) return <Skeleton className="h-24 rounded-3xl" />;
 
   return (
-    <Card className="rounded-3xl border-border/60 shadow-soft">
+    <Card className="dashboard-level-card">
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <p className="flex items-center gap-2 font-display text-lg text-foreground">
