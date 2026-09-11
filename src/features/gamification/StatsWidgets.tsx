@@ -85,7 +85,7 @@ export function BadgeShelf({ userId, limit = 6 }: { userId: string | undefined; 
   if (achievements.isLoading) return <Skeleton className="h-24 rounded-3xl" />;
 
   return (
-    <Card className="dashboard-level-card">
+    <Card className="dashboard-badge-card">
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <p className="flex items-center gap-2 font-display text-lg text-foreground">

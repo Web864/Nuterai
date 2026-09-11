@@ -276,7 +276,8 @@ function Dashboard() {
             </section>
 
             <section className="dashboard-bottom-grid mt-5 grid gap-4 sm:grid-cols-2">
-              <Card className="dashboard-panel dashboard-plan-panel">`r`n                <CardHeader className="pb-2">
+              <Card className="dashboard-panel dashboard-plan-panel">
+                <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 font-display text-lg">
                     <Award className="h-5 w-5 text-accent" />
                     Your plan
@@ -290,7 +291,8 @@ function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="dashboard-panel dashboard-plan-panel">`r`n                <CardHeader className="pb-2">
+              <Card className="dashboard-panel dashboard-plan-panel">
+                <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 font-display text-lg">
                     <Calendar className="h-5 w-5 text-accent" />
                     Weekly summary

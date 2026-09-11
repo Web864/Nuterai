@@ -573,6 +573,136 @@
     .dashboard-macros-panel { min-height: auto; }
     .dashboard-bottom-grid > .dashboard-panel { min-height: auto; }
   }
+
+  .dashboard-shell::after {
+    position: fixed;
+    z-index: -1;
+    inset: 0;
+    pointer-events: none;
+    content: "";
+    opacity: .18;
+    background-image: url("./assets/nutriai-premium-assets/grain-overlay.svg");
+    background-repeat: repeat;
+    mix-blend-mode: soft-light;
+  }
+
+  .dashboard-nav [href="/dashboard"] > span:first-child {
+    background-image: url("./assets/nutriai-premium-assets/nutriai-logo-mark.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 58%;
+  }
+
+  .dashboard-nav [href="/dashboard"] > span:first-child svg { opacity: 0; }
+
+  .dashboard-action-card > div > div:first-child {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 1.25rem;
+  }
+
+  .dashboard-action-rail > a:nth-child(1) .dashboard-action-card > div > div:first-child { background-image: url("./assets/nutriai-premium-assets/icon-meal.svg"); }
+  .dashboard-action-rail > a:nth-child(2) .dashboard-action-card > div > div:first-child { background-image: url("./assets/nutriai-premium-assets/icon-water.svg"); }
+  .dashboard-action-rail > a:nth-child(3) .dashboard-action-card > div > div:first-child { background-image: url("./assets/nutriai-premium-assets/icon-workout.svg"); }
+  .dashboard-action-rail > a:nth-child(4) .dashboard-action-card > div > div:first-child { background-image: url("./assets/nutriai-premium-assets/icon-spark.svg"); }
+  .dashboard-action-rail > a:nth-child(5) .dashboard-action-card > div > div:first-child { background-image: url("./assets/nutriai-premium-assets/icon-scan.svg"); }
+  .dashboard-action-rail .dashboard-action-card > div > div:first-child svg { opacity: 0; }
+
+  /* Motion language: calm entry, responsive feedback, no layout animation. */
+  :root {
+    --motion-duration-fast: 160ms;
+    --motion-duration-normal: 360ms;
+    --motion-duration-slow: 520ms;
+    --motion-stagger: 46ms;
+    --motion-ease-standard: cubic-bezier(0.22, 0.61, 0.36, 1);
+    --motion-ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 5.5rem; }
+
+  [data-motion="reveal"] {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+    transition:
+      opacity var(--motion-duration-normal) var(--motion-ease-emphasized),
+      transform var(--motion-duration-normal) var(--motion-ease-emphasized);
+    transition-delay: calc(var(--motion-index, 0) * var(--motion-stagger));
+    will-change: opacity, transform;
+  }
+
+  [data-motion="reveal"][data-motion-visible="true"] {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    will-change: auto;
+  }
+
+  [data-slot="card"] {
+    transition:
+      transform var(--motion-duration-fast) var(--motion-ease-standard),
+      border-color var(--motion-duration-fast) var(--motion-ease-standard),
+      background-color var(--motion-duration-fast) var(--motion-ease-standard);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    [data-slot="card"].premium-card-hover:hover,
+    .dashboard-action-card:hover,
+    .dashboard-metric-card:hover {
+      transform: translate3d(0, -2px, 0);
+    }
+  }
+
+  button:active:not(:disabled),
+  [role="button"]:active:not([aria-disabled="true"]),
+  a[class*="bg-primary"]:active {
+    transform: scale(0.98);
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  [data-slot="progress-indicator"] {
+    transition: transform var(--motion-duration-slow) var(--motion-ease-emphasized);
+  }
+
+  [data-state="open"][role="dialog"],
+  [data-state="open"][data-slot="dialog-content"],
+  [data-state="open"][data-slot="dropdown-menu-content"],
+  [data-state="open"][data-slot="popover-content"] {
+    animation: motion-overlay-in var(--motion-duration-fast) var(--motion-ease-emphasized) both;
+  }
+
+  [data-slot="skeleton"] {
+    background: linear-gradient(90deg, var(--color-muted) 20%, color-mix(in oklch, var(--color-muted) 60%, white) 50%, var(--color-muted) 80%);
+    background-size: 200% 100%;
+    animation: motion-skeleton 1.8s linear infinite;
+  }
+
+  @keyframes motion-overlay-in {
+    from { opacity: 0; transform: translate3d(0, 6px, 0) scale(0.985); }
+    to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  }
+
+  @keyframes motion-skeleton {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+
+  @media (max-width: 640px) {
+    [data-motion="reveal"] { transform: translate3d(0, 10px, 0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    [data-motion="reveal"] {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+    [data-slot="skeleton"] { animation: none; }
+  }
   .reference-art {
     background-repeat: no-repeat;
     background-size: 900px 629px;
@@ -607,22 +737,6 @@
     }
   }
 
-  main > section,
-  main > header {
-    animation: premium-enter 560ms var(--ease-organic) both;
-  }
-
-  main > section:nth-child(2) {
-    animation-delay: 70ms;
-  }
-
-  main > section:nth-child(3) {
-    animation-delay: 120ms;
-  }
-
-  main > section:nth-child(4) {
-    animation-delay: 170ms;
-  }
 
   .premium-float {
     animation: premium-float 5.5s ease-in-out infinite;

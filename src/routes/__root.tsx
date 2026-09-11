@@ -20,6 +20,7 @@ import { DARK_THEME_COLOR, LIGHT_THEME_COLOR, THEME_INIT_SCRIPT } from "../lib/t
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider, useTheme } from "@/components/theme-provider";
+import { MotionProvider } from "@/components/motion/MotionProvider";
 
 function NotFoundComponent() {
   return (
@@ -177,6 +178,7 @@ function RootComponent() {
 
   return (
     <ThemeProvider>
+      <MotionProvider />
       <QueryClientProvider client={queryClient}>
         <Outlet />
         <AppToaster />
