@@ -250,6 +250,7 @@ function AuthPage() {
                   <Input
                     id="email"
                     type="email"
+                    className="border-0 bg-[#1b4d3a] focus-visible:border-0"
                     autoComplete="email"
                     required
                     value={email}
@@ -270,6 +271,7 @@ function AuthPage() {
                   <Input
                     id="password"
                     type="password"
+                    className="border-0 bg-[#1b4d3a] focus-visible:border-0"
                     autoComplete="current-password"
                     required
                     value={password}
@@ -289,6 +291,7 @@ function AuthPage() {
                   <Label htmlFor="name">Your name</Label>
                   <Input
                     id="name"
+                    className="border-0 bg-[#1b4d3a] focus-visible:border-0"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -300,6 +303,7 @@ function AuthPage() {
                   <Input
                     id="email-up"
                     type="email"
+                    className="border-0 bg-[#1b4d3a] focus-visible:border-0"
                     autoComplete="email"
                     required
                     value={email}
@@ -311,6 +315,7 @@ function AuthPage() {
                   <Input
                     id="password-up"
                     type="password"
+                    className="border-0 bg-[#1b4d3a] focus-visible:border-0"
                     autoComplete="new-password"
                     required
                     minLength={6}

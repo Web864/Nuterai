@@ -164,7 +164,7 @@
   --accent: oklch(0.56 0.16 153);
   --accent-foreground: oklch(0.985 0.01 115);
   --border: oklch(0.72 0.045 146 / 0.45);
-  --input: oklch(0.72 0.045 146 / 0.55);
+  --input: #2de3a1;
   --ring: oklch(0.56 0.16 153);
   --sidebar: oklch(0.955 0.028 135);
   --sidebar-foreground: oklch(0.22 0.035 151);
@@ -172,7 +172,7 @@
   --sidebar-primary-foreground: oklch(0.985 0.01 115);
   --sidebar-accent: oklch(0.9 0.05 142);
   --sidebar-accent-foreground: oklch(0.24 0.04 151);
-  --sidebar-border: oklch(0.72 0.045 146 / 0.45);
+  --sidebar-border: #2de3a1;
   --sidebar-ring: oklch(0.56 0.16 153);
   --gradient-hero:
     radial-gradient(circle at 82% 5%, oklch(0.79 0.13 151 / 0.48), transparent 30%),
@@ -222,7 +222,7 @@
   --destructive-foreground: oklch(0.98 0 0);
 
   --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 12%);
+  --input: #2de3a1;
   --ring: oklch(0.72 0.15 155);
 
   --sidebar: oklch(0.19 0.02 155);
@@ -231,7 +231,7 @@
   --sidebar-primary-foreground: oklch(0.16 0.03 155);
   --sidebar-accent: oklch(0.25 0.025 155);
   --sidebar-accent-foreground: oklch(0.96 0.01 85);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-border: #2de3a1;
   --sidebar-ring: oklch(0.72 0.15 155);
 
   --gradient-hero:
@@ -1171,8 +1171,8 @@
       var(--color-surface-elevated) 92%,
       var(--color-card)
     );
-    --card-border: color-mix(in oklch, var(--color-primary) 16%, var(--color-border));
-    --card-border-accent: color-mix(in oklch, var(--color-primary) 42%, var(--color-border));
+    --card-border: #2de3a1;
+    --card-border-accent: #2de3a1;
     --card-radius: 1.75rem;
     --card-padding: 1.5rem;
     --card-shadow: var(--shadow-soft);
@@ -1181,8 +1181,8 @@
   .dark {
     --surface-card: #0b2115;
     --surface-elevated-card: #10291b;
-    --card-border: rgb(122 229 162 / 12%);
-    --card-border-accent: rgb(138 242 179 / 35%);
+    --card-border: #2de3a1;
+    --card-border-accent: #2de3a1;
     --card-shadow: 0 18px 50px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(255 255 255 / 3%);
   }
 
@@ -1224,10 +1224,10 @@
     );
   }
   .nutriai-card-nutrition {
-    border-color: color-mix(in oklch, var(--color-primary) 25%, var(--card-border));
+    border-color: var(--card-border);
   }
   .nutriai-card-ai {
-    border-color: color-mix(in oklch, var(--color-accent) 32%, var(--card-border));
+    border-color: var(--card-border);
     background: linear-gradient(
       145deg,
       color-mix(in oklch, var(--color-secondary) 72%, var(--surface-card)),
@@ -1235,10 +1235,10 @@
     );
   }
   .nutriai-card-progress {
-    border-color: color-mix(in oklch, var(--color-primary) 32%, var(--card-border));
+    border-color: var(--card-border);
   }
   .nutriai-card-achievement {
-    border-color: color-mix(in oklch, var(--color-warning) 34%, var(--card-border));
+    border-color: var(--card-border);
   }
   .nutriai-card-premium {
     border-color: var(--card-border-accent);
@@ -1249,19 +1249,19 @@
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 3%);
   }
   .nutriai-card-success {
-    border-color: color-mix(in oklch, var(--color-success) 42%, var(--card-border));
+    border-color: var(--card-border);
   }
   .nutriai-card-warning {
-    border-color: color-mix(in oklch, var(--color-warning) 42%, var(--card-border));
+    border-color: var(--card-border);
   }
   .nutriai-card-destructive {
-    border-color: color-mix(in oklch, var(--color-destructive) 48%, var(--card-border));
+    border-color: var(--card-border);
   }
 
   .nutriai-card .rounded-2xl.bg-accent\/15,
   .nutriai-card .rounded-2xl.bg-secondary,
   .nutriai-card .rounded-xl.bg-primary {
-    border: 1px solid color-mix(in oklch, var(--color-primary) 22%, transparent);
+    border: 1px solid var(--card-border);
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
   }
 
