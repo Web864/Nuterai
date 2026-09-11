@@ -50,6 +50,8 @@ import {
   type WorkoutPlan,
 } from "@/features/workout/queries";
 import { generateWorkoutPlan } from "@/lib/ai-workout.functions";
+import { detectTimezone } from "@/lib/reminders";
+import { disableWorkoutPlanReminders, useCreateWorkoutPlanReminders } from "@/features/reminders/queries";
 import { describeAiActionError } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/workout")({
@@ -93,7 +95,7 @@ function WorkoutPage() {
         </div>
       </div>
 
-      <main className="mx-auto max-w-4xl px-4 pb-24 pt-8 sm:px-6">
+      <main className="mx-auto max-w-4xl min-w-0 px-3 pb-24 pt-6 sm:px-6 sm:pt-8">
         <header className="mb-6">
           <h1 className="font-display text-4xl text-foreground">Movement</h1>
           <p className="mt-2 text-muted-foreground">
@@ -102,7 +104,7 @@ function WorkoutPage() {
         </header>
 
         <Tabs defaultValue="plans" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 rounded-full">
+          <TabsList className="grid w-full min-w-0 grid-cols-3 rounded-full">
             <TabsTrigger value="plans" className="rounded-full">
               <Dumbbell className="mr-2 h-4 w-4" /> Plans
             </TabsTrigger>
@@ -121,7 +123,7 @@ function WorkoutPage() {
               defaultGym={goals.data?.gym_access ?? undefined}
               defaultExp={goals.data?.workout_experience ?? undefined}
             />
-            <PlansList userId={userId} plans={plans.data ?? []} activePlanId={activePlan?.id} />
+            <PlansList userId={userId} plans={plans.data ?? []} activePlanId={activePlan?.id} timezone={detectTimezone()} />
           </TabsContent>
 
           <TabsContent value="log" className="mt-6">
@@ -313,6 +315,7 @@ function PlansList({
 }) {
   const setActive = useSetActivePlan(userId);
   const del = useDeletePlan(userId);
+  const syncWorkoutReminders = useCreateWorkoutPlanReminders(userId);
 
   if (plans.length === 0) {
     return (
@@ -367,7 +370,7 @@ function PlanCard({
   return (
     <Card className="rounded-3xl border-border/60 shadow-soft">
       <CardHeader className="pb-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <CardTitle className="font-display text-lg">{plan.name}</CardTitle>
@@ -420,8 +423,8 @@ function PlanCard({
             {(days.data ?? []).map((day) => {
               const exercises = parseExercises(day.exercises);
               return (
-                <div key={day.id} className="rounded-2xl bg-secondary/40 p-4">
-                  <div className="mb-2 flex items-center justify-between">
+                <div key={day.id} className="min-w-0 rounded-2xl bg-secondary/40 p-4">
+                  <div className="mb-2 flex min-w-0 flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="font-medium text-foreground">
                         Day {day.day_index} · {day.title}
@@ -435,7 +438,7 @@ function PlanCard({
                     {exercises.map((ex, i) => (
                       <li
                         key={i}
-                        className="flex justify-between border-b border-border/40 py-1 last:border-0"
+                        className="flex min-w-0 flex-wrap justify-between gap-x-3 gap-y-1 border-b border-border/40 py-1 last:border-0"
                       >
                         <span className="font-medium text-foreground">{ex.name}</span>
                         <span className="text-muted-foreground">
@@ -630,11 +633,11 @@ function QuickLogCard({ userId, activePlanId }: { userId: string; activePlanId?:
         </div>
 
         {logExercises.length > 0 && (
-          <div className="rounded-2xl bg-secondary/40 p-4">
+          <div className="min-w-0 rounded-2xl bg-secondary/40 p-4">
             <p className="mb-2 text-sm font-medium text-foreground">Exercises</p>
             <ul className="space-y-1 text-sm">
               {logExercises.map((ex, i) => (
-                <li key={i} className="flex justify-between text-muted-foreground">
+                <li key={i} className="flex min-w-0 flex-wrap justify-between gap-x-3 gap-y-1 text-muted-foreground">
                   <span className="text-foreground">{ex.name}</span>
                   <span>
                     {ex.sets} × {ex.reps}
@@ -645,8 +648,8 @@ function QuickLogCard({ userId, activePlanId }: { userId: string; activePlanId?:
           </div>
         )}
 
-        <div className="flex items-center justify-between rounded-2xl bg-accent/10 p-4">
-          <div className="flex items-center gap-2 text-sm">
+        <div className="flex min-w-0 flex-col items-stretch justify-between gap-3 rounded-2xl bg-accent/10 p-4 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 items-center gap-2 text-sm">
             <Flame className="h-4 w-4 text-accent" />
             <span className="text-foreground">
               ~{estimateCalories(duration, intensity).toLocaleString()} kcal burned
@@ -698,7 +701,7 @@ function SessionHistory({ userId, sessions }: { userId: string; sessions: Workou
       <div className="space-y-3">
         {sessions.map((s) => (
           <Card key={s.id} className="rounded-3xl border-border/60 shadow-soft">
-            <CardContent className="flex items-center justify-between gap-3 p-4">
+            <CardContent className="flex min-w-0 items-center justify-between gap-3 p-4">
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-foreground">{s.name}</p>
                 <p className="text-xs text-muted-foreground">
@@ -765,3 +768,6 @@ function humanizeFocus(f: string): string {
     }[f] ?? f
   );
 }
+
+
+

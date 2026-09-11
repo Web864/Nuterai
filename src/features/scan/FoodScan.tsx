@@ -294,7 +294,7 @@ export function PhotoTab({ userId }: { userId: string }) {
 
             {result && items.length > 0 && (
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="font-display text-lg">Detected items</p>
                     <p className="text-xs text-muted-foreground">
@@ -318,7 +318,7 @@ export function PhotoTab({ userId }: { userId: string }) {
                     />
                   ))}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex min-w-0 flex-wrap gap-2">
                   <Button
                     variant="outline"
                     className="flex-1 rounded-full"
@@ -594,9 +594,9 @@ export function BarcodeTab({ userId }: { userId: string }) {
               </Button>
             </div>
 
-            <form onSubmit={submitManual} className="space-y-2">
+            <form onSubmit={submitManual} className="min-w-0 space-y-2">
               <Label htmlFor="barcode-manual">Or enter barcode manually</Label>
-              <div className="flex gap-2">
+              <div className="flex min-w-0 flex-wrap gap-2">
                 <Input
                   id="barcode-manual"
                   inputMode="numeric"
@@ -697,17 +697,17 @@ function ProductCard({
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4">
+      <div className="flex min-w-0 gap-3 sm:gap-4">
         {product.image_url ? (
           <img
             src={product.image_url}
             alt={product.name}
             loading="lazy"
             decoding="async"
-            className="h-24 w-24 rounded-2xl object-cover bg-secondary"
+            className="h-20 w-20 shrink-0 rounded-2xl bg-secondary object-cover sm:h-24 sm:w-24"
           />
         ) : (
-          <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-secondary">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-secondary sm:h-24 sm:w-24">
             <ImageIcon className="h-8 w-8 text-muted-foreground" />
           </div>
         )}
@@ -775,7 +775,7 @@ function ProductCard({
         </p>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex min-w-0 flex-wrap gap-2">
         <Button
           variant="outline"
           className="flex-1 rounded-full"
@@ -888,7 +888,7 @@ function CustomFoodForm({
           className="rounded-xl"
         />
       </div>
-      <div className="flex gap-2">
+      <div className="flex min-w-0 flex-wrap gap-2">
         <Select value={meal} onValueChange={(v) => setMeal(v as MealType)}>
           <SelectTrigger className="rounded-xl">
             <SelectValue />
@@ -973,7 +973,7 @@ export function SearchTab({ userId }: { userId: string }) {
   return (
     <Card className="rounded-3xl border-border/60 shadow-soft">
       <CardContent className="p-5 sm:p-6 space-y-4">
-        <form onSubmit={submit} className="flex gap-2">
+        <form onSubmit={submit} className="flex min-w-0 gap-2">
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -1009,7 +1009,7 @@ export function SearchTab({ userId }: { userId: string }) {
               <button
                 key={`${r.barcode ?? "x"}-${i}`}
                 onClick={() => setPicked(r)}
-                className="flex w-full gap-3 rounded-2xl border border-border/60 bg-card/50 p-3 text-left transition-organic hover:border-accent/40 hover:bg-secondary/50"
+                className="flex w-full min-w-0 gap-3 rounded-2xl border border-border/60 bg-card/50 p-3 text-left transition-organic hover:border-accent/40 hover:bg-secondary/50"
               >
                 {r.image_url ? (
                   <img
@@ -1017,10 +1017,10 @@ export function SearchTab({ userId }: { userId: string }) {
                     alt=""
                     loading="lazy"
                     decoding="async"
-                    className="h-14 w-14 rounded-xl object-cover"
+                    className="h-14 w-14 shrink-0 rounded-xl object-cover"
                   />
                 ) : (
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-secondary">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-secondary">
                     <ImageIcon className="h-5 w-5 text-muted-foreground" />
                   </div>
                 )}
@@ -1108,3 +1108,4 @@ function logImageTiming(file: File, dataUrl: string, started: number) {
     });
   }
 }
+

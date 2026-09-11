@@ -1354,3 +1354,97 @@
 @utility transition-organic {
   transition: all var(--transition-base);
 }
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    max-width: 100%;
+  }
+
+  body {
+    min-width: 0;
+  }
+
+  img,
+  svg,
+  canvas,
+  video,
+  iframe {
+    max-width: 100%;
+  }
+
+  pre {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  code,
+  pre,
+  kbd,
+  samp {
+    overflow-wrap: anywhere;
+  }
+}
+
+@layer components {
+  .nutriai-card,
+  .premium-glass,
+  .dashboard-panel,
+  .dashboard-action-card,
+  .landing-overlay,
+  [data-slot="card"],
+  [data-slot="card-header"],
+  [data-slot="card-content"],
+  [data-slot="card-footer"] {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .dashboard-shell,
+  .premium-shell,
+  .landing-page,
+  .prose,
+  [data-slot="card"] {
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-action-rail,
+  .dashboard-main,
+  .landing-header-inner,
+  .landing-hero-grid,
+  .landing-hero-copy,
+  .landing-preview {
+    min-width: 0;
+  }
+
+  .landing-header-actions {
+    min-width: 0;
+    flex-shrink: 1;
+    gap: 0.25rem;
+  }
+
+  @media (max-width: 420px) {
+    .landing-header-actions .landing-secondary-action,
+    .landing-hero-actions .landing-secondary-action {
+      width: 100%;
+    }
+
+    .landing-hero-actions {
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .landing-hero-actions > * {
+      min-width: 0;
+      flex: 1 1 100%;
+    }
+  }
+}

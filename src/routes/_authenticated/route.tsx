@@ -1,7 +1,8 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+﻿import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useReminderEngine } from "@/features/reminders/useReminderEngine";
 import { useDailyCheckIn } from "@/features/gamification/useGamification";
+import { useScreenBreakSystem } from "@/features/screen-break/useScreenBreakSystem";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -19,5 +20,7 @@ function AuthedLayout() {
   const { userId } = Route.useRouteContext();
   useReminderEngine(userId);
   useDailyCheckIn(userId);
+  useScreenBreakSystem(userId);
   return <Outlet />;
 }
+

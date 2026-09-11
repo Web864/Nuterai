@@ -32,7 +32,7 @@ export const Route = createFileRoute("/auth")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Sign in — NutriAI" },
+      { title: "Sign in â€” NutriAI" },
       {
         name: "description",
         content: "Sign in to NutriAI to access your personalized AI health coach.",
@@ -385,7 +385,7 @@ function AuthPage() {
         </div>
 
         <Dialog open={forgotOpen} onOpenChange={handleForgotOpenChange}>
-          <DialogContent className="mx-4 max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-2xl">
+          <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-2xl">
             <DialogHeader>
               <DialogTitle>Forgot Password</DialogTitle>
               <DialogDescription>

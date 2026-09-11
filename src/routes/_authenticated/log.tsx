@@ -117,7 +117,7 @@ function LogPage() {
 
       <main className="mx-auto max-w-3xl px-4 pb-24 pt-6 sm:px-6">
         {/* Today totals */}
-        <section className="grid gap-3 sm:grid-cols-3">
+        <section className="grid min-w-0 gap-3 sm:grid-cols-3">
           <TotalCard
             icon={<Flame className="h-5 w-5" />}
             label="Calories"
@@ -142,7 +142,7 @@ function LogPage() {
         </section>
 
         <Tabs defaultValue="meal" className="mt-6">
-          <TabsList className="grid w-full grid-cols-3 rounded-full bg-secondary p-1">
+          <TabsList className="grid w-full min-w-0 grid-cols-3 rounded-full bg-secondary p-1">
             <TabsTrigger value="meal" className="rounded-full">
               <Utensils className="mr-2 h-4 w-4" /> Meal
             </TabsTrigger>
@@ -240,7 +240,7 @@ function MealLogger({ userId }: { userId: string }) {
         <h2 className="font-display text-lg">Log a meal</h2>
       </div>
       <Tabs defaultValue="text">
-        <TabsList className="grid w-full grid-cols-3 rounded-full bg-secondary p-1">
+        <TabsList className="grid w-full min-w-0 grid-cols-3 rounded-full bg-secondary p-1">
           <TabsTrigger value="text" className="rounded-full">
             <PenLine className="mr-1.5 h-3.5 w-3.5" /> Text
           </TabsTrigger>
@@ -344,7 +344,7 @@ function TextMealTab({ userId }: { userId: string }) {
   return (
     <Card className="rounded-3xl border-border/60 shadow-soft">
       <CardContent className="p-5 sm:p-6 space-y-4">
-        <div className="grid gap-3 sm:grid-cols-[1fr_180px]">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
           <div className="space-y-1.5">
             <Label htmlFor="meal-desc">What did you eat?</Label>
             <Textarea
@@ -391,7 +391,7 @@ function TextMealTab({ userId }: { userId: string }) {
 
         {analysis && (
           <div className="rounded-2xl border border-border/60 bg-secondary/40 p-4">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex min-w-0 flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">Estimated</p>
                 <p className="font-display text-xl text-foreground">{totalKcal} kcal</p>
@@ -404,7 +404,7 @@ function TextMealTab({ userId }: { userId: string }) {
               {analysis.items.map((item, idx) => (
                 <li
                   key={idx}
-                  className="flex items-start justify-between gap-3 rounded-xl bg-background/60 p-3 text-sm"
+                  className="flex min-w-0 flex-col items-start justify-between gap-2 rounded-xl bg-background/60 p-3 text-sm"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-foreground">{item.name}</p>
@@ -483,7 +483,7 @@ function MealList({ userId, date }: { userId: string; date: string }) {
               {items.map((m) => (
                 <div
                   key={m.id}
-                  className="flex items-start justify-between gap-3 rounded-xl bg-secondary/40 p-3 text-sm"
+                  className="flex min-w-0 flex-col items-start justify-between gap-2 rounded-xl bg-secondary/40 p-3 text-sm sm:flex-row"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-foreground">{m.name}</p>
@@ -583,7 +583,7 @@ function WaterLogger({
         </div>
 
         <form
-          className="flex gap-2"
+          className="flex min-w-0 flex-wrap gap-2"
           onSubmit={(e) => {
             e.preventDefault();
             const n = parseInt(custom, 10);
@@ -627,7 +627,7 @@ function WaterList({ userId, date }: { userId: string; date: string }) {
         {water.data.map((w) => (
           <div
             key={w.id}
-            className="flex items-center justify-between rounded-xl bg-secondary/40 p-3 text-sm"
+            className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl bg-secondary/40 p-3 text-sm"
           >
             <span className="text-foreground">
               {w.amount_ml} ml
@@ -765,7 +765,7 @@ function WeightList({ userId }: { userId: string }) {
         {weight.data.map((w) => (
           <div
             key={w.id}
-            className="flex items-center justify-between rounded-xl bg-secondary/40 p-3 text-sm"
+            className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl bg-secondary/40 p-3 text-sm"
           >
             <div>
               <p className="font-medium text-foreground">{Number(w.weight_kg).toFixed(1)} kg</p>
@@ -796,3 +796,5 @@ function WeightList({ userId }: { userId: string }) {
 
 /* keep Link import used to satisfy no-unused rule in some builds */
 void Link;
+
+

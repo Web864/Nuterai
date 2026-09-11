@@ -36,9 +36,9 @@ function ScanPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
+      <div className="mx-auto max-w-4xl min-w-0 px-3 py-6 sm:px-6">
         <Tabs defaultValue="photo" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 rounded-2xl">
+          <TabsList className="grid w-full min-w-0 grid-cols-3 rounded-2xl">
             <TabsTrigger value="photo" className="rounded-xl">
               <Camera className="mr-1.5 h-4 w-4" /> Photo
             </TabsTrigger>
@@ -64,3 +64,4 @@ function ScanPage() {
     </div>
   );
 }
+

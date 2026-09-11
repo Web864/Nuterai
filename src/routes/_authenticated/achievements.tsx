@@ -88,11 +88,11 @@ function AchievementsPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6">
+      <main className="mx-auto max-w-5xl min-w-0 space-y-6 px-3 py-6 sm:px-6">
         <LevelCard userId={userId} />
 
         <Tabs defaultValue="badges">
-          <TabsList className="w-full justify-start overflow-x-auto rounded-full">
+          <TabsList className="w-full max-w-full justify-start overflow-x-auto rounded-full">
             <TabsTrigger value="badges" className="rounded-full">
               Badges
             </TabsTrigger>
@@ -533,3 +533,4 @@ function XpTab({ userId }: { userId: string }) {
     </Card>
   );
 }
+

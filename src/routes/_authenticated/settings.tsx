@@ -33,7 +33,7 @@ function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-3xl min-w-0 px-3 py-6 sm:px-6 sm:py-8">
         <Button asChild variant="ghost" size="sm" className="mb-4 rounded-full">
           <Link to="/dashboard">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -67,7 +67,7 @@ function SettingsPage() {
           </Card>
 
           <Card className="rounded-3xl border-border/60 shadow-soft">
-            <CardHeader className="flex-row items-center justify-between">
+            <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
               <CardTitle className="font-display text-xl">Appearance</CardTitle>
               <ThemeToggle />
             </CardHeader>
@@ -79,7 +79,7 @@ function SettingsPage() {
           </Card>
 
           <Card className="rounded-3xl border-border/60 shadow-soft">
-            <CardHeader className="flex-row items-center justify-between">
+            <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
               <CardTitle className="font-display text-xl">Health goals</CardTitle>
               <Button asChild variant="outline" size="sm" className="rounded-full">
                 <Link to="/onboarding">
@@ -127,11 +127,11 @@ function SettingsPage() {
             <CardHeader>
               <CardTitle className="font-display text-xl text-destructive">Danger zone</CardTitle>
             </CardHeader>
-            <CardContent className="flex items-center justify-between gap-4">
+            <CardContent className="flex min-w-0 flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
               <p className="text-sm text-muted-foreground">
                 Permanently delete your account and all your data. This can't be undone.
               </p>
-              <Button asChild variant="destructive" size="sm" className="rounded-full shrink-0">
+              <Button asChild variant="destructive" size="sm" className="shrink-0 rounded-full">
                 <Link to="/settings/delete-account">Delete account</Link>
               </Button>
             </CardContent>
@@ -270,7 +270,7 @@ function ToggleRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className="flex min-w-0 items-start justify-between gap-4">
       <div className="min-w-0">
         <p className="font-medium">{label}</p>
         <p className="text-sm text-muted-foreground">{description}</p>
@@ -282,9 +282,10 @@ function ToggleRow({
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-border/40 pb-2 last:border-0 last:pb-0">
+    <div className="flex min-w-0 flex-wrap justify-between gap-x-3 gap-y-1 border-b border-border/40 pb-2 last:border-0 last:pb-0">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium text-foreground">{value}</span>
     </div>
   );
 }
+

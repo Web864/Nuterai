@@ -2,6 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { profileQueryOptions, goalsQueryOptions } from "@/features/goals/queries";
+import { remindersQueryOptions, type Reminder } from "@/features/reminders/queries";
+import { formatWhen, nextOccurrence, typeLabel } from "@/lib/reminders";
 import {
   mealsTodayQueryOptions,
   waterTodayQueryOptions,
@@ -73,6 +75,7 @@ function Dashboard() {
   const today = useMemo(() => todayISO(), []);
   const meals = useQuery(mealsTodayQueryOptions(userId, today));
   const water = useQuery(waterTodayQueryOptions(userId, today));
+  const reminders = useQuery(remindersQueryOptions(userId));
 
   const totals = useMemo(() => sumMealTotals(meals.data ?? []), [meals.data]);
   const waterMl = useMemo(() => sumWater(water.data ?? []), [water.data]);
@@ -113,7 +116,7 @@ function Dashboard() {
       <TopBar onSignOut={handleSignOut} name={firstName} />
 
       <main className="dashboard-main mx-auto max-w-[1440px] px-4 pb-20 pt-8 sm:px-7 lg:px-10">
-        <header className="dashboard-hero dashboard-reference-hero mb-7 flex flex-wrap items-end justify-between gap-5">
+        <header className="dashboard-hero dashboard-reference-hero mb-7 flex min-w-0 flex-wrap items-end justify-between gap-5">
           <div>
             <p className="dashboard-eyebrow">
               {new Date().toLocaleDateString(undefined, {
@@ -174,7 +177,7 @@ function Dashboard() {
               <BadgeShelf userId={userId} />
             </section>
 
-            <section className="dashboard-workspace mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.72fr)_minmax(330px,1fr)]">
+            <section className="dashboard-workspace mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.72fr)_minmax(0,1fr)]">
               <Card className="dashboard-panel dashboard-macros-panel lg:col-span-1">
                 <CardHeader className="pb-3 sm:p-7 sm:pb-3">
                   <CardTitle className="flex items-center gap-2 font-display text-xl">
@@ -215,7 +218,8 @@ function Dashboard() {
                 </CardContent>
               </Card>
 
-              <div className="dashboard-action-rail space-y-2">
+              <div className="dashboard-action-rail min-w-0 space-y-2">
+                <UpcomingReminderMini reminders={reminders.data ?? []} />
                 <Link to="/log" className="block">
                   <FeatureCard
                     icon={<Utensils className="h-5 w-5" />}
@@ -434,7 +438,7 @@ function MacroRow({
   const pct = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
   return (
     <div>
-      <div className="mb-1.5 flex items-baseline justify-between text-sm">
+      <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2 text-sm">
         <span className="font-medium text-foreground">{label}</span>
         <span className="text-muted-foreground">
           <strong className="text-foreground">{Math.round(value)}</strong> / {target}
@@ -446,6 +450,38 @@ function MacroRow({
   );
 }
 
+function UpcomingReminderMini({ reminders }: { reminders: Reminder[] }) {
+  const items = reminders
+    .filter((r) => r.enabled ?? r.is_active)
+    .map((r) => ({ r, next: nextOccurrence(r) }))
+    .filter((item): item is { r: Reminder; next: Date } => Boolean(item.next))
+    .sort((a, b) => a.next.getTime() - b.next.getTime())
+    .slice(0, 3);
+
+  if (!items.length) return null;
+
+  return (
+    <Card variant="stat" className="dashboard-action-card">
+      <CardContent className="p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="font-medium text-foreground">Next reminder</p>
+          <Bell className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="space-y-3">
+          {items.map(({ r, next }) => (
+            <div key={r.id} className="flex min-w-0 items-center justify-between gap-3 text-sm">
+              <div className="min-w-0">
+                <p className="truncate font-medium text-foreground">{r.title}</p>
+                <p className="truncate text-xs text-muted-foreground">{typeLabel(r.type)} - {r.message ?? "Balanced plan time"}</p>
+              </div>
+              <span className="shrink-0 text-xs text-muted-foreground">{formatWhen(next)}</span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 function FeatureCard({
   icon,
   title,
@@ -480,7 +516,7 @@ function FeatureCard({
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-border/40 pb-2 last:border-0 last:pb-0">
+    <div className="flex min-w-0 flex-wrap justify-between gap-x-3 gap-y-1 border-b border-border/40 pb-2 last:border-0 last:pb-0">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium text-foreground">{value}</span>
     </div>
@@ -526,3 +562,8 @@ function humanizeDiet(d: string | null): string {
     }[d ?? ""] ?? "—"
   );
 }
+
+
+
+
+

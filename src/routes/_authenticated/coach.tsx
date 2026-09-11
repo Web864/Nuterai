@@ -27,6 +27,7 @@ import {
   type CoachThread,
 } from "@/features/coach/queries";
 import { sendCoachMessage } from "@/lib/ai-coach.functions";
+import { applyReminderAction, proposeReminderAction, type ReminderAction } from "@/lib/reminder-actions.server";
 import { describeAiActionError } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/coach")({
@@ -150,7 +151,7 @@ function CoachPage() {
         </aside>
 
         {/* Main */}
-        <section>
+        <section className="min-w-0">
           {activeId ? (
             <ChatPanel
               key={activeId}
@@ -224,9 +225,12 @@ function ChatPanel({
   const qc = useQueryClient();
   const messagesQ = useQuery(messagesQueryOptions(threadId));
   const send = useServerFn(sendCoachMessage);
+  const proposeReminder = useServerFn(proposeReminderAction);
+  const applyReminder = useServerFn(applyReminderAction);
   const { track } = useGamification(userId);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [pendingReminderAction, setPendingReminderAction] = useState<{ action: ReminderAction; confirmation: string; preview: string | null } | null>(null);
   const sendInFlightRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -277,8 +281,8 @@ function ChatPanel({
   }
 
   return (
-    <Card className="rounded-3xl border-border/60 shadow-soft flex flex-col h-[calc(100vh-160px)]">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 sm:p-6">
+    <Card className="flex h-[calc(100dvh-160px)] min-w-0 flex-col overflow-hidden rounded-3xl border-border/60 shadow-soft">
+      <div ref={scrollRef} className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6">
         {isEmpty ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/15">
@@ -286,13 +290,13 @@ function ChatPanel({
             </div>
             <h3 className="mt-3 font-display text-xl">How can I help today?</h3>
             <p className="mt-1 text-sm text-muted-foreground">Try one of these to get started:</p>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2 max-w-2xl w-full">
+            <div className="mt-4 grid w-full max-w-2xl min-w-0 gap-2 sm:grid-cols-2">
               {SUGGESTED.map((s) => (
                 <button
                   key={s}
                   onClick={() => handleSend(s)}
                   disabled={sending}
-                  className="rounded-2xl border border-border/60 bg-card px-4 py-3 text-left text-sm transition-organic hover:border-accent/40 hover:bg-secondary/50"
+                  className="min-w-0 rounded-2xl border border-border/60 bg-card px-4 py-3 text-left text-sm transition-organic hover:border-accent/40 hover:bg-secondary/50"
                 >
                   {s}
                 </button>
@@ -314,20 +318,46 @@ function ChatPanel({
         )}
       </div>
 
+      <Dialog open={!!pendingReminderAction} onOpenChange={(o) => !o && setPendingReminderAction(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm reminder change</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>{pendingReminderAction?.confirmation}</p>
+            {pendingReminderAction?.preview && <p className="rounded-2xl bg-secondary p-3 text-foreground">{pendingReminderAction.preview}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPendingReminderAction(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setInput(pendingReminderAction?.preview ?? ""); setPendingReminderAction(null); }}>Edit</Button>
+            <Button onClick={async () => {
+              if (!pendingReminderAction) return;
+              try {
+                await applyReminder({ data: { action: pendingReminderAction.action } });
+                toast.success("Reminder updated");
+                setPendingReminderAction(null);
+                await qc.invalidateQueries({ queryKey: ["reminders", userId] });
+              } catch (e) {
+                toast.error(describeAiActionError(e, "Could not apply reminder action."));
+              }
+            }}>Confirm</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="border-t border-border/60 p-3 sm:p-4">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSend();
           }}
-          className="flex items-end gap-2"
+          className="flex min-w-0 items-end gap-2"
         >
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask your coach anything…"
             rows={1}
-            className="min-h-[44px] max-h-40 resize-none rounded-2xl"
+            className="max-h-40 min-h-[44px] min-w-0 resize-none rounded-2xl"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -358,16 +388,16 @@ function ChatPanel({
 function MessageBubble({ role, content }: { role: string; content: string }) {
   const isUser = role === "user";
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+    <div className={`flex min-w-0 ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
+        className={`min-w-0 max-w-[85%] overflow-hidden rounded-2xl px-3 py-3 text-sm sm:px-4 ${
           isUser ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
         }`}
       >
         {isUser ? (
-          <p className="whitespace-pre-wrap">{content}</p>
+          <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{content}</p>
         ) : (
-          <div className="prose prose-sm max-w-none prose-p:my-2 prose-ul:my-2 prose-headings:font-display dark:prose-invert">
+          <div className="prose prose-sm max-w-none break-words prose-p:my-2 prose-pre:max-w-full prose-pre:overflow-x-auto prose-pre:whitespace-pre-wrap prose-code:break-words prose-ul:my-2 prose-headings:font-display [overflow-wrap:anywhere] dark:prose-invert">
             <ReactMarkdown>{content}</ReactMarkdown>
           </div>
         )}
@@ -375,3 +405,6 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
     </div>
   );
 }
+
+
+

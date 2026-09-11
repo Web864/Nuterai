@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
-const cardVariants = cva("nutriai-card premium-card-hover", {
+const cardVariants = cva("nutriai-card premium-card-hover min-w-0 max-w-full", {
   variants: {
     variant: {
       default: "",
@@ -43,7 +43,7 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
     <div
       data-slot="card-header"
       ref={ref}
-      className={cn("flex flex-col space-y-1.5 p-6", className)}
+      className={cn("flex min-w-0 flex-col space-y-1.5 p-4 sm:p-6", className)}
       {...props}
     />
   ),
@@ -76,7 +76,7 @@ CardDescription.displayName = "CardDescription";
 
 const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div data-slot="card-content" ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+    <div data-slot="card-content" ref={ref} className={cn("min-w-0 p-4 pt-0 sm:p-6 sm:pt-0", className)} {...props} />
   ),
 );
 CardContent.displayName = "CardContent";
@@ -86,7 +86,7 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
     <div
       data-slot="card-footer"
       ref={ref}
-      className={cn("flex items-center p-6 pt-0", className)}
+      className={cn("flex min-w-0 flex-wrap items-center gap-2 p-4 pt-0 sm:p-6 sm:pt-0", className)}
       {...props}
     />
   ),
@@ -94,3 +94,4 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 CardFooter.displayName = "CardFooter";
 
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
+

@@ -118,7 +118,7 @@ function LandingPage() {
                 NutriAI builds a nutrition, fitness, and lifestyle plan around your body, your
                 goals, and your day - then adapts it as you go.
               </p>
-              <div className="landing-hero-actions mt-8 flex">
+              <div className="landing-hero-actions mt-8 flex flex-wrap gap-3">
                 <Button asChild size="lg" className="landing-primary-action rounded-full px-7">
                   <Link to="/auth" search={{ mode: "signup" }}>
                     Get started free <ArrowRight className="h-4 w-4" />
@@ -131,7 +131,7 @@ function LandingPage() {
               <p className="mt-4 text-xs text-muted-foreground">
                 Free forever. No credit card required.
               </p>
-              <div className="landing-trust-grid mt-9 grid max-w-md border-t border-border/60 pt-6">
+              <div className="landing-trust-grid mt-9 grid max-w-md min-w-0 border-t border-border/60 pt-6">
                 <TrustPoint icon={Sparkles} label="Personalized" detail="Plans" />
                 <TrustPoint icon={Brain} label="AI-powered" detail="Insights" />
                 <TrustPoint icon={BarChart3} label="Real" detail="Results" />
@@ -294,7 +294,7 @@ function SiteHeader() {
             Pricing
           </Link>
         </nav>
-        <div className="landing-header-actions flex items-center">
+        <div className="landing-header-actions flex min-w-0 shrink items-center justify-end">
           <Button asChild variant="ghost" size="sm" className="rounded-full">
             <Link to="/auth">Sign in</Link>
           </Button>
@@ -312,7 +312,7 @@ function SiteHeader() {
 function SiteFooter() {
   return (
     <footer className="border-t border-border/60 bg-background/50">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 px-5 py-9 text-sm text-muted-foreground sm:flex-row sm:px-8 lg:px-10">
+      <div className="mx-auto flex max-w-7xl min-w-0 flex-col items-center justify-between gap-5 px-5 py-9 text-sm text-muted-foreground sm:flex-row sm:px-8 lg:px-10">
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Leaf className="h-3.5 w-3.5" />
@@ -453,3 +453,4 @@ function FeatureCard({
     </div>
   );
 }
+
