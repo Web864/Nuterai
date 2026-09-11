@@ -96,51 +96,51 @@ const features = [
 
 function LandingPage() {
   return (
-    <div className="premium-shell min-h-screen">
+    <div className="landing-page premium-shell min-h-screen">
       <SiteHeader />
       <main>
-        <section className="relative isolate overflow-hidden border-b border-border/60">
+        <section className="landing-hero relative isolate overflow-hidden border-b border-border/60">
           <div className="absolute inset-0 -z-10 bg-gradient-glow" />
-          <div className="mx-auto grid max-w-7xl gap-12 px-5 pb-20 pt-14 sm:px-8 md:pb-24 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-12 lg:px-10 lg:pb-24 lg:pt-16">
-            <div className="max-w-xl">
+          <div className="landing-hero-grid mx-auto grid max-w-7xl lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div className="landing-hero-copy max-w-xl">
               <span className="premium-glass inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-medium text-foreground">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
                 Your personal AI health coach
               </span>
-              <h1 className="mt-6 text-balance font-display text-5xl leading-[0.94] sm:text-6xl lg:text-[4.6rem]">
+              <h1 className="landing-hero-title mt-6 text-balance font-display">
                 Eat well.
                 <br />
                 Move often.
                 <br />
                 <span className="emerald-text">Live better.</span>
               </h1>
-              <p className="mt-6 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg">
+              <p className="landing-hero-description mt-6 max-w-lg text-muted-foreground">
                 NutriAI builds a nutrition, fitness, and lifestyle plan around your body, your
                 goals, and your day - then adapts it as you go.
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button asChild size="lg" className="rounded-full px-7">
+              <div className="landing-hero-actions mt-8 flex">
+                <Button asChild size="lg" className="landing-primary-action rounded-full px-7">
                   <Link to="/auth" search={{ mode: "signup" }}>
                     Get started free <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="rounded-full px-7">
+                <Button asChild variant="outline" size="lg" className="landing-secondary-action rounded-full px-7">
                   <Link to="/auth">I already have an account</Link>
                 </Button>
               </div>
               <p className="mt-4 text-xs text-muted-foreground">
                 Free forever. No credit card required.
               </p>
-              <div className="mt-9 grid max-w-md grid-cols-3 gap-3 border-t border-border/60 pt-6">
+              <div className="landing-trust-grid mt-9 grid max-w-md border-t border-border/60 pt-6">
                 <TrustPoint icon={Sparkles} label="Personalized" detail="Plans" />
                 <TrustPoint icon={Brain} label="AI-powered" detail="Insights" />
                 <TrustPoint icon={BarChart3} label="Real" detail="Results" />
               </div>
             </div>
 
-            <div className="premium-float relative mx-auto w-full max-w-2xl lg:max-w-none">
+            <div className="landing-preview premium-float relative mx-auto w-full max-w-2xl lg:max-w-none">
               <div className="absolute -inset-8 -z-10 rounded-[3rem] bg-primary/20 blur-3xl" />
-              <div className="relative overflow-hidden rounded-[2rem] border border-white/15 shadow-hero sm:rounded-[2.5rem]">
+              <div className="landing-preview-frame relative overflow-hidden border border-white/15 shadow-hero">
                 <img
                   src={heroImage}
                   alt="A wholesome salmon grain bowl with fresh greens, tomatoes, avocado, and seeds"
@@ -148,11 +148,11 @@ function LandingPage() {
                   height={1200}
                   fetchPriority="high"
                   decoding="async"
-                  className="aspect-[1.16] w-full object-cover"
+                  className="landing-preview-image w-full object-cover"
                 />
                 <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-background/75 to-transparent" />
               </div>
-              <div className="premium-glass absolute -left-2 top-1/4 rounded-2xl p-4 sm:-left-7 sm:p-5">
+              <div className="landing-overlay landing-analysis premium-glass absolute rounded-2xl">
                 <div className="flex items-center gap-3">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                     <Activity className="h-4 w-4" />
@@ -168,7 +168,7 @@ function LandingPage() {
                   <Metric label="Fats" value="18g" tone="bg-amber-400" />
                 </div>
               </div>
-              <div className="premium-glass absolute right-3 top-4 flex items-center gap-3 rounded-2xl px-4 py-3 sm:right-5 sm:top-5">
+              <div className="landing-overlay landing-calories premium-glass absolute flex items-center gap-3 rounded-2xl">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                   <Leaf className="h-4 w-4" />
                 </span>
@@ -177,7 +177,7 @@ function LandingPage() {
                   <p className="mt-1 text-xs text-muted-foreground">Balanced meal</p>
                 </div>
               </div>
-              <div className="premium-glass absolute bottom-4 right-3 max-w-[14rem] rounded-2xl px-4 py-3 sm:bottom-5 sm:right-5">
+              <div className="landing-overlay landing-message premium-glass absolute rounded-2xl">
                 <div className="flex items-start gap-2">
                   <Leaf className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   <p className="text-xs leading-5 text-foreground">
@@ -278,8 +278,8 @@ function LandingPage() {
 
 function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/75 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-8 lg:px-10">
+    <header className="landing-header sticky top-0 z-40 border-b border-border/60 bg-background/75 backdrop-blur-xl">
+      <div className="landing-header-inner mx-auto flex max-w-7xl items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 text-foreground">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_22px_oklch(0.77_0.18_153_/_0.3)]">
             <Leaf className="h-4 w-4" />
@@ -294,7 +294,7 @@ function SiteHeader() {
             Pricing
           </Link>
         </nav>
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="landing-header-actions flex items-center">
           <Button asChild variant="ghost" size="sm" className="rounded-full">
             <Link to="/auth">Sign in</Link>
           </Button>
@@ -367,7 +367,7 @@ function TrustPoint({
   detail: string;
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="landing-trust-item flex items-center gap-2">
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
         <Icon className="h-4 w-4" />
       </span>
