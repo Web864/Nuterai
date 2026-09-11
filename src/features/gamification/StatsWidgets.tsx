@@ -25,7 +25,7 @@ export function LevelCard({ userId }: { userId: string | undefined }) {
   const lp = levelProgress(stats.data?.xp ?? 0);
 
   return (
-    <Card className="dashboard-level-card">
+    <Card variant="progress" className="dashboard-level-card">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -85,7 +85,7 @@ export function BadgeShelf({ userId, limit = 6 }: { userId: string | undefined; 
   if (achievements.isLoading) return <Skeleton className="h-24 rounded-3xl" />;
 
   return (
-    <Card className="dashboard-badge-card">
+    <Card variant="achievement" className="dashboard-badge-card">
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <p className="flex items-center gap-2 font-display text-lg text-foreground">

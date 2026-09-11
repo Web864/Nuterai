@@ -394,14 +394,16 @@ function StatCard({
 }) {
   const pct = target && target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
   return (
-    <Card className="dashboard-action-card premium-card-hover">
+    <Card variant="stat" className="dashboard-action-card premium-card-hover">
       <CardContent className="p-5">
         <div
           className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${accent ?? "bg-secondary text-primary"}`}
         >
           {accent ? <span className="text-primary-foreground">{icon}</span> : icon}
         </div>
-        <p className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
+        <p className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          {label}
+        </p>
         <p className="mt-1 font-display text-3xl text-foreground">
           {value.toLocaleString()}
           {target ? (
@@ -456,7 +458,7 @@ function FeatureCard({
   soon?: boolean;
 }) {
   return (
-    <Card className="dashboard-action-card premium-card-hover">
+    <Card variant="stat" className="dashboard-action-card premium-card-hover">
       <CardContent className="flex items-center gap-4 p-4">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-primary">
           {icon}
