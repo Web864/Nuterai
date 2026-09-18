@@ -8,7 +8,12 @@ type ServerEntry = {
 };
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
-const AI_RUNTIME_ENV_KEYS = ["GEMINI_API_KEY", "OPENAI_API_KEY"] as const;
+const AI_RUNTIME_ENV_KEYS = [
+  "GEMINI_API_KEY",
+  "GEMINI_MODEL",
+  "OPENAI_API_KEY",
+  "OPENAI_MODEL",
+] as const;
 
 function applyAiRuntimeEnv(env: unknown) {
   if (!env || typeof env !== "object") return;

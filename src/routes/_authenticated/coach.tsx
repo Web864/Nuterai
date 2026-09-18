@@ -27,7 +27,11 @@ import {
   type CoachThread,
 } from "@/features/coach/queries";
 import { sendCoachMessage } from "@/lib/ai-coach.functions";
-import { applyReminderAction, proposeReminderAction, type ReminderAction } from "@/lib/reminder-actions.server";
+import {
+  applyReminderAction,
+  proposeReminderAction,
+  type ReminderAction,
+} from "@/lib/reminder-actions.server";
 import { describeAiActionError } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/coach")({
@@ -230,7 +234,11 @@ function ChatPanel({
   const { track } = useGamification(userId);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-  const [pendingReminderAction, setPendingReminderAction] = useState<{ action: ReminderAction; confirmation: string; preview: string | null } | null>(null);
+  const [pendingReminderAction, setPendingReminderAction] = useState<{
+    action: ReminderAction;
+    confirmation: string;
+    preview: string | null;
+  } | null>(null);
   const sendInFlightRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -266,9 +274,30 @@ function ChatPanel({
       ];
     });
     try {
-      await send({ data: { thread_id: threadId, message: content } });
+      const result = await send({ data: { thread_id: threadId, message: content } });
+      if ("persisted" in result && result.persisted === false) {
+        qc.setQueryData(["coach-messages", threadId], (old: unknown) => {
+          const list = Array.isArray(old) ? old : [];
+          return [
+            ...list,
+            {
+              id: `ephemeral-assistant-${Date.now()}`,
+              thread_id: threadId,
+              user_id: userId,
+              role: "assistant",
+              content: result.reply,
+              created_at: new Date().toISOString(),
+              model: result.model,
+              tokens_in: null,
+              tokens_out: null,
+            },
+          ];
+        });
+        toast.warning("Your coach reply is shown, but it could not be saved to this conversation.");
+      } else {
+        await qc.invalidateQueries({ queryKey: ["coach-messages", threadId] });
+      }
       void track({ type: "coach_message" }, { silent: true });
-      await qc.invalidateQueries({ queryKey: ["coach-messages", threadId] });
       await qc.invalidateQueries({ queryKey: ["coach-threads", userId] });
     } catch (e) {
       toast.error(describeAiActionError(e, "Failed to send message."));
@@ -318,29 +347,50 @@ function ChatPanel({
         )}
       </div>
 
-      <Dialog open={!!pendingReminderAction} onOpenChange={(o) => !o && setPendingReminderAction(null)}>
+      <Dialog
+        open={!!pendingReminderAction}
+        onOpenChange={(o) => !o && setPendingReminderAction(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm reminder change</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 text-sm text-muted-foreground">
             <p>{pendingReminderAction?.confirmation}</p>
-            {pendingReminderAction?.preview && <p className="rounded-2xl bg-secondary p-3 text-foreground">{pendingReminderAction.preview}</p>}
+            {pendingReminderAction?.preview && (
+              <p className="rounded-2xl bg-secondary p-3 text-foreground">
+                {pendingReminderAction.preview}
+              </p>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setPendingReminderAction(null)}>Cancel</Button>
-            <Button variant="outline" onClick={() => { setInput(pendingReminderAction?.preview ?? ""); setPendingReminderAction(null); }}>Edit</Button>
-            <Button onClick={async () => {
-              if (!pendingReminderAction) return;
-              try {
-                await applyReminder({ data: { action: pendingReminderAction.action } });
-                toast.success("Reminder updated");
+            <Button variant="ghost" onClick={() => setPendingReminderAction(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setInput(pendingReminderAction?.preview ?? "");
                 setPendingReminderAction(null);
-                await qc.invalidateQueries({ queryKey: ["reminders", userId] });
-              } catch (e) {
-                toast.error(describeAiActionError(e, "Could not apply reminder action."));
-              }
-            }}>Confirm</Button>
+              }}
+            >
+              Edit
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!pendingReminderAction) return;
+                try {
+                  await applyReminder({ data: { action: pendingReminderAction.action } });
+                  toast.success("Reminder updated");
+                  setPendingReminderAction(null);
+                  await qc.invalidateQueries({ queryKey: ["reminders", userId] });
+                } catch (e) {
+                  toast.error(describeAiActionError(e, "Could not apply reminder action."));
+                }
+              }}
+            >
+              Confirm
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -405,6 +455,3 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
     </div>
   );
 }
-
-
-

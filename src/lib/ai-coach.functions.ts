@@ -13,10 +13,8 @@ import {
 } from "@/lib/health-safety";
 import { logAiSafetyEvent } from "@/lib/ai-safety-log.server";
 import { fetchWithTimeout, isNetworkOrTimeoutError } from "@/lib/utils";
-
 const NETWORK_ERROR_MESSAGE =
   "Unable to reach the AI coach because your internet connection is unavailable or too slow. Please try again.";
-
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
@@ -30,7 +28,6 @@ const MAX_REPLY_TOKENS = 450;
 const GEMINI_FAILURE_THRESHOLD = 2;
 const GEMINI_COOLDOWN_MS = 3 * 60_000;
 const GEMINI_INVALID_KEY_COOLDOWN_MS = 10 * 60_000;
-
 type GeminiCircuitState = { failures: number; unavailableUntil: number; reason?: string };
 type CoachGlobalState = { requestSeq: number; geminiCircuit: GeminiCircuitState };
 const coachGlobal = globalThis as typeof globalThis & { __nutriaiCoach?: CoachGlobalState };
@@ -38,25 +35,11 @@ const coachState = (coachGlobal.__nutriaiCoach ??= {
   requestSeq: 0,
   geminiCircuit: { failures: 0, unavailableUntil: 0 },
 });
-
 const InputSchema = z.object({
   thread_id: z.string().uuid(),
   message: z.string().trim().min(1).max(4000),
 });
-
-const SYSTEM_PROMPT = `You are NutriAI's personal coach - a warm, evidence-based nutrition and fitness expert.
-
-You have concise context about this user (profile, goals, recent meals, workouts, weight). Use it to give specific, personalized advice.
-
-Style:
-- Be concise, actionable, and encouraging. Never lecture.
-- Default to 3-8 short paragraphs or bullets.
-- Use markdown: short paragraphs, bullet lists, bold for key numbers.
-- When giving nutrition or workout advice, tie back to THIS user's goals and recent data.
-- If asked for a meal or workout, give a concrete plan (foods, macros, sets/reps).
-- If user asks about medical conditions, medications, or eating disorders, recommend a licensed professional.
-- Never make up data you don't have. If context is missing, ask a quick clarifying question.`;
-
+const SYSTEM_PROMPT = `You are NutriAI's personal coach - a warm, evidence-based nutrition and fitness expert.You have concise context about this user (profile, goals, recent meals, workouts, weight). Use it to give specific, personalized advice.Style:- Be concise, actionable, and encouraging. Never lecture.- Default to 3-8 short paragraphs or bullets.- Use markdown: short paragraphs, bullet lists, bold for key numbers.- When giving nutrition or workout advice, tie back to THIS user's goals and recent data.- If asked for a meal or workout, give a concrete plan (foods, macros, sets/reps).- If user asks about medical conditions, medications, or eating disorders, recommend a licensed professional.- Never make up data you don't have. If context is missing, ask a quick clarifying question.`;
 async function buildUserContext(
   supabase: SupabaseClient<Database>,
   userId: string,
@@ -89,13 +72,11 @@ async function buildUserContext(
       .order("logged_at", { ascending: false })
       .limit(2),
   ]);
-
   if (import.meta.env.DEV) {
     console.info("[timing] ai.coach.supabase_context end", {
       durationMs: Math.round(performance.now() - started),
     });
   }
-
   const contextErrors = [goalsRes.error, mealsRes.error, workoutsRes.error, weightRes.error].filter(
     Boolean,
   );
@@ -103,12 +84,10 @@ async function buildUserContext(
     console.warn("[ai.coach.context_error]", { count: contextErrors.length });
     throw new Error("AI Coach could not load your context. Please try again.");
   }
-
   const goals = goalsRes.data;
   const meals = mealsRes.data ?? [];
   const workouts = workoutsRes.data ?? [];
   const weights = weightRes.data ?? [];
-
   const parts: string[] = ["=== USER CONTEXT ==="];
   if (goals) {
     parts.push(
@@ -124,12 +103,7 @@ async function buildUserContext(
   }
   if (meals.length) {
     parts.push(
-      `Recent meals: ${meals
-        .map(
-          (m) =>
-            `${m.name} (${Math.round(m.calories_kcal ?? 0)}kcal, P${Math.round(m.protein_g ?? 0)}/C${Math.round(m.carbs_g ?? 0)}/F${Math.round(m.fat_g ?? 0)})`,
-        )
-        .join("; ")}`,
+      `Recent meals: ${meals.map((m) => `${m.name} (${Math.round(m.calories_kcal ?? 0)}kcal, P${Math.round(m.protein_g ?? 0)}/C${Math.round(m.carbs_g ?? 0)}/F${Math.round(m.fat_g ?? 0)})`).join("; ")}`,
     );
   }
   if (workouts.length) {
@@ -140,7 +114,6 @@ async function buildUserContext(
   parts.push("=== END CONTEXT ===");
   return truncateForPrompt(parts.join("\n"), MAX_SYSTEM_CONTEXT_CHARS);
 }
-
 export const sendCoachMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
@@ -148,28 +121,27 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     const requestId = ++coachState.requestSeq;
     const geminiApiKey = process.env.GEMINI_API_KEY;
     const openAiApiKey = process.env.OPENAI_API_KEY;
-    console.info("[ai.coach.config]", {
-      request: requestId,
+    console.info("[ai.coach.request]", {
+      requestId,
       geminiKeyPresent: Boolean(geminiApiKey),
       openAiKeyPresent: Boolean(openAiApiKey),
-      geminiModel: GEMINI_MODEL,
-      openAiModel: OPENAI_MODEL,
-      geminiCircuitOpen: isGeminiCircuitOpen(),
     });
-
     if (!geminiApiKey && !openAiApiKey) {
       throw new Error("AI Coach is temporarily unavailable. Please try again shortly.");
     }
-
     const { supabase, userId } = context;
     const requestStarted = performance.now();
     let supabaseContextDurationMs = 0;
+    let finalProvider: ProviderName | undefined;
+    let fallbackUsed = false;
+    let providerStatus: number | undefined;
+    let persistenceOk: boolean | undefined;
+    let success = false;
+    let errorType: string | undefined;
     if (import.meta.env.DEV)
       console.info("[timing] ai.coach.request start", { request: requestId });
-
     try {
       await enforceAiRateLimit(supabase, "coach");
-
       const { data: thread, error: threadErr } = await supabase
         .from("coach_threads")
         .select("id, user_id, title")
@@ -179,7 +151,6 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
         throw new Error("AI Coach could not load this conversation. Please try again.");
       if (!thread || thread.user_id !== userId)
         throw new Error("Your session expired. Please sign in again.");
-
       const { data: history, error: historyErr } = await supabase
         .from("coach_messages")
         .select("role, content")
@@ -188,7 +159,6 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
         .limit(MAX_HISTORY_MESSAGES);
       if (historyErr)
         throw new Error("AI Coach could not load this conversation. Please try again.");
-
       const { error: insertUserErr } = await supabase.from("coach_messages").insert({
         thread_id: data.thread_id,
         user_id: userId,
@@ -196,10 +166,8 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
         content: data.message,
       });
       if (insertUserErr) throw new Error(insertUserErr.message);
-
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const risk = classifyHealthRisk(data.message);
-
       if (risk.crisis) {
         void logAiSafetyEvent(userId, "coach", "crisis_input");
         const { data: safeMsg, error: insertSafeErr } = await supabaseAdmin
@@ -214,7 +182,6 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
           .select()
           .single();
         if (insertSafeErr) throw new Error(insertSafeErr.message);
-
         await supabase
           .from("coach_threads")
           .update({
@@ -222,12 +189,9 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
             last_message_at: new Date().toISOString(),
           })
           .eq("id", data.thread_id);
-
         return { message: safeMsg, model: "safety-static" };
       }
-
       if (risk.medical) void logAiSafetyEvent(userId, "coach", "medical_input");
-
       const promptStarted = performance.now();
       const contextStarted = performance.now();
       const userContext = await buildUserContext(supabase, userId);
@@ -235,7 +199,6 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
       const systemContent = risk.medical
         ? `${SYSTEM_PROMPT}\n\n${MEDICAL_INPUT_REINFORCEMENT}\n\n${userContext}`
         : `${SYSTEM_PROMPT}\n\n${userContext}`;
-
       const messages: CoachMessage[] = [
         { role: "system", content: systemContent },
         ...(history ?? [])
@@ -257,7 +220,6 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
           estimatedInputTokens: estimateTokens(estimateMessagesSize(messages)),
         });
       }
-
       const generation = await generateCoachResponse({
         requestId,
         messages,
@@ -266,13 +228,14 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
         supabaseContextDurationMs,
         requestStarted,
       });
+      finalProvider = generation.provider;
+      fallbackUsed = generation.fallbackUsed;
+      providerStatus = generation.status;
       let reply = generation.reply;
-
       if (scanReplyForUnsafePatterns(reply)) {
         void logAiSafetyEvent(userId, "coach", "unsafe_output");
         reply = UNSAFE_OUTPUT_FALLBACK;
       }
-
       const { data: assistantMsg, error: insertAiErr } = await supabaseAdmin
         .from("coach_messages")
         .insert({
@@ -286,8 +249,17 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
         })
         .select()
         .single();
-      if (insertAiErr) throw new Error(insertAiErr.message);
-
+      if (insertAiErr) {
+        persistenceOk = false;
+        console.warn("[ai.coach.persistence]", {
+          requestId,
+          persistenceOk,
+          errorType: "persistence_failure",
+        });
+        success = true;
+        return { message: null, reply, model: generation.model, persisted: false };
+      }
+      persistenceOk = true;
       const preview = reply.slice(0, 140);
       const patch: { last_message_preview: string; last_message_at: string; title?: string } = {
         last_message_preview: preview,
@@ -297,28 +269,35 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
         patch.title = data.message.slice(0, 60);
       }
       await supabase.from("coach_threads").update(patch).eq("id", data.thread_id);
-
-      return { message: assistantMsg, model: generation.model };
+      success = true;
+      return { message: assistantMsg, reply, model: generation.model, persisted: true };
+    } catch (error) {
+      errorType = error instanceof CoachProviderError ? "provider_failure" : "server_exception";
+      throw error;
     } finally {
-      if (import.meta.env.DEV) {
-        console.info("[timing] ai.coach.request end", {
-          request: requestId,
-          durationMs: Math.round(performance.now() - requestStarted),
-        });
-      }
+      console.info("[ai.coach.result]", {
+        requestId,
+        success,
+        finalProvider,
+        fallbackUsed,
+        providerStatus,
+        persistenceOk,
+        totalMs: Math.round(performance.now() - requestStarted),
+        errorType,
+      });
     }
   });
-
 type CoachMessage = { role: string; content: string };
 type ProviderName = "gemini" | "openai";
-
 type CoachGeneration = {
   reply: string;
   model: string;
   tokensIn: number | null;
   tokensOut: number | null;
+  provider: ProviderName;
+  status: number;
+  fallbackUsed: boolean;
 };
-
 class CoachProviderError extends Error {
   constructor(
     message: string,
@@ -329,7 +308,6 @@ class CoachProviderError extends Error {
     super(message);
   }
 }
-
 async function generateCoachResponse({
   requestId,
   messages,
@@ -348,7 +326,6 @@ async function generateCoachResponse({
   const promptChars = estimateMessagesSize(messages);
   const promptMessages = messages.length;
   let failure: unknown;
-
   if (geminiApiKey && !isGeminiCircuitOpen()) {
     try {
       const generation = await generateFromProvider({
@@ -378,12 +355,10 @@ async function generateCoachResponse({
   } else {
     failure = new CoachProviderError("Gemini is in cooldown.", true, undefined, "circuit_open");
   }
-
   if (!openAiApiKey) {
     if (failure instanceof CoachProviderError) throw new Error(providerUserMessage(failure));
     throw new Error("AI Coach is temporarily unavailable. Please try again shortly.");
   }
-
   try {
     return await generateFromProvider({
       requestId,
@@ -403,7 +378,6 @@ async function generateCoachResponse({
     throw new Error(providerUserMessage(toCoachProviderError(err)));
   }
 }
-
 async function generateFromProvider({
   requestId,
   provider,
@@ -445,19 +419,13 @@ async function generateFromProvider({
       attempt,
     });
   }
-
   try {
     const response = await fetchWithTimeout(
       url,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model,
-          messages,
-          max_tokens: MAX_REPLY_TOKENS,
-          temperature: 0.5,
-        }),
+        body: JSON.stringify({ model, messages, max_tokens: MAX_REPLY_TOKENS, temperature: 0.5 }),
       },
       { timeoutMs, label: `ai.coach.${provider}.${attempt}` },
     );
@@ -470,7 +438,6 @@ async function generateFromProvider({
         code,
       );
     }
-
     let payload: {
       choices?: Array<{ message?: { content?: string } }>;
       usage?: { prompt_tokens?: number; completion_tokens?: number };
@@ -490,7 +457,6 @@ async function generateFromProvider({
         false,
       );
     }
-
     if (import.meta.env.DEV) {
       console.info("[timing] ai.coach.provider_end", {
         request: requestId,
@@ -508,11 +474,23 @@ async function generateFromProvider({
         fallbackUsed,
       });
     }
+    console.info("[ai.coach.provider]", {
+      requestId,
+      providerAttempted: provider,
+      model,
+      providerStatus: response.status,
+      providerErrorCode: undefined,
+      providerDurationMs: Math.round(performance.now() - started),
+      fallbackUsed,
+    });
     return {
       reply,
       model,
       tokensIn: payload.usage?.prompt_tokens ?? null,
       tokensOut: payload.usage?.completion_tokens ?? null,
+      provider,
+      status: response.status,
+      fallbackUsed,
     };
   } catch (err) {
     const failure = toCoachProviderError(err);
@@ -533,33 +511,36 @@ async function generateFromProvider({
         fallbackUsed,
       });
     }
+    console.warn("[ai.coach.provider]", {
+      requestId,
+      providerAttempted: provider,
+      model,
+      providerStatus: failure.status,
+      providerErrorCode: failure.code,
+      providerDurationMs: Math.round(performance.now() - started),
+      fallbackUsed,
+    });
     throw failure;
   }
 }
-
 function truncateForPrompt(value: string, maxChars: number): string {
   return value.length <= maxChars ? value : `${value.slice(0, maxChars)}...`;
 }
-
 function estimateMessagesSize(messages: CoachMessage[]): number {
   return messages.reduce(
     (total, message) => total + message.role.length + message.content.length,
     0,
   );
 }
-
 function estimateTokens(chars: number): number {
   return Math.ceil(chars / 4);
 }
-
 function isGeminiCircuitOpen(now = Date.now()): boolean {
   return coachState.geminiCircuit.unavailableUntil > now;
 }
-
 function resetGeminiCircuit(): void {
   coachState.geminiCircuit = { failures: 0, unavailableUntil: 0 };
 }
-
 function recordGeminiFailure(err: unknown): void {
   const failure = toCoachProviderError(err);
   const failures = coachState.geminiCircuit.failures + 1;
@@ -573,12 +554,10 @@ function recordGeminiFailure(err: unknown): void {
     reason: String(failure.code ?? failure.status ?? "transient"),
   };
 }
-
 function shouldShortCircuitGemini(err: unknown): boolean {
   if (!(err instanceof CoachProviderError)) return false;
   return err.transient || err.status === 401 || err.status === 403;
 }
-
 function isFallbackEligible(err: unknown): boolean {
   if (!(err instanceof CoachProviderError)) return false;
   return (
@@ -588,7 +567,6 @@ function isFallbackEligible(err: unknown): boolean {
     err.code === "circuit_open"
   );
 }
-
 function providerUserMessage(error: CoachProviderError): string {
   if (error.status === 408 || error.code === "timeout") {
     return "The AI Coach took too long to respond. Please try again.";
@@ -601,19 +579,15 @@ function providerUserMessage(error: CoachProviderError): string {
   }
   return "AI Coach is temporarily unavailable. Please try again shortly.";
 }
-
 function isTimeoutError(err: unknown): boolean {
   return err instanceof DOMException && (err.name === "TimeoutError" || err.name === "AbortError");
 }
-
 function isTransientStatus(status: number): boolean {
   return status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
 }
-
 function isTransientProviderFailure(err: unknown): boolean {
   return err instanceof CoachProviderError && err.transient;
 }
-
 function toCoachProviderError(err: unknown): CoachProviderError {
   if (err instanceof CoachProviderError) return err;
   if (isTimeoutError(err)) {
@@ -629,7 +603,6 @@ function toCoachProviderError(err: unknown): CoachProviderError {
   }
   return new CoachProviderError("AI Coach is temporarily unavailable. Please try again.", false);
 }
-
 function providerStatusMessage(status: number): string {
   if (status === 429) return "The AI Coach is busy right now. Please try again in a moment.";
   if (status === 401 || status === 403)
@@ -637,7 +610,6 @@ function providerStatusMessage(status: number): string {
   if (status >= 500) return "AI Coach is temporarily unavailable. Please try again shortly.";
   return "The AI Coach couldn't process this request. Please try again.";
 }
-
 async function readProviderError(response: Response): Promise<string | number | undefined> {
   const text = await response.text().catch(() => "");
   try {

@@ -218,7 +218,7 @@ function Dashboard() {
                 </CardContent>
               </Card>
 
-              <div className="dashboard-action-rail min-w-0 space-y-2">
+              <div className="dashboard-action-rail min-w-0 space-y-2 pt-3">
                 <UpcomingReminderMini reminders={reminders.data ?? []} />
                 <Link to="/log" className="block">
                   <FeatureCard
