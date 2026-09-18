@@ -16,6 +16,38 @@ function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
 }
 
+const networkWindow = new Map<string, number[]>();
+
+function logSupabaseRequest(input: RequestInfo | URL, init: RequestInit | undefined): void {
+  if (!import.meta.env.DEV) return;
+
+  const rawUrl = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  const url = new URL(rawUrl);
+  const method = init?.method ?? (input instanceof Request ? input.method : "GET");
+  const endpoint = url.pathname;
+  const key = `${method} ${endpoint}`;
+  const now = Date.now();
+  const timestamps = (networkWindow.get(key) ?? []).filter((timestamp) => now - timestamp <= 10_000);
+  timestamps.push(now);
+  networkWindow.set(key, timestamps);
+
+  const stack = new Error().stack?.split("\n").slice(2, 4).join("\n");
+  console.info("[supabase.request]", {
+    endpoint,
+    method,
+    route: typeof window === "undefined" ? "server" : window.location.pathname,
+    timestamp: new Date(now).toISOString(),
+    caller: stack,
+  });
+  if (timestamps.length > 3) {
+    console.warn("[network.loop.detected]", {
+      queryKey: key,
+      caller: stack,
+      reason: "supabase_fetch",
+      count: timestamps.length,
+    });
+  }
+}
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
   return (input, init) => {
     const headers = new Headers(
@@ -35,6 +67,7 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     }
 
     headers.set("apikey", supabaseKey);
+    logSupabaseRequest(input, init);
     return fetch(input, { ...init, headers });
   };
 }
