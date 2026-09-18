@@ -6,11 +6,23 @@ import { enforceAiRateLimit } from "@/lib/rate-limit.server";
 import { classifyHealthRisk, CRISIS_SAFE_RESPONSE } from "@/lib/health-safety";
 import { logAiSafetyEvent } from "@/lib/ai-safety-log.server";
 
-const NETWORK_ERROR_MESSAGE =
-  "Unable to reach the AI service because your internet connection is unavailable or too slow. Please try again.";
-
-const MODEL = "gemini-flash-latest";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
+const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+const GEMINI_TIMEOUT_MS = 12_000;
+const OPENAI_TIMEOUT_MS = 18_000;
+const GEMINI_FAILURE_THRESHOLD = 2;
+const GEMINI_COOLDOWN_MS = 3 * 60_000;
+
+type ProviderName = "gemini" | "openai";
+type WorkoutCircuitState = { failures: number; unavailableUntil: number };
+type WorkoutGlobalState = { requestSeq: number; geminiCircuit: WorkoutCircuitState };
+const workoutGlobal = globalThis as typeof globalThis & { __nutriaiWorkout?: WorkoutGlobalState };
+const workoutState = (workoutGlobal.__nutriaiWorkout ??= {
+  requestSeq: 0,
+  geminiCircuit: { failures: 0, unavailableUntil: 0 },
+});
 
 const ExerciseSchema = z.object({
   name: z.string(),
@@ -144,15 +156,155 @@ const TOOL = {
   },
 };
 
+type ProviderGeneration = {
+  plan: GeneratedPlan;
+  raw: unknown;
+  model: string;
+  provider: ProviderName;
+  fallbackUsed: boolean;
+};
+
+class WorkoutProviderError extends Error {
+  constructor(message: string, readonly transient: boolean, readonly status?: number, readonly errorType?: string) {
+    super(message);
+  }
+}
+
+function isTransientStatus(status: number): boolean {
+  return status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+}
+
+function isGeminiCircuitOpen(now = Date.now()): boolean {
+  return workoutState.geminiCircuit.unavailableUntil > now;
+}
+
+function resetGeminiCircuit(): void {
+  workoutState.geminiCircuit = { failures: 0, unavailableUntil: 0 };
+}
+
+function recordGeminiFailure(): void {
+  const failures = workoutState.geminiCircuit.failures + 1;
+  workoutState.geminiCircuit = {
+    failures,
+    unavailableUntil: failures >= GEMINI_FAILURE_THRESHOLD ? Date.now() + GEMINI_COOLDOWN_MS : 0,
+  };
+}
+
+function toWorkoutProviderError(err: unknown): WorkoutProviderError {
+  if (err instanceof WorkoutProviderError) return err;
+  if (isNetworkOrTimeoutError(err)) {
+    const timeout = err instanceof DOMException && (err.name === "TimeoutError" || err.name === "AbortError");
+    return new WorkoutProviderError(
+      timeout ? "Workout generation timed out." : "Workout provider network failure.",
+      true,
+      undefined,
+      timeout ? "timeout" : "network",
+    );
+  }
+  return new WorkoutProviderError("Workout provider request failed.", false, undefined, "unknown");
+}
+
+async function generateFromProvider({ requestId, provider, apiKey, model, userPrompt, timeoutMs, fallbackUsed, requestStarted }: {
+  requestId: number; provider: ProviderName; apiKey: string; model: string; userPrompt: string;
+  timeoutMs: number; fallbackUsed: boolean; requestStarted: number;
+}): Promise<ProviderGeneration> {
+  const started = performance.now();
+  let status: number | undefined;
+  try {
+    const response = await fetchWithTimeout(
+      provider === "gemini" ? GEMINI_URL : OPENAI_URL,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: userPrompt }],
+          tools: [TOOL],
+          tool_choice: { type: "function", function: { name: "record_workout_plan" } },
+        }),
+      },
+      { timeoutMs, label: `ai.workout.${provider}` },
+    );
+    status = response.status;
+    if (!response.ok) {
+      throw new WorkoutProviderError("Workout provider returned an error.", isTransientStatus(response.status), response.status, `http_${response.status}`);
+    }
+    let payload: { choices?: Array<{ message?: { tool_calls?: Array<{ function?: { arguments?: string } }> } }> };
+    try { payload = (await response.json()) as typeof payload; }
+    catch { throw new WorkoutProviderError("Workout provider returned invalid JSON.", false, status, "invalid_json"); }
+    const raw = payload.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    if (!raw) throw new WorkoutProviderError("Workout provider returned no plan.", false, status, "invalid_response");
+    let parsedJson: unknown;
+    try { parsedJson = JSON.parse(raw); }
+    catch { throw new WorkoutProviderError("Workout provider returned malformed plan data.", false, status, "malformed_plan"); }
+    const plan = PlanSchema.safeParse(parsedJson);
+    if (!plan.success) throw new WorkoutProviderError("Workout provider returned an invalid plan.", false, status, "invalid_plan");
+    console.info("[ai.workout.provider]", {
+      requestId, provider, model, status, duration: Math.round(performance.now() - started), fallbackUsed,
+      totalMs: Math.round(performance.now() - requestStarted), errorType: undefined,
+    });
+    return { plan: plan.data, raw: parsedJson, model, provider, fallbackUsed };
+  } catch (err) {
+    const failure = toWorkoutProviderError(err);
+    console.warn("[ai.workout.provider]", {
+      requestId, provider, model, status: failure.status ?? status, duration: Math.round(performance.now() - started), fallbackUsed,
+      totalMs: Math.round(performance.now() - requestStarted), errorType: failure.errorType,
+    });
+    throw failure;
+  }
+}
+
+async function generateWorkoutWithFallback({ requestId, geminiApiKey, openAiApiKey, userPrompt, requestStarted }: {
+  requestId: number; geminiApiKey?: string; openAiApiKey?: string; userPrompt: string; requestStarted: number;
+}): Promise<ProviderGeneration> {
+  let geminiFailure: WorkoutProviderError | undefined;
+  if (geminiApiKey && !isGeminiCircuitOpen()) {
+    try {
+      const generation = await generateFromProvider({
+        requestId, provider: "gemini", apiKey: geminiApiKey, model: GEMINI_MODEL, userPrompt,
+        timeoutMs: GEMINI_TIMEOUT_MS, fallbackUsed: false, requestStarted,
+      });
+      resetGeminiCircuit();
+      return generation;
+    } catch (err) {
+      geminiFailure = toWorkoutProviderError(err);
+      if (!geminiFailure.transient) throw geminiFailure;
+      recordGeminiFailure();
+    }
+  } else {
+    geminiFailure = new WorkoutProviderError(
+      geminiApiKey ? "Gemini is in cooldown." : "Gemini is not configured.",
+      true,
+      undefined,
+      geminiApiKey ? "circuit_open" : "missing_key",
+    );
+  }
+
+  if (openAiApiKey) {
+    try {
+      return await generateFromProvider({
+        requestId, provider: "openai", apiKey: openAiApiKey, model: OPENAI_MODEL, userPrompt,
+        timeoutMs: OPENAI_TIMEOUT_MS, fallbackUsed: true, requestStarted,
+      });
+    } catch {
+      // The final result log records a single user-safe combined failure.
+    }
+  }
+  throw geminiFailure;
+}
 export const generateWorkoutPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("AI is not configured. Please contact support.");
+    const requestId = ++workoutState.requestSeq;
+    const requestStarted = performance.now();
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    const openAiApiKey = process.env.OPENAI_API_KEY;
+    if (!geminiApiKey && !openAiApiKey) {
+      throw new Error("Workout generation is temporarily unavailable. Please try again.");
+    }
 
     await enforceAiRateLimit(context.supabase, "workout");
-
     if (data.focus_notes && classifyHealthRisk(data.focus_notes).crisis) {
       void logAiSafetyEvent(context.userId, "workout", "crisis_input");
       throw new Error(CRISIS_SAFE_RESPONSE);
@@ -167,96 +319,50 @@ Days per week: ${data.days_per_week}
 Target session length: ${data.minutes_per_session} minutes
 ${data.focus_notes ? `Preferences: ${data.focus_notes}` : ""}`;
 
-    let res: Response;
     try {
-      res = await fetchWithTimeout(
-        GEMINI_URL,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: MODEL,
-            messages: [
-              { role: "system", content: SYSTEM_PROMPT },
-              { role: "user", content: userPrompt },
-            ],
-            tools: [TOOL],
-            tool_choice: { type: "function", function: { name: "record_workout_plan" } },
-          }),
-        },
-        { timeoutMs: 25000, label: "ai.workout.gemini" },
-      );
+      const generation = await generateWorkoutWithFallback({
+        requestId, geminiApiKey, openAiApiKey, userPrompt, requestStarted,
+      });
+      const { plan, raw: parsedJson, model, provider, fallbackUsed } = generation;
+      const { supabase, userId } = context;
+      const { data: planRow, error: planErr } = await supabase
+        .from("workout_plans")
+        .insert({
+          user_id: userId, name: plan.name, goal: plan.goal, difficulty: plan.difficulty,
+          days_per_week: plan.days_per_week, duration_weeks: plan.duration_weeks,
+          notes: plan.notes ?? null, is_active: false, source: "ai", ai_model: model,
+          ai_raw: parsedJson as never,
+        })
+        .select()
+        .single();
+      if (planErr || !planRow) throw new Error(planErr?.message ?? "Failed to save plan.");
+
+      const dayRows = plan.days.map((d) => ({
+        plan_id: planRow.id, user_id: userId, day_index: d.day_index, title: d.title,
+        focus: d.focus, estimated_minutes: d.estimated_minutes, exercises: d.exercises as never,
+      }));
+      const { error: daysErr } = await supabase.from("workout_plan_days").insert(dayRows);
+      if (daysErr) {
+        console.error("[generateWorkoutPlan] day insert error", daysErr);
+        throw new Error("Saved plan but failed to save days.");
+      }
+
+      console.info("[ai.workout.result]", {
+        requestId, provider, model, status: 200, duration: Math.round(performance.now() - requestStarted),
+        fallbackUsed, totalMs: Math.round(performance.now() - requestStarted), errorType: undefined,
+      });
+      return { plan_id: planRow.id, name: planRow.name, model };
     } catch (err) {
-      if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
+      console.warn("[ai.workout.result]", {
+        requestId, provider: "openai", model: OPENAI_MODEL,
+        status: err instanceof WorkoutProviderError ? err.status : undefined,
+        duration: Math.round(performance.now() - requestStarted), fallbackUsed: Boolean(openAiApiKey),
+        totalMs: Math.round(performance.now() - requestStarted),
+        errorType: err instanceof WorkoutProviderError ? err.errorType : "persistence",
+      });
+      if (err instanceof WorkoutProviderError && err.transient) {
+        throw new Error("Workout generation is temporarily unavailable. Please try again.");
+      }
       throw err;
     }
-
-    if (res.status === 429) throw new Error("Rate limit reached. Please try again in a moment.");
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error("[generateWorkoutPlan] gateway error", res.status, text);
-      throw new Error("Couldn't reach the AI service. Please try again.");
-    }
-
-    const payload = (await res.json()) as {
-      choices?: Array<{
-        message?: {
-          tool_calls?: Array<{ function?: { name?: string; arguments?: string } }>;
-        };
-      }>;
-    };
-
-    const raw = payload.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-    if (!raw) throw new Error("The AI didn't return a usable plan. Try rephrasing.");
-
-    let parsedJson: unknown;
-    try {
-      parsedJson = JSON.parse(raw);
-    } catch {
-      throw new Error("The AI returned malformed data. Try again.");
-    }
-
-    const plan = PlanSchema.parse(parsedJson);
-
-    // Persist plan + days
-    const { supabase, userId } = context;
-    const { data: planRow, error: planErr } = await supabase
-      .from("workout_plans")
-      .insert({
-        user_id: userId,
-        name: plan.name,
-        goal: plan.goal,
-        difficulty: plan.difficulty,
-        days_per_week: plan.days_per_week,
-        duration_weeks: plan.duration_weeks,
-        notes: plan.notes ?? null,
-        is_active: false,
-        source: "ai",
-        ai_model: MODEL,
-        ai_raw: parsedJson as never,
-      })
-      .select()
-      .single();
-    if (planErr || !planRow) throw new Error(planErr?.message ?? "Failed to save plan.");
-
-    const dayRows = plan.days.map((d) => ({
-      plan_id: planRow.id,
-      user_id: userId,
-      day_index: d.day_index,
-      title: d.title,
-      focus: d.focus,
-      estimated_minutes: d.estimated_minutes,
-      exercises: d.exercises as never,
-    }));
-
-    const { error: daysErr } = await supabase.from("workout_plan_days").insert(dayRows);
-    if (daysErr) {
-      console.error("[generateWorkoutPlan] day insert error", daysErr);
-      throw new Error("Saved plan but failed to save days.");
-    }
-
-    return { plan_id: planRow.id, name: planRow.name, model: MODEL };
   });
