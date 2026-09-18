@@ -15,7 +15,7 @@ import { logAiSafetyEvent } from "@/lib/ai-safety-log.server";
 import { fetchWithTimeout, isNetworkOrTimeoutError } from "@/lib/utils";
 const NETWORK_ERROR_MESSAGE =
   "Unable to reach the AI coach because your internet connection is unavailable or too slow. Please try again.";
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
@@ -121,6 +121,13 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     const requestId = ++coachState.requestSeq;
     const geminiApiKey = process.env.GEMINI_API_KEY;
     const openAiApiKey = process.env.OPENAI_API_KEY;
+    console.info("[ai.gemini.config]", {
+      keyPresent: Boolean(geminiApiKey),
+      model: GEMINI_MODEL,
+      environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "unknown",
+      timestamp: new Date().toISOString(),
+      requestId,
+    });
     console.info("[ai.coach.request]", {
       requestId,
       geminiKeyPresent: Boolean(geminiApiKey),
