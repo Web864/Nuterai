@@ -176,6 +176,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   const knownAuthUserId = useRef<string | null>(null);
+  const authIdentityReady = useRef(false);
 
   useEffect(() => {
     rootLifecycleCount += 1;
@@ -202,29 +203,51 @@ function RootComponent() {
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      const userId = session?.user.id ?? null;
+      const previousUserId = knownAuthUserId.current;
+      const nextUserId = session?.user.id ?? null;
+      const identityChanged = authIdentityReady.current && previousUserId !== nextUserId;
 
-      if (event === "SIGNED_IN") {
-        const sameSession = userId !== null && knownAuthUserId.current === userId;
-        knownAuthUserId.current = userId;
-        if (sameSession) return;
+      console.info("[auth.identity.compare]", {
+        previousUserId,
+        nextUserId,
+        authEvent: event,
+        identityChanged,
+        timestamp: new Date().toISOString(),
+      });
 
+      // Supabase delivers this once when the listener subscribes. It seeds the
+      // stable identity without turning an existing session into a refresh.
+      if (event === "INITIAL_SESSION") {
+        knownAuthUserId.current = nextUserId;
+        authIdentityReady.current = true;
+        return;
+      }
+
+      if (!authIdentityReady.current) {
+        knownAuthUserId.current = nextUserId;
+        authIdentityReady.current = true;
+        return;
+      }
+
+      if (event === "TOKEN_REFRESHED" || (event === "SIGNED_IN" && !identityChanged)) {
+        return;
+      }
+
+      knownAuthUserId.current = nextUserId;
+
+      if (event === "SIGNED_IN" && identityChanged) {
         logGlobalRefreshTrigger("router.invalidate", "auth_identity_changed");
         router.invalidate();
         return;
       }
 
-      if (event === "USER_UPDATED") {
-        knownAuthUserId.current = userId;
-        if (!userId) return;
-
+      if (event === "USER_UPDATED" && nextUserId) {
         logGlobalRefreshTrigger("queryClient.invalidateQueries", "auth_user_updated_profile_only");
-        queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+        queryClient.invalidateQueries({ queryKey: ["profile", nextUserId] });
         return;
       }
 
-      if (event === "SIGNED_OUT") {
-        knownAuthUserId.current = null;
+      if (event === "SIGNED_OUT" && identityChanged) {
         logGlobalRefreshTrigger("router.invalidate", "auth_signed_out");
         queryClient.clear();
         router.invalidate();
