@@ -1,5 +1,6 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { logQueryExecution } from "@/lib/query-debug";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 export type MealEntry = Tables<"meal_entries">;
@@ -21,6 +22,7 @@ export const mealsTodayQueryOptions = (userId: string | undefined, date: string)
     enabled: !!userId,
     queryFn: async (): Promise<MealEntry[]> => {
       if (!userId) return [];
+            logQueryExecution("meals", "mealsTodayQueryOptions");
       const { data, error } = await supabase
         .from("meal_entries")
         .select("*")
@@ -66,6 +68,7 @@ export const waterTodayQueryOptions = (userId: string | undefined, date: string)
     enabled: !!userId,
     queryFn: async (): Promise<WaterLog[]> => {
       if (!userId) return [];
+            logQueryExecution("water", "waterTodayQueryOptions");
       const { data, error } = await supabase
         .from("water_logs")
         .select("*")
@@ -111,6 +114,7 @@ export const weightHistoryQueryOptions = (userId: string | undefined) =>
     enabled: !!userId,
     queryFn: async (): Promise<WeightLog[]> => {
       if (!userId) return [];
+            logQueryExecution("weight", "weightHistoryQueryOptions");
       const { data, error } = await supabase
         .from("weight_logs")
         .select("*")

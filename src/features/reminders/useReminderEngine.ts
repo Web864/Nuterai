@@ -1,8 +1,8 @@
-﻿import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { profileQueryOptions } from "@/features/goals/queries";
-import { remindersQueryOptions, refreshReminderNextTriggers, type Reminder } from "./queries";
+import { remindersQueryOptions, type Reminder } from "./queries";
 import { detectTimezone, inQuietHours, nextOccurrence, notificationCopy, typeLabel } from "@/lib/reminders";
 import { isNative } from "@/lib/native";
 
@@ -29,10 +29,6 @@ export function useReminderEngine(userId: string | undefined) {
     }
   }, [userId, profileQ.data]);
 
-  useEffect(() => {
-    if (!userId || !reminders.length) return;
-    void refreshReminderNextTriggers(userId, reminders);
-  }, [userId, reminders]);
 
   useEffect(() => {
     if (!userId) return;

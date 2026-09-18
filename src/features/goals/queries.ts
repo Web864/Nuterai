@@ -1,5 +1,6 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { logQueryExecution } from "@/lib/query-debug";
 import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
 
 export type Profile = Tables<"profiles">;
@@ -11,6 +12,7 @@ export const profileQueryOptions = (userId: string | undefined) =>
     enabled: !!userId,
     queryFn: async (): Promise<Profile | null> => {
       if (!userId) return null;
+            logQueryExecution("profile", "profileQueryOptions");
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -27,6 +29,7 @@ export const goalsQueryOptions = (userId: string | undefined) =>
     enabled: !!userId,
     queryFn: async (): Promise<UserGoals | null> => {
       if (!userId) return null;
+            logQueryExecution("goals", "goalsQueryOptions");
       const { data, error } = await supabase
         .from("user_goals")
         .select("*")

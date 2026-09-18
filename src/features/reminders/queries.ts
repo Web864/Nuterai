@@ -1,5 +1,6 @@
-﻿import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { logQueryExecution } from "@/lib/query-debug";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import {
   buildDietReminderDrafts,
@@ -27,9 +28,10 @@ export const remindersQueryOptions = (userId: string | undefined) =>
   queryOptions({
     queryKey: ["reminders", userId],
     enabled: !!userId,
-    staleTime: 30_000,
+    staleTime: 5 * 60_000,
     queryFn: async (): Promise<Reminder[]> => {
       if (!userId) return [];
+            logQueryExecution("reminders", "remindersQueryOptions");
       const { data, error } = await supabase
         .from("reminders")
         .select("*")
@@ -46,6 +48,7 @@ export const notificationsQueryOptions = (userId: string | undefined) =>
     enabled: !!userId,
     queryFn: async (): Promise<NotificationRow[]> => {
       if (!userId) return [];
+            logQueryExecution("notifications", "notificationsQueryOptions");
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
@@ -55,7 +58,7 @@ export const notificationsQueryOptions = (userId: string | undefined) =>
       if (error) throw error;
       return data ?? [];
     },
-    refetchInterval: 60_000,
+    staleTime: 60_000,
   });
 
 export const reminderEventsQueryOptions = (userId: string | undefined) =>
@@ -64,7 +67,8 @@ export const reminderEventsQueryOptions = (userId: string | undefined) =>
     enabled: !!userId,
     queryFn: async (): Promise<ReminderEvent[]> => {
       if (!userId) return [];
-      const { data, error } = await supabase
+            logQueryExecution("reminder-events", "reminderEventsQueryOptions");
+const { data, error } = await supabase
         .from("reminder_events" as never)
         .select("*")
         .eq("user_id", userId)
