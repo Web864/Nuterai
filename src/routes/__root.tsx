@@ -10,7 +10,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { registerServiceWorker } from "../lib/pwa";
@@ -158,9 +158,42 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+let rootLifecycleCount = 0;
+
+/** TEMPORARY: remove after confirming the auth-driven global refresh loop is gone. */
+function logGlobalRefreshTrigger(type: string, reason: string): void {
+  const stack = new Error().stack?.split("\n").slice(2, 4).join("\n");
+  console.info("[global.refresh.trigger]", {
+    type,
+    reason,
+    route: typeof window === "undefined" ? "server" : window.location.pathname,
+    timestamp: new Date().toISOString(),
+    caller: stack,
+  });
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const knownAuthUserId = useRef<string | null>(null);
+
+  useEffect(() => {
+    rootLifecycleCount += 1;
+    console.info("[query.client.lifecycle]", {
+      state: "mounted",
+      count: rootLifecycleCount,
+      route: window.location.pathname,
+      timestamp: new Date().toISOString(),
+    });
+    return () => {
+      console.info("[query.client.lifecycle]", {
+        state: "unmounted",
+        count: rootLifecycleCount,
+        route: window.location.pathname,
+        timestamp: new Date().toISOString(),
+      });
+    };
+  }, []);
 
   useEffect(() => {
     registerServiceWorker();
@@ -168,10 +201,34 @@ function RootComponent() {
   }, [router]);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      const userId = session?.user.id ?? null;
+
+      if (event === "SIGNED_IN") {
+        const sameSession = userId !== null && knownAuthUserId.current === userId;
+        knownAuthUserId.current = userId;
+        if (sameSession) return;
+
+        logGlobalRefreshTrigger("router.invalidate", "auth_identity_changed");
+        router.invalidate();
+        return;
+      }
+
+      if (event === "USER_UPDATED") {
+        knownAuthUserId.current = userId;
+        if (!userId) return;
+
+        logGlobalRefreshTrigger("queryClient.invalidateQueries", "auth_user_updated_profile_only");
+        queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+        return;
+      }
+
+      if (event === "SIGNED_OUT") {
+        knownAuthUserId.current = null;
+        logGlobalRefreshTrigger("router.invalidate", "auth_signed_out");
+        queryClient.clear();
+        router.invalidate();
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);
@@ -186,7 +243,6 @@ function RootComponent() {
     </ThemeProvider>
   );
 }
-
 /** sonner's richColors palette is keyed off its own `theme` prop (defaults
  * to "light") independent of our .dark class — without wiring it to
  * resolvedTheme, success/error toasts would stay light-themed in dark mode. */

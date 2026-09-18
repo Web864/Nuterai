@@ -3,15 +3,38 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { profileQueryOptions } from "@/features/goals/queries";
 import { remindersQueryOptions, type Reminder } from "./queries";
-import { detectTimezone, inQuietHours, nextOccurrence, notificationCopy, typeLabel } from "@/lib/reminders";
+import {
+  detectTimezone,
+  inQuietHours,
+  nextOccurrence,
+  notificationCopy,
+  typeLabel,
+} from "@/lib/reminders";
 import { isNative } from "@/lib/native";
 
 const WEB_TICK_MS = 60_000;
 const LOOKAHEAD_MS = 75_000;
 const NATIVE_HORIZON_DAYS = 7;
+let reminderEngineMounts = 0;
 
 export function useReminderEngine(userId: string | undefined) {
   const qc = useQueryClient();
+  useEffect(() => {
+    reminderEngineMounts += 1;
+    console.info("[reminder.engine.lifecycle]", {
+      state: "mounted",
+      count: reminderEngineMounts,
+      route: window.location.pathname,
+      timestamp: new Date().toISOString(),
+    });
+    return () =>
+      console.info("[reminder.engine.lifecycle]", {
+        state: "unmounted",
+        count: reminderEngineMounts,
+        route: window.location.pathname,
+        timestamp: new Date().toISOString(),
+      });
+  }, []);
   const profileQ = useQuery(profileQueryOptions(userId));
   const remindersQ = useQuery(remindersQueryOptions(userId));
   const firedRef = useRef<Set<string>>(new Set());
@@ -28,7 +51,6 @@ export function useReminderEngine(userId: string | undefined) {
       void supabase.from("profiles").update({ timezone: detected }).eq("id", userId);
     }
   }, [userId, profileQ.data]);
-
 
   useEffect(() => {
     if (!userId) return;
@@ -81,9 +103,19 @@ export function useReminderEngine(userId: string | undefined) {
         } as never);
 
         const quiet = inQuietHours(next, tz, profile?.quiet_hours_start, profile?.quiet_hours_end);
-        if (notifEnabled && !quiet && typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+        if (
+          notifEnabled &&
+          !quiet &&
+          typeof window !== "undefined" &&
+          "Notification" in window &&
+          Notification.permission === "granted"
+        ) {
           try {
-            const n = new Notification(r.title, { body: message, tag: r.id, icon: "/apple-touch-icon.png" });
+            const n = new Notification(r.title, {
+              body: message,
+              tag: r.id,
+              icon: "/apple-touch-icon.png",
+            });
             n.onclick = () => {
               window.focus();
               window.location.href = "/reminders";
@@ -96,7 +128,11 @@ export function useReminderEngine(userId: string | undefined) {
 
         await supabase
           .from("reminders")
-          .update({ last_triggered_at: slotIso, next_trigger_at: nextOccurrence(r, new Date(next.getTime() + 1000))?.toISOString() ?? null } as never)
+          .update({
+            last_triggered_at: slotIso,
+            next_trigger_at:
+              nextOccurrence(r, new Date(next.getTime() + 1000))?.toISOString() ?? null,
+          } as never)
           .eq("id", r.id)
           .eq("user_id", userId);
         qc.invalidateQueries({ queryKey: ["notifications", userId] });
@@ -125,8 +161,11 @@ export function useReminderEngine(userId: string | undefined) {
       const pending = await LocalNotifications.getPending();
       const expected = buildNativeNotifications(reminders, profile);
       const expectedIds = new Set(expected.map((n) => n.id));
-      const stale = pending.notifications.filter((n) => isNutriReminderId(n.id) && !expectedIds.has(n.id));
-      if (stale.length) await LocalNotifications.cancel({ notifications: stale.map((n) => ({ id: n.id })) });
+      const stale = pending.notifications.filter(
+        (n) => isNutriReminderId(n.id) && !expectedIds.has(n.id),
+      );
+      if (stale.length)
+        await LocalNotifications.cancel({ notifications: stale.map((n) => ({ id: n.id })) });
 
       const pendingIds = new Set(pending.notifications.map((n) => n.id));
       const missing = expected.filter((n) => !pendingIds.has(n.id));
@@ -140,10 +179,21 @@ export function useReminderEngine(userId: string | undefined) {
   }, [userId, reminders, profileQ.data]);
 }
 
-function buildNativeNotifications(reminders: Reminder[], profile: Awaited<ReturnType<typeof profileQueryOptions>>["queryFn"] extends () => Promise<infer T> ? T : never) {
+function buildNativeNotifications(
+  reminders: Reminder[],
+  profile: Awaited<ReturnType<typeof profileQueryOptions>>["queryFn"] extends () => Promise<infer T>
+    ? T
+    : never,
+) {
   if (profile?.notifications_enabled === false) return [];
   const tz = profile?.timezone || detectTimezone();
-  const result: Array<{ id: number; title: string; body: string; schedule: { at: Date; allowWhileIdle: true }; extra: { reminderId: string; source: string } }> = [];
+  const result: Array<{
+    id: number;
+    title: string;
+    body: string;
+    schedule: { at: Date; allowWhileIdle: true };
+    extra: { reminderId: string; source: string };
+  }> = [];
   const horizon = Date.now() + NATIVE_HORIZON_DAYS * 86_400_000;
 
   for (const r of reminders) {
@@ -181,7 +231,11 @@ export async function checkNotificationPermission(): Promise<NotificationPermiss
   if (isNative) {
     const { LocalNotifications } = await import("@capacitor/local-notifications");
     const current = await LocalNotifications.checkPermissions();
-    return current.display === "granted" ? "granted" : current.display === "denied" ? "denied" : "default";
+    return current.display === "granted"
+      ? "granted"
+      : current.display === "denied"
+        ? "denied"
+        : "default";
   }
   if (typeof window === "undefined" || !("Notification" in window)) return "denied";
   return Notification.permission;
@@ -191,10 +245,18 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
   if (isNative) {
     const { LocalNotifications } = await import("@capacitor/local-notifications");
     const current = await LocalNotifications.checkPermissions();
-    const result = current.display === "prompt" || current.display === "prompt-with-rationale" ? await LocalNotifications.requestPermissions() : current;
-    return result.display === "granted" ? "granted" : result.display === "denied" ? "denied" : "default";
+    const result =
+      current.display === "prompt" || current.display === "prompt-with-rationale"
+        ? await LocalNotifications.requestPermissions()
+        : current;
+    return result.display === "granted"
+      ? "granted"
+      : result.display === "denied"
+        ? "denied"
+        : "default";
   }
   if (typeof window === "undefined" || !("Notification" in window)) return "denied";
-  if (Notification.permission === "granted" || Notification.permission === "denied") return Notification.permission;
+  if (Notification.permission === "granted" || Notification.permission === "denied")
+    return Notification.permission;
   return await Notification.requestPermission();
 }
