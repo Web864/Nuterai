@@ -5,11 +5,12 @@ import { routeTree } from "./routeTree.gen";
 export const getRouter = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
-      queries: {
-        staleTime: 60_000,
-        refetchOnWindowFocus: false,
-        refetchOnMount: false,
-      },
+     queries: {
+  staleTime: 60_000,
+  refetchOnWindowFocus: false,
+  refetchOnMount: false,
+  retry: 1,
+},
     },
   });
 
