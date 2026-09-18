@@ -18,16 +18,21 @@ function isNewSupabaseApiKey(value: string): boolean {
 
 const networkWindow = new Map<string, number[]>();
 
+/**
+ * TEMPORARY production-safe network diagnostics. Remove after the idle request
+ * loop is identified; this deliberately records no URL query parameters, bodies,
+ * headers, tokens, API keys, or user data.
+ */
 function logSupabaseRequest(input: RequestInfo | URL, init: RequestInit | undefined): void {
-  if (!import.meta.env.DEV) return;
-
   const rawUrl = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
   const url = new URL(rawUrl);
   const method = init?.method ?? (input instanceof Request ? input.method : "GET");
   const endpoint = url.pathname;
   const key = `${method} ${endpoint}`;
   const now = Date.now();
-  const timestamps = (networkWindow.get(key) ?? []).filter((timestamp) => now - timestamp <= 10_000);
+  const timestamps = (networkWindow.get(key) ?? []).filter(
+    (timestamp) => now - timestamp <= 10_000,
+  );
   timestamps.push(now);
   networkWindow.set(key, timestamps);
 
