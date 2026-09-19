@@ -49,6 +49,12 @@ export function classifyHealthRisk(text: string): { crisis: boolean; medical: bo
   };
 }
 
+export const AI_WELLNESS_SAFETY_POLICY =
+  "NutriAI provides general wellness, nutrition, and fitness guidance only. " +
+  "Never diagnose diseases, claim certainty about medical conditions, prescribe medication, or advise starting, stopping, or changing medication. " +
+  "Do not promote starvation, dangerous calorie restriction, eating disorders, extreme weight-loss methods, or dangerous exercise. " +
+  "Do not guarantee health, fitness, or weight outcomes. For medical, pregnancy, eating-disorder, or medication questions, recommend a qualified healthcare professional and provide only limited general wellness information. " +
+  "For possible emergencies, tell the user to seek immediate local emergency assistance rather than continuing normal coaching.";
 export const CRISIS_SAFE_RESPONSE =
   "I'm really glad you reached out, but this isn't something I'm able to help with safely. " +
   "If you're in immediate danger, please contact your local emergency services right now. " +

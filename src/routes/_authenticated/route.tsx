@@ -17,26 +17,8 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthedLayout,
 });
 
-let authenticatedLayoutMounts = 0;
-
 function AuthedLayout() {
   const { userId } = Route.useRouteContext();
-  useEffect(() => {
-    authenticatedLayoutMounts += 1;
-    console.info("[authenticated.layout.lifecycle]", {
-      state: "mounted",
-      count: authenticatedLayoutMounts,
-      route: window.location.pathname,
-      timestamp: new Date().toISOString(),
-    });
-    return () =>
-      console.info("[authenticated.layout.lifecycle]", {
-        state: "unmounted",
-        count: authenticatedLayoutMounts,
-        route: window.location.pathname,
-        timestamp: new Date().toISOString(),
-      });
-  }, []);
   useReminderEngine(userId);
   useDailyCheckIn(userId);
   useScreenBreakSystem(userId);

@@ -36,9 +36,17 @@ export async function deleteAccount(userId: string): Promise<DeleteAccountResult
         .delete()
         .eq("user_id", userId);
       if (error) {
-        // Not fatal on its own — the auth.users delete below still removes
-        // everything with a working CASCADE. Logged so a gap is visible.
+        // Fail closed. Auth deletion is not transactional with PostgREST deletes,
+        // so continuing could leave orphaned user data if a cascade is missing.
         console.error(`[deleteAccount] cleanup failed for ${table}`, error.message);
+        await writeAudit(admin, userId, "account.self_delete_failed", "user", userId, {
+          table,
+          error: error.message,
+        });
+        return {
+          success: false,
+          message: "We couldn't complete account deletion. Please try again or contact support.",
+        };
       }
     }
 

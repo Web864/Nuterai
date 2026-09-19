@@ -27,6 +27,7 @@ import {
   type CoachThread,
 } from "@/features/coach/queries";
 import { sendCoachMessage } from "@/lib/ai-coach.functions";
+import { submitAiFeedback } from "@/lib/ai-feedback.functions";
 import {
   applyReminderAction,
   proposeReminderAction,
@@ -335,7 +336,7 @@ function ChatPanel({
         ) : (
           <div className="space-y-4">
             {messages.map((m) => (
-              <MessageBubble key={m.id} role={m.role} content={m.content} />
+              <MessageBubble key={m.id} messageId={m.id} role={m.role} content={m.content} />
             ))}
             {sending && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -435,7 +436,136 @@ function ChatPanel({
   );
 }
 
-function MessageBubble({ role, content }: { role: string; content: string }) {
+function MessageFeedback({ messageId }: { messageId: string }) {
+  const submitFeedback = useServerFn(submitAiFeedback);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [category, setCategory] = useState("unsafe_advice");
+  const [details, setDetails] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit(feedback: "helpful" | "not_helpful" | "report") {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await submitFeedback({
+        data: {
+          coachMessageId: messageId,
+          feedback,
+          ...(feedback === "report"
+            ? {
+                category: category as
+                  | "unsafe_advice"
+                  | "incorrect_information"
+                  | "offensive_inappropriate"
+                  | "medical_concern"
+                  | "other",
+                details,
+              }
+            : {}),
+        },
+      });
+      toast.success(
+        feedback === "report" ? "Report submitted. Thank you." : "Thanks for your feedback.",
+      );
+      setReportOpen(false);
+      setDetails("");
+    } catch (error) {
+      toast.error(
+        describeAiActionError(error, "We couldn't submit your feedback. Please try again."),
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="mt-2 flex flex-wrap gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs"
+          disabled={submitting}
+          onClick={() => submit("helpful")}
+        >
+          Helpful
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs"
+          disabled={submitting}
+          onClick={() => submit("not_helpful")}
+        >
+          Not helpful
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs text-muted-foreground"
+          disabled={submitting}
+          onClick={() => setReportOpen(true)}
+        >
+          Report
+        </Button>
+      </div>
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report AI response</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <label className="block text-sm font-medium" htmlFor="ai-report-category">
+              Reason
+            </label>
+            <select
+              id="ai-report-category"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              disabled={submitting}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="unsafe_advice">Unsafe advice</option>
+              <option value="incorrect_information">Incorrect information</option>
+              <option value="offensive_inappropriate">Offensive or inappropriate</option>
+              <option value="medical_concern">Medical concern</option>
+              <option value="other">Other</option>
+            </select>
+            <label className="block text-sm font-medium" htmlFor="ai-report-details">
+              Details (optional)
+            </label>
+            <Textarea
+              id="ai-report-details"
+              value={details}
+              onChange={(event) => setDetails(event.target.value)}
+              maxLength={500}
+              disabled={submitting}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" disabled={submitting} onClick={() => setReportOpen(false)}>
+              Cancel
+            </Button>
+            <Button disabled={submitting} onClick={() => submit("report")}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Submit report
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function MessageBubble({
+  messageId,
+  role,
+  content,
+}: {
+  messageId: string;
+  role: string;
+  content: string;
+}) {
   const isUser = role === "user";
   return (
     <div className={`flex min-w-0 ${isUser ? "justify-end" : "justify-start"}`}>
@@ -447,9 +577,12 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
         {isUser ? (
           <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{content}</p>
         ) : (
-          <div className="prose prose-sm max-w-none break-words prose-p:my-2 prose-pre:max-w-full prose-pre:overflow-x-auto prose-pre:whitespace-pre-wrap prose-code:break-words prose-ul:my-2 prose-headings:font-display [overflow-wrap:anywhere] dark:prose-invert">
-            <ReactMarkdown>{content}</ReactMarkdown>
-          </div>
+          <>
+            <div className="prose prose-sm max-w-none break-words prose-p:my-2 prose-pre:max-w-full prose-pre:overflow-x-auto prose-pre:whitespace-pre-wrap prose-code:break-words prose-ul:my-2 prose-headings:font-display [overflow-wrap:anywhere] dark:prose-invert">
+              <ReactMarkdown>{content}</ReactMarkdown>
+            </div>
+            <MessageFeedback messageId={messageId} />
+          </>
         )}
       </div>
     </div>

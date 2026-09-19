@@ -157,44 +157,11 @@ function RootShell({ children }: { children: ReactNode }) {
     </html>
   );
 }
-
-let rootLifecycleCount = 0;
-
-/** TEMPORARY: remove after confirming the auth-driven global refresh loop is gone. */
-function logGlobalRefreshTrigger(type: string, reason: string): void {
-  const stack = new Error().stack?.split("\n").slice(2, 4).join("\n");
-  console.info("[global.refresh.trigger]", {
-    type,
-    reason,
-    route: typeof window === "undefined" ? "server" : window.location.pathname,
-    timestamp: new Date().toISOString(),
-    caller: stack,
-  });
-}
-
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   const knownAuthUserId = useRef<string | null>(null);
   const authIdentityReady = useRef(false);
-
-  useEffect(() => {
-    rootLifecycleCount += 1;
-    console.info("[query.client.lifecycle]", {
-      state: "mounted",
-      count: rootLifecycleCount,
-      route: window.location.pathname,
-      timestamp: new Date().toISOString(),
-    });
-    return () => {
-      console.info("[query.client.lifecycle]", {
-        state: "unmounted",
-        count: rootLifecycleCount,
-        route: window.location.pathname,
-        timestamp: new Date().toISOString(),
-      });
-    };
-  }, []);
 
   useEffect(() => {
     registerServiceWorker();
@@ -206,14 +173,6 @@ function RootComponent() {
       const previousUserId = knownAuthUserId.current;
       const nextUserId = session?.user.id ?? null;
       const identityChanged = authIdentityReady.current && previousUserId !== nextUserId;
-
-      console.info("[auth.identity.compare]", {
-        previousUserId,
-        nextUserId,
-        authEvent: event,
-        identityChanged,
-        timestamp: new Date().toISOString(),
-      });
 
       // Supabase delivers this once when the listener subscribes. It seeds the
       // stable identity without turning an existing session into a refresh.

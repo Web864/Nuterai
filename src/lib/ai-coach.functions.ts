@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { enforceAiRateLimit } from "@/lib/rate-limit.server";
 import {
+  AI_WELLNESS_SAFETY_POLICY,
   classifyHealthRisk,
   CRISIS_SAFE_RESPONSE,
   MEDICAL_INPUT_REINFORCEMENT,
@@ -39,7 +40,9 @@ const InputSchema = z.object({
   thread_id: z.string().uuid(),
   message: z.string().trim().min(1).max(4000),
 });
-const SYSTEM_PROMPT = `You are NutriAI's personal coach - a warm, evidence-based nutrition and fitness expert.You have concise context about this user (profile, goals, recent meals, workouts, weight). Use it to give specific, personalized advice.Style:- Be concise, actionable, and encouraging. Never lecture.- Default to 3-8 short paragraphs or bullets.- Use markdown: short paragraphs, bullet lists, bold for key numbers.- When giving nutrition or workout advice, tie back to THIS user's goals and recent data.- If asked for a meal or workout, give a concrete plan (foods, macros, sets/reps).- If user asks about medical conditions, medications, or eating disorders, recommend a licensed professional.- Never make up data you don't have. If context is missing, ask a quick clarifying question.`;
+const SYSTEM_PROMPT = `${AI_WELLNESS_SAFETY_POLICY}
+
+You are NutriAI's personal coach - a warm, evidence-based nutrition and fitness expert.You have concise context about this user (profile, goals, recent meals, workouts, weight). Use it to give specific, personalized advice.Style:- Be concise, actionable, and encouraging. Never lecture.- Default to 3-8 short paragraphs or bullets.- Use markdown: short paragraphs, bullet lists, bold for key numbers.- When giving nutrition or workout advice, tie back to THIS user's goals and recent data.- If asked for a meal or workout, give a concrete plan (foods, macros, sets/reps).- If user asks about medical conditions, medications, or eating disorders, recommend a licensed professional.- Never make up data you don't have. If context is missing, ask a quick clarifying question.`;
 async function buildUserContext(
   supabase: SupabaseClient<Database>,
   userId: string,

@@ -3,7 +3,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { fetchWithTimeout, isNetworkOrTimeoutError } from "@/lib/utils";
 import { enforceAiRateLimit } from "@/lib/rate-limit.server";
-import { classifyHealthRisk, CRISIS_SAFE_RESPONSE } from "@/lib/health-safety";
+import {
+  AI_WELLNESS_SAFETY_POLICY,
+  classifyHealthRisk,
+  CRISIS_SAFE_RESPONSE,
+} from "@/lib/health-safety";
 import { logAiSafetyEvent } from "@/lib/ai-safety-log.server";
 
 const NETWORK_ERROR_MESSAGE =
@@ -35,7 +39,9 @@ const InputSchema = z.object({
   description: z.string().trim().min(2).max(500),
 });
 
-const SYSTEM_PROMPT = `You are NutriAI's food-nutrition estimator. Given a user's free-text description of what they ate, return a structured JSON breakdown of each food item with realistic nutrition values.
+const SYSTEM_PROMPT = `${AI_WELLNESS_SAFETY_POLICY}
+
+You are NutriAI's food-nutrition estimator. Given a user's free-text description of what they ate, return a structured JSON breakdown of each food item with realistic nutrition values.
 
 Rules:
 - Break the description into distinct food items (e.g. "chicken salad with olive oil and a coffee" -> 3 items).
