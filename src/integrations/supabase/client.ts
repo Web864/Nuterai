@@ -35,7 +35,7 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     }
 
     headers.set("apikey", supabaseKey);
-    logSupabaseRequest(input, init);
+    // logSupabaseRequest(input, init);
     return fetch(input, { ...init, headers });
   };
 }
