@@ -42,17 +42,16 @@ export async function enforceAiRateLimit(
     p_endpoint: endpoint,
   });
 
-  if (error) {
-    console.error("[enforceAiRateLimit] check failed", endpoint, error.message);
-    throw new RateLimitError("Couldn't verify usage limits right now. Please try again shortly.");
-  }
+ if (error) {
+  console.error("[enforceAiRateLimit] check failed", {
+    endpoint,
+    message: error.message,
+    code: error.code,
+    details: error.details,
+    hint: error.hint,
+  });
 
-  const result = data as { allowed: boolean; reason?: "burst" | "daily" };
-  if (!result.allowed) {
-    throw new RateLimitError(
-      result.reason === "burst"
-        ? "You're sending requests too quickly. Please wait a few minutes and try again."
-        : "You've reached today's usage limit for this feature. Please try again tomorrow.",
-    );
-  }
+  throw new RateLimitError(
+    "Couldn't verify usage limits right now. Please try again shortly.",
+  );
 }
