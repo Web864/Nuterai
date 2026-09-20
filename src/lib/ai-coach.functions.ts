@@ -18,10 +18,13 @@ const NETWORK_ERROR_MESSAGE =
   "Unable to reach the AI coach because your internet connection is unavailable or too slow. Please try again.";
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+const LONGCAT_MODEL = process.env.LONGCAT_MODEL ?? "LongCat-2.0";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+const LONGCAT_URL = `${(process.env.LONGCAT_BASE_URL ?? "https://api.longcat.chat/openai/v1").replace(/\/+$/, "")}/chat/completions`;
 const GEMINI_TIMEOUT_MS = 12_000;
 const OPENAI_TIMEOUT_MS = 18_000;
+const LONGCAT_TIMEOUT_MS = 12_000;
 const MAX_HISTORY_MESSAGES = 6;
 const MAX_HISTORY_MESSAGE_CHARS = 700;
 const MAX_SYSTEM_CONTEXT_CHARS = 1_800;
@@ -122,6 +125,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
     const requestId = ++coachState.requestSeq;
+    const longCatApiKey = process.env.LONGCAT_API_KEY;
     const geminiApiKey = process.env.GEMINI_API_KEY;
     const openAiApiKey = process.env.OPENAI_API_KEY;
     console.info("[ai.gemini.config]", {
@@ -133,10 +137,11 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     });
     console.info("[ai.coach.request]", {
       requestId,
+      longCatKeyPresent: Boolean(longCatApiKey),
       geminiKeyPresent: Boolean(geminiApiKey),
       openAiKeyPresent: Boolean(openAiApiKey),
     });
-    if (!geminiApiKey && !openAiApiKey) {
+    if (!longCatApiKey && !geminiApiKey && !openAiApiKey) {
       throw new Error("AI Coach is temporarily unavailable. Please try again shortly.");
     }
     const { supabase, userId } = context;
@@ -233,6 +238,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
       const generation = await generateCoachResponse({
         requestId,
         messages,
+        longCatApiKey,
         geminiApiKey,
         openAiApiKey,
         supabaseContextDurationMs,
@@ -298,7 +304,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     }
   });
 type CoachMessage = { role: string; content: string };
-type ProviderName = "gemini" | "openai";
+type ProviderName = "longcat" | "gemini" | "openai";
 type CoachGeneration = {
   reply: string;
   model: string;
@@ -321,6 +327,7 @@ class CoachProviderError extends Error {
 async function generateCoachResponse({
   requestId,
   messages,
+  longCatApiKey,
   geminiApiKey,
   openAiApiKey,
   supabaseContextDurationMs,
@@ -328,6 +335,7 @@ async function generateCoachResponse({
 }: {
   requestId: number;
   messages: CoachMessage[];
+  longCatApiKey?: string;
   geminiApiKey?: string;
   openAiApiKey?: string;
   supabaseContextDurationMs: number;
@@ -336,6 +344,29 @@ async function generateCoachResponse({
   const promptChars = estimateMessagesSize(messages);
   const promptMessages = messages.length;
   let failure: unknown;
+  let fallbackUsed = false;
+  if (longCatApiKey) {
+    try {
+      return await generateFromProvider({
+        requestId,
+        provider: "longcat",
+        model: LONGCAT_MODEL,
+        apiKey: longCatApiKey,
+        messages,
+        timeoutMs: LONGCAT_TIMEOUT_MS,
+        fallbackUsed: false,
+        attempt: 1,
+        promptChars,
+        promptMessages,
+        supabaseContextDurationMs,
+        requestStarted,
+      });
+    } catch (err) {
+      failure = err;
+      if (!isFallbackEligible(err) && !isTransientProviderFailure(err)) throw err;
+      fallbackUsed = true;
+    }
+  }
   if (geminiApiKey && !isGeminiCircuitOpen()) {
     try {
       const generation = await generateFromProvider({
@@ -345,7 +376,7 @@ async function generateCoachResponse({
         apiKey: geminiApiKey,
         messages,
         timeoutMs: GEMINI_TIMEOUT_MS,
-        fallbackUsed: false,
+        fallbackUsed,
         attempt: 1,
         promptChars,
         promptMessages,
@@ -416,7 +447,8 @@ async function generateFromProvider({
   requestStarted: number;
 }): Promise<CoachGeneration> {
   const started = performance.now();
-  const url = provider === "gemini" ? GEMINI_URL : OPENAI_URL;
+  const url =
+    provider === "longcat" ? LONGCAT_URL : provider === "gemini" ? GEMINI_URL : OPENAI_URL;
   if (import.meta.env.DEV) {
     console.info("[timing] ai.coach.provider_start", {
       request: requestId,
@@ -435,7 +467,13 @@ async function generateFromProvider({
       {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model, messages, max_tokens: MAX_REPLY_TOKENS, temperature: 0.5 }),
+        body: JSON.stringify({
+          model,
+          messages,
+          max_tokens: MAX_REPLY_TOKENS,
+          temperature: 0.5,
+          ...(provider === "longcat" ? { thinking: { type: "disabled" } } : {}),
+        }),
       },
       { timeoutMs, label: `ai.coach.${provider}.${attempt}` },
     );
