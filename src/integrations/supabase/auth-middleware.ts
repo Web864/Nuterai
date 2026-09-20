@@ -76,15 +76,19 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
   {
     global: {
       fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY!),
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     },
     auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
+      storage: undefined,
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
     },
-  }
+  },
 );
-
+  
     const { data, error } = await supabase.auth.getClaims(token);
     if (error || !data?.claims) {
       throw new Error("Unauthorized: Invalid token");

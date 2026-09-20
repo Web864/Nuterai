@@ -33,7 +33,28 @@ export class RateLimitError extends Error {
  * errors (e.g. transient DB issue, or the migration hasn't been deployed
  * yet) — a blocked request is preferable to an unbounded-cost failure mode
  * for a cost-sensitive endpoint.
- */
+//  */
+// export async function enforceAiRateLimit(
+//   supabase: SupabaseClient<Database>,
+//   endpoint: AiEndpoint,
+// ): Promise<void> {
+//   const { data, error } = await supabase.rpc("check_ai_rate_limit", {
+//     p_endpoint: endpoint,
+//   });
+
+//  if (error) {
+//   console.error("[enforceAiRateLimit] check failed", {
+//     endpoint,
+//     message: error.message,
+//     code: error.code,
+//     details: error.details,
+//     hint: error.hint,
+//   });
+
+//   throw new RateLimitError(
+//     "Couldn't verify usage limits right now. Please try again shortly.",
+//   );
+// }
 export async function enforceAiRateLimit(
   supabase: SupabaseClient<Database>,
   endpoint: AiEndpoint,
@@ -42,16 +63,30 @@ export async function enforceAiRateLimit(
     p_endpoint: endpoint,
   });
 
- if (error) {
-  console.error("[enforceAiRateLimit] check failed", {
-    endpoint,
-    message: error.message,
-    code: error.code,
-    details: error.details,
-    hint: error.hint,
-  });
+  if (error) {
+    console.error("[enforceAiRateLimit] check failed", {
+      endpoint,
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
 
-  throw new RateLimitError(
-    "Couldn't verify usage limits right now. Please try again shortly.",
-  );
+    throw new RateLimitError(
+      "Couldn't verify usage limits right now. Please try again shortly.",
+    );
+  }
+
+  const result = data as {
+    allowed: boolean;
+    reason?: "burst" | "daily";
+  };
+
+  if (!result.allowed) {
+    throw new RateLimitError(
+      result.reason === "burst"
+        ? "You're sending requests too quickly. Please wait a few minutes and try again."
+        : "You've reached today's usage limit for this feature. Please try again tomorrow.",
+    );
+  }
 }
