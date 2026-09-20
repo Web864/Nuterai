@@ -16,6 +16,10 @@ const NETWORK_ERROR_MESSAGE =
 const MODEL = "gemini-3.8-flash";
 // const MODEL = "gemini-flash-latest";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+const LONGCAT_MODEL = process.env.LONGCAT_MODEL ?? "LongCat-2.0";
+const LONGCAT_URL =
+  (process.env.LONGCAT_BASE_URL ?? "https://api.longcat.chat/openai/v1").replace(/\/+$/, "") +
+  "/chat/completions";
 
 const AnalyzedItemSchema = z.object({
   name: z.string(),
@@ -101,8 +105,10 @@ export const analyzeMeal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
+    const longCatApiKey = process.env.LONGCAT_API_KEY;
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
+    // if (!apiKey) {
+    if (!longCatApiKey && !apiKey) {
       throw new Error("AI is not configured. Please contact support.");
     }
 
@@ -113,6 +119,46 @@ export const analyzeMeal = createServerFn({ method: "POST" })
       throw new Error(CRISIS_SAFE_RESPONSE);
     }
 
+    if (longCatApiKey) {
+      try {
+        const longCatResponse = await fetchWithTimeout(
+          LONGCAT_URL,
+          {
+            method: "POST",
+            headers: {
+              Authorization: "Bearer " + longCatApiKey,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: LONGCAT_MODEL,
+              messages: [
+                { role: "system", content: SYSTEM_PROMPT },
+                { role: "user", content: "Food description: " + data.description },
+              ],
+              tools: [TOOL],
+              tool_choice: "auto",
+              thinking: { type: "disabled" },
+            }),
+          },
+          { timeoutMs: 20_000, label: "ai.meal_text.longcat" },
+        );
+        if (!longCatResponse.ok) throw new Error("LongCat HTTP " + longCatResponse.status);
+        const longCatPayload = (await longCatResponse.json()) as {
+          choices?: Array<{
+            message?: { tool_calls?: Array<{ function?: { arguments?: string } }> };
+          }>;
+        };
+        const longCatRaw =
+          longCatPayload.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+        if (!longCatRaw) throw new Error("LongCat returned no structured meal estimate.");
+        const longCatParsed = AnalyzedResponseSchema.parse(JSON.parse(longCatRaw));
+        return { ...longCatParsed, model: LONGCAT_MODEL };
+      } catch (err) {
+        console.warn("[analyzeMeal] LongCat failed; falling back to Gemini.", {
+          errorType: err instanceof Error ? err.name : "unknown",
+        });
+      }
+    }
     let res: Response;
     try {
       res = await fetchWithTimeout(
@@ -139,7 +185,7 @@ export const analyzeMeal = createServerFn({ method: "POST" })
       if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
       throw err;
     }
-    debugger;
+    // debugger;
 
     if (res.status === 429) {
       throw new Error("Rate limit reached. Please try again in a moment.");

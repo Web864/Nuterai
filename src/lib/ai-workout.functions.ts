@@ -12,14 +12,20 @@ import { logAiSafetyEvent } from "@/lib/ai-safety-log.server";
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+const LONGCAT_MODEL = process.env.LONGCAT_MODEL ?? "LongCat-2.0";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+const LONGCAT_URL =
+  (process.env.LONGCAT_BASE_URL ?? "https://api.longcat.chat/openai/v1").replace(/\/+$/, "") +
+  "/chat/completions";
 const GEMINI_TIMEOUT_MS = 12_000;
 const OPENAI_TIMEOUT_MS = 18_000;
+const LONGCAT_TIMEOUT_MS = 12_000;
 const GEMINI_FAILURE_THRESHOLD = 2;
 const GEMINI_COOLDOWN_MS = 3 * 60_000;
 
-type ProviderName = "gemini" | "openai";
+// type ProviderName = "gemini" | "openai";
+type ProviderName = "longcat" | "gemini" | "openai";
 type WorkoutCircuitState = { failures: number; unavailableUntil: number };
 type WorkoutGlobalState = { requestSeq: number; geminiCircuit: WorkoutCircuitState };
 const workoutGlobal = globalThis as typeof globalThis & { __nutriaiWorkout?: WorkoutGlobalState };
@@ -216,6 +222,19 @@ function toWorkoutProviderError(err: unknown): WorkoutProviderError {
   return new WorkoutProviderError("Workout provider request failed.", false, undefined, "unknown");
 }
 
+function shouldFallBackFromLongCat(err: unknown): boolean {
+  const failure = toWorkoutProviderError(err);
+  return (
+    failure.transient ||
+    failure.status === 401 ||
+    failure.status === 403 ||
+    failure.errorType === "invalid_json" ||
+    failure.errorType === "invalid_response" ||
+    failure.errorType === "malformed_plan" ||
+    failure.errorType === "invalid_plan"
+  );
+}
+
 async function generateFromProvider({
   requestId,
   provider,
@@ -239,7 +258,8 @@ async function generateFromProvider({
   let status: number | undefined;
   try {
     const response = await fetchWithTimeout(
-      provider === "gemini" ? GEMINI_URL : OPENAI_URL,
+      // provider === "gemini" ? GEMINI_URL : OPENAI_URL,
+      provider === "longcat" ? LONGCAT_URL : provider === "gemini" ? GEMINI_URL : OPENAI_URL,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -251,6 +271,7 @@ async function generateFromProvider({
           ],
           tools: [TOOL],
           tool_choice: { type: "function", function: { name: "record_workout_plan" } },
+          ...(provider === "longcat" ? { thinking: { type: "disabled" } } : {}),
         }),
       },
       { timeoutMs, label: `ai.workout.${provider}` },
@@ -333,17 +354,36 @@ async function generateFromProvider({
 
 async function generateWorkoutWithFallback({
   requestId,
+  longCatApiKey,
   geminiApiKey,
   openAiApiKey,
   userPrompt,
   requestStarted,
 }: {
   requestId: number;
+  longCatApiKey?: string;
   geminiApiKey?: string;
   openAiApiKey?: string;
   userPrompt: string;
   requestStarted: number;
 }): Promise<ProviderGeneration> {
+  if (longCatApiKey) {
+    try {
+      return await generateFromProvider({
+        requestId,
+        provider: "longcat",
+        apiKey: longCatApiKey,
+        model: LONGCAT_MODEL,
+        userPrompt,
+        timeoutMs: LONGCAT_TIMEOUT_MS,
+        fallbackUsed: false,
+        requestStarted,
+      });
+    } catch (err) {
+      if (!shouldFallBackFromLongCat(err)) throw toWorkoutProviderError(err);
+    }
+  }
+
   let geminiFailure: WorkoutProviderError | undefined;
   if (geminiApiKey && !isGeminiCircuitOpen()) {
     try {
@@ -397,9 +437,11 @@ export const generateWorkoutPlan = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const requestId = ++workoutState.requestSeq;
     const requestStarted = performance.now();
+    const longCatApiKey = process.env.LONGCAT_API_KEY;
     const geminiApiKey = process.env.GEMINI_API_KEY;
     const openAiApiKey = process.env.OPENAI_API_KEY;
-    if (!geminiApiKey && !openAiApiKey) {
+    // if (!geminiApiKey && !openAiApiKey) {
+    if (!longCatApiKey && !geminiApiKey && !openAiApiKey) {
       throw new Error("Workout generation is temporarily unavailable. Please try again.");
     }
 
@@ -421,6 +463,7 @@ ${data.focus_notes ? `Preferences: ${data.focus_notes}` : ""}`;
     try {
       const generation = await generateWorkoutWithFallback({
         requestId,
+        longCatApiKey,
         geminiApiKey,
         openAiApiKey,
         userPrompt,

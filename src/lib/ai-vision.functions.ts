@@ -11,6 +11,10 @@ const NETWORK_ERROR_MESSAGE =
 
 const VISION_MODEL = "gemini-flash-latest";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+const LONGCAT_MODEL = process.env.LONGCAT_MODEL ?? "LongCat-2.0";
+const LONGCAT_URL =
+  (process.env.LONGCAT_BASE_URL ?? "https://api.longcat.chat/openai/v1").replace(/\/+$/, "") +
+  "/chat/completions";
 
 const AnalyzedItemSchema = z.object({
   name: z.string(),
@@ -99,8 +103,10 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => PhotoInput.parse(input))
   .handler(async ({ data, context }) => {
+    const longCatApiKey = process.env.LONGCAT_API_KEY;
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("AI is not configured. Please contact support.");
+    // if (!apiKey) throw new Error("AI is not configured. Please contact support.");
+    if (!longCatApiKey && !apiKey) throw new Error("AI is not configured. Please contact support.");
 
     await enforceAiRateLimit(context.supabase, "meal_vision");
 
@@ -113,6 +119,52 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
       ? `Analyze this food photo. Additional hint from user: ${data.hint}`
       : "Analyze this food photo and estimate nutrition for every visible item.";
 
+    if (longCatApiKey) {
+      try {
+        const longCatResponse = await fetchWithTimeout(
+          LONGCAT_URL,
+          {
+            method: "POST",
+            headers: {
+              Authorization: "Bearer " + longCatApiKey,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: LONGCAT_MODEL,
+              messages: [
+                { role: "system", content: SYSTEM_PROMPT },
+                {
+                  role: "user",
+                  content: [
+                    { type: "text", text: userText },
+                    { type: "image_url", image_url: { url: data.image_data_url } },
+                  ],
+                },
+              ],
+              tools: [PHOTO_TOOL],
+              tool_choice: { type: "function", function: { name: "record_photo_estimate" } },
+              thinking: { type: "disabled" },
+            }),
+          },
+          { timeoutMs: 25_000, label: "ai.meal_photo.longcat" },
+        );
+        if (!longCatResponse.ok) throw new Error("LongCat HTTP " + longCatResponse.status);
+        const longCatPayload = (await longCatResponse.json()) as {
+          choices?: Array<{
+            message?: { tool_calls?: Array<{ function?: { arguments?: string } }> };
+          }>;
+        };
+        const longCatRaw =
+          longCatPayload.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+        if (!longCatRaw) throw new Error("LongCat returned no structured photo estimate.");
+        const longCatParsed = AnalyzedResponseSchema.parse(JSON.parse(longCatRaw));
+        return { ...longCatParsed, model: LONGCAT_MODEL };
+      } catch (err) {
+        console.warn("[analyzeMealPhoto] LongCat failed; falling back to Gemini.", {
+          errorType: err instanceof Error ? err.name : "unknown",
+        });
+      }
+    }
     let res: Response;
     try {
       res = await fetchWithTimeout(
