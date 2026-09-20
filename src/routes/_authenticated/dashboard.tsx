@@ -227,7 +227,7 @@ function Dashboard() {
                     description="AI-powered food logging"
                   />
                 </Link>
-                <Link to="/log" className="block">
+                <Link to="/log" search={{ tab: "water" }} className="block">
                   <FeatureCard
                     icon={<Droplets className="h-5 w-5" />}
                     title="Log water"
@@ -463,7 +463,7 @@ function UpcomingReminderMini({ reminders }: { reminders: Reminder[] }) {
   return (
     <Card variant="stat" className="dashboard-action-card">
       <CardContent className="p-4">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between w-full p-2 rounded">
           <p className="font-medium text-foreground">Next reminder</p>
           <Bell className="h-4 w-4 text-muted-foreground" />
         </div>
