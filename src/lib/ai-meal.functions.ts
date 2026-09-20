@@ -13,7 +13,8 @@ import { logAiSafetyEvent } from "@/lib/ai-safety-log.server";
 const NETWORK_ERROR_MESSAGE =
   "Unable to analyze because your internet connection is unavailable or too slow. Please try again.";
 
-const MODEL = "gemini-flash-latest";
+const MODEL = "gemini-3.8-flash";
+// const MODEL = "gemini-flash-latest";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 const AnalyzedItemSchema = z.object({
@@ -129,7 +130,7 @@ export const analyzeMeal = createServerFn({ method: "POST" })
               { role: "user", content: `Food description: ${data.description}` },
             ],
             tools: [TOOL],
-            tool_choice: { type: "function", function: { name: "record_meal_estimate" } },
+            tool_choice: "auto",
           }),
         },
         { timeoutMs: 20000, label: "ai.meal_text.gemini" },
@@ -138,6 +139,7 @@ export const analyzeMeal = createServerFn({ method: "POST" })
       if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
       throw err;
     }
+    debugger;
 
     if (res.status === 429) {
       throw new Error("Rate limit reached. Please try again in a moment.");

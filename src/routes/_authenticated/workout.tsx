@@ -50,8 +50,10 @@ import {
   type WorkoutPlan,
 } from "@/features/workout/queries";
 import { generateWorkoutPlan } from "@/lib/ai-workout.functions";
-import { detectTimezone } from "@/lib/reminders";
-import { disableWorkoutPlanReminders, useCreateWorkoutPlanReminders } from "@/features/reminders/queries";
+import {
+  disableWorkoutPlanReminders,
+  useCreateWorkoutPlanReminders,
+} from "@/features/reminders/queries";
 import { describeAiActionError } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/workout")({
@@ -123,7 +125,7 @@ function WorkoutPage() {
               defaultGym={goals.data?.gym_access ?? undefined}
               defaultExp={goals.data?.workout_experience ?? undefined}
             />
-            <PlansList userId={userId} plans={plans.data ?? []} activePlanId={activePlan?.id} timezone={detectTimezone()} />
+            <PlansList userId={userId} plans={plans.data ?? []} activePlanId={activePlan?.id} />
           </TabsContent>
 
           <TabsContent value="log" className="mt-6">
@@ -637,7 +639,10 @@ function QuickLogCard({ userId, activePlanId }: { userId: string; activePlanId?:
             <p className="mb-2 text-sm font-medium text-foreground">Exercises</p>
             <ul className="space-y-1 text-sm">
               {logExercises.map((ex, i) => (
-                <li key={i} className="flex min-w-0 flex-wrap justify-between gap-x-3 gap-y-1 text-muted-foreground">
+                <li
+                  key={i}
+                  className="flex min-w-0 flex-wrap justify-between gap-x-3 gap-y-1 text-muted-foreground"
+                >
                   <span className="text-foreground">{ex.name}</span>
                   <span>
                     {ex.sets} × {ex.reps}
@@ -768,6 +773,3 @@ function humanizeFocus(f: string): string {
     }[f] ?? f
   );
 }
-
-
-

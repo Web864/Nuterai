@@ -19,8 +19,8 @@ import {
 import { toast } from "sonner";
 import { Leaf, Loader2 } from "lucide-react";
 
-const EMAIL_CONFIRMATION_CALLBACK_URL = "https://nutriai-cyan.vercel.app/auth/callback";
-const PASSWORD_RESET_CALLBACK_URL = "https://nutriai-cyan.vercel.app/auth/callback";
+const EMAIL_CONFIRMATION_CALLBACK_URL = "http://localhost:8080//auth/callback";
+const PASSWORD_RESET_CALLBACK_URL = "http://localhost:8080//auth/callback";
 const forgotEmailSchema = z.string().trim().email();
 
 const searchSchema = z.object({

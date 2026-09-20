@@ -195,19 +195,16 @@ function RootComponent() {
       knownAuthUserId.current = nextUserId;
 
       if (event === "SIGNED_IN" && identityChanged) {
-        logGlobalRefreshTrigger("router.invalidate", "auth_identity_changed");
         router.invalidate();
         return;
       }
 
       if (event === "USER_UPDATED" && nextUserId) {
-        logGlobalRefreshTrigger("queryClient.invalidateQueries", "auth_user_updated_profile_only");
         queryClient.invalidateQueries({ queryKey: ["profile", nextUserId] });
         return;
       }
 
       if (event === "SIGNED_OUT" && identityChanged) {
-        logGlobalRefreshTrigger("router.invalidate", "auth_signed_out");
         queryClient.clear();
         router.invalidate();
       }

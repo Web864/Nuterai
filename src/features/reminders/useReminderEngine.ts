@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { profileQueryOptions } from "@/features/goals/queries";
 import { remindersQueryOptions, type Reminder } from "./queries";
 import {
@@ -54,6 +55,7 @@ export function useReminderEngine(userId: string | undefined) {
 
   useEffect(() => {
     if (!userId) return;
+    const activeUserId = userId;
     const profile = profileQ.data;
     if (!reminders.length) return;
     let cancelled = false;
@@ -78,7 +80,7 @@ export function useReminderEngine(userId: string | undefined) {
         const { data: inserted, error } = await supabase
           .from("notifications")
           .insert({
-            user_id: userId,
+            user_id: activeUserId,
             reminder_id: r.id,
             type: r.type,
             title: r.title,
@@ -134,9 +136,9 @@ export function useReminderEngine(userId: string | undefined) {
               nextOccurrence(r, new Date(next.getTime() + 1000))?.toISOString() ?? null,
           } as never)
           .eq("id", r.id)
-          .eq("user_id", userId);
-        qc.invalidateQueries({ queryKey: ["notifications", userId] });
-        qc.invalidateQueries({ queryKey: ["reminder-events", userId] });
+          .eq("user_id", activeUserId);
+        qc.invalidateQueries({ queryKey: ["notifications", activeUserId] });
+        qc.invalidateQueries({ queryKey: ["reminder-events", activeUserId] });
       }
     }
 
@@ -181,9 +183,7 @@ export function useReminderEngine(userId: string | undefined) {
 
 function buildNativeNotifications(
   reminders: Reminder[],
-  profile: Awaited<ReturnType<typeof profileQueryOptions>>["queryFn"] extends () => Promise<infer T>
-    ? T
-    : never,
+  profile: Tables<"profiles"> | null | undefined,
 ) {
   if (profile?.notifications_enabled === false) return [];
   const tz = profile?.timezone || detectTimezone();

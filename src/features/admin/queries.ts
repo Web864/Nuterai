@@ -91,7 +91,7 @@ function useAdminMutation<TInput>(
 }
 
 export function useAdminSetRole() {
-  const fn = useServerFn(adminSetRole);
+  const fn = (adminSetRole);
   return useAdminMutation<{ userId: string; role: "admin" | "moderator" | "user"; grant: boolean }>(
     fn as never,
     [

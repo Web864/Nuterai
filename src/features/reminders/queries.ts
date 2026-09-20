@@ -18,7 +18,8 @@ export type ReminderEvent = {
   id: string;
   user_id: string;
   reminder_id: string | null;
-  event_type: "triggered" | "started" | "completed" | "snoozed" | "skipped" | "deleted" | "rescheduled";
+  event_type:
+    "triggered" | "started" | "completed" | "snoozed" | "skipped" | "deleted" | "rescheduled";
   occurred_at: string;
   scheduled_for: string | null;
   metadata: Record<string, unknown>;
@@ -31,7 +32,7 @@ export const remindersQueryOptions = (userId: string | undefined) =>
     staleTime: 5 * 60_000,
     queryFn: async (): Promise<Reminder[]> => {
       if (!userId) return [];
-            logQueryExecution("reminders", "remindersQueryOptions");
+      logQueryExecution("reminders", "remindersQueryOptions");
       const { data, error } = await supabase
         .from("reminders")
         .select("*")
@@ -48,7 +49,7 @@ export const notificationsQueryOptions = (userId: string | undefined) =>
     enabled: !!userId,
     queryFn: async (): Promise<NotificationRow[]> => {
       if (!userId) return [];
-            logQueryExecution("notifications", "notificationsQueryOptions");
+      logQueryExecution("notifications", "notificationsQueryOptions");
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
@@ -67,8 +68,8 @@ export const reminderEventsQueryOptions = (userId: string | undefined) =>
     enabled: !!userId,
     queryFn: async (): Promise<ReminderEvent[]> => {
       if (!userId) return [];
-            logQueryExecution("reminder-events", "reminderEventsQueryOptions");
-const { data, error } = await supabase
+      logQueryExecution("reminder-events", "reminderEventsQueryOptions");
+      const { data, error } = await supabase
         .from("reminder_events" as never)
         .select("*")
         .eq("user_id", userId)
@@ -84,7 +85,11 @@ export function useCreateReminder(userId: string) {
   return useMutation({
     mutationFn: async (draft: ReminderDraft) => {
       const payload = { ...toInsertPayload(draft), user_id: userId };
-      const { data, error } = await supabase.from("reminders").insert(payload as never).select().single();
+      const { data, error } = await supabase
+        .from("reminders")
+        .insert(payload as never)
+        .select()
+        .single();
       if (error) throw error;
       return data as Reminder;
     },
@@ -112,10 +117,14 @@ export function useCreateDietPlanReminders(userId: string) {
   const upsert = useUpsertReminderDrafts(userId);
   return {
     ...upsert,
-    mutate: (input: { timezone: string; mealTimes?: Parameters<typeof buildDietReminderDrafts>[1] }, options?: Parameters<typeof upsert.mutate>[1]) =>
-      upsert.mutate(buildDietReminderDrafts(input.timezone, input.mealTimes), options),
-    mutateAsync: (input: { timezone: string; mealTimes?: Parameters<typeof buildDietReminderDrafts>[1] }) =>
-      upsert.mutateAsync(buildDietReminderDrafts(input.timezone, input.mealTimes)),
+    mutate: (
+      input: { timezone: string; mealTimes?: Parameters<typeof buildDietReminderDrafts>[1] },
+      options?: Parameters<typeof upsert.mutate>[1],
+    ) => upsert.mutate(buildDietReminderDrafts(input.timezone, input.mealTimes), options),
+    mutateAsync: (input: {
+      timezone: string;
+      mealTimes?: Parameters<typeof buildDietReminderDrafts>[1];
+    }) => upsert.mutateAsync(buildDietReminderDrafts(input.timezone, input.mealTimes)),
   };
 }
 
@@ -123,8 +132,10 @@ export function useCreateHydrationReminders(userId: string) {
   const upsert = useUpsertReminderDrafts(userId);
   return {
     ...upsert,
-    mutate: (input: Parameters<typeof buildHydrationReminderDrafts>[0], options?: Parameters<typeof upsert.mutate>[1]) =>
-      upsert.mutate(buildHydrationReminderDrafts(input), options),
+    mutate: (
+      input: Parameters<typeof buildHydrationReminderDrafts>[0],
+      options?: Parameters<typeof upsert.mutate>[1],
+    ) => upsert.mutate(buildHydrationReminderDrafts(input), options),
     mutateAsync: (input: Parameters<typeof buildHydrationReminderDrafts>[0]) =>
       upsert.mutateAsync(buildHydrationReminderDrafts(input)),
   };
@@ -135,10 +146,21 @@ export function useCreateWorkoutPlanReminders(userId: string) {
   return {
     ...upsert,
     mutateAsync: async (input: { planId: string; timezone: string; defaultTime?: string }) => {
-      const [{ data: plan, error: planError }, { data: days, error: daysError }] = await Promise.all([
-        supabase.from("workout_plans").select("id,name,is_active").eq("id", input.planId).eq("user_id", userId).maybeSingle(),
-        supabase.from("workout_plan_days").select("id,plan_id,day_index,title,focus,estimated_minutes").eq("plan_id", input.planId).eq("user_id", userId).order("day_index", { ascending: true }),
-      ]);
+      const [{ data: plan, error: planError }, { data: days, error: daysError }] =
+        await Promise.all([
+          supabase
+            .from("workout_plans")
+            .select("id,name,is_active")
+            .eq("id", input.planId)
+            .eq("user_id", userId)
+            .maybeSingle(),
+          supabase
+            .from("workout_plan_days")
+            .select("id,plan_id,day_index,title,focus,estimated_minutes")
+            .eq("plan_id", input.planId)
+            .eq("user_id", userId)
+            .order("day_index", { ascending: true }),
+        ]);
       if (planError) throw planError;
       if (daysError) throw daysError;
       if (!plan) throw new Error("Workout plan not found.");
@@ -152,20 +174,43 @@ export function useCreateWorkoutPlanReminders(userId: string) {
       });
       return upsert.mutateAsync(drafts);
     },
-    mutate: (input: { planId: string; timezone: string; defaultTime?: string }, options?: Parameters<typeof upsert.mutate>[1]) => {
+    mutate: (
+      input: { planId: string; timezone: string; defaultTime?: string },
+      options?: Parameters<typeof upsert.mutate>[1],
+    ) => {
       void (async () => {
         const result = await (async () => {
-          const [{ data: plan, error: planError }, { data: days, error: daysError }] = await Promise.all([
-            supabase.from("workout_plans").select("id,name,is_active").eq("id", input.planId).eq("user_id", userId).maybeSingle(),
-            supabase.from("workout_plan_days").select("id,plan_id,day_index,title,focus,estimated_minutes").eq("plan_id", input.planId).eq("user_id", userId).order("day_index", { ascending: true }),
-          ]);
+          const [{ data: plan, error: planError }, { data: days, error: daysError }] =
+            await Promise.all([
+              supabase
+                .from("workout_plans")
+                .select("id,name,is_active")
+                .eq("id", input.planId)
+                .eq("user_id", userId)
+                .maybeSingle(),
+              supabase
+                .from("workout_plan_days")
+                .select("id,plan_id,day_index,title,focus,estimated_minutes")
+                .eq("plan_id", input.planId)
+                .eq("user_id", userId)
+                .order("day_index", { ascending: true }),
+            ]);
           if (planError) throw planError;
           if (daysError) throw daysError;
           if (!plan) throw new Error("Workout plan not found.");
-          return buildWorkoutPlanReminderDrafts({ timezone: input.timezone, planId: plan.id, planName: plan.name, planActive: plan.is_active, days: days ?? [], defaultTime: input.defaultTime });
+          return buildWorkoutPlanReminderDrafts({
+            timezone: input.timezone,
+            planId: plan.id,
+            planName: plan.name,
+            planActive: plan.is_active,
+            days: days ?? [],
+            defaultTime: input.defaultTime,
+          });
         })();
         upsert.mutate(result, options);
-      })().catch((error) => options?.onError?.(error, [] as never, undefined as never));
+      })().catch((error) =>
+        options?.onError?.(error, [] as never, undefined as never, undefined as never),
+      );
     },
   };
 }
@@ -182,9 +227,20 @@ export async function disableWorkoutPlanReminders(userId: string, planId: string
 export function useUpdateReminder(userId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: TablesUpdate<"reminders"> & Record<string, unknown> }) => {
-      const normalized = patch.enabled !== undefined ? { ...patch, is_active: patch.enabled } : patch;
-      const { error } = await supabase.from("reminders").update(normalized as never).eq("id", id).eq("user_id", userId);
+    mutationFn: async ({
+      id,
+      patch,
+    }: {
+      id: string;
+      patch: TablesUpdate<"reminders"> & Record<string, unknown>;
+    }) => {
+      const normalized =
+        patch.enabled !== undefined ? { ...patch, is_active: patch.enabled } : patch;
+      const { error } = await supabase
+        .from("reminders")
+        .update(normalized as never)
+        .eq("id", id)
+        .eq("user_id", userId);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reminders", userId] }),
@@ -196,7 +252,11 @@ export function useDeleteReminder(userId: string) {
   return useMutation({
     mutationFn: async (id: string) => {
       await insertReminderEvent(userId, id, "deleted");
-      const { error } = await supabase.from("reminders").delete().eq("id", id).eq("user_id", userId);
+      const { error } = await supabase
+        .from("reminders")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reminders", userId] }),
@@ -207,12 +267,29 @@ export function useMarkNotification(userId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: TablesUpdate<"notifications"> }) => {
-      const { error } = await supabase.from("notifications").update(patch).eq("id", id).eq("user_id", userId);
+      const { error } = await supabase
+        .from("notifications")
+        .update(patch)
+        .eq("id", id)
+        .eq("user_id", userId);
       if (error) throw error;
-      if (patch.action === "completed" || patch.action === "dismissed" || patch.action === "snoozed") {
+      if (
+        patch.action === "completed" ||
+        patch.action === "dismissed" ||
+        patch.action === "snoozed"
+      ) {
         const event = patch.action === "dismissed" ? "skipped" : patch.action;
-        const n = await supabase.from("notifications").select("reminder_id, scheduled_for").eq("id", id).maybeSingle();
-        await insertReminderEvent(userId, n.data?.reminder_id ?? null, event as ReminderEvent["event_type"], n.data?.scheduled_for ?? null);
+        const n = await supabase
+          .from("notifications")
+          .select("reminder_id, scheduled_for")
+          .eq("id", id)
+          .maybeSingle();
+        await insertReminderEvent(
+          userId,
+          n.data?.reminder_id ?? null,
+          event as ReminderEvent["event_type"],
+          n.data?.scheduled_for ?? null,
+        );
       }
     },
     onSuccess: () => {
@@ -225,7 +302,15 @@ export function useMarkNotification(userId: string) {
 export function useRecordReminderEvent(userId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ reminderId, eventType, metadata }: { reminderId: string; eventType: ReminderEvent["event_type"]; metadata?: Record<string, unknown> }) => {
+    mutationFn: async ({
+      reminderId,
+      eventType,
+      metadata,
+    }: {
+      reminderId: string;
+      eventType: ReminderEvent["event_type"];
+      metadata?: Record<string, unknown>;
+    }) => {
       await insertReminderEvent(userId, reminderId, eventType, null, metadata);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reminder-events", userId] }),
@@ -283,6 +368,3 @@ async function insertReminderEvent(
 }
 
 export type LegacyReminderInsert = Omit<TablesInsert<"reminders">, "user_id">;
-
-
-
