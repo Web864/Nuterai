@@ -193,6 +193,8 @@ function buildNativeNotifications(
     body: string;
     schedule: { at: Date; allowWhileIdle: true };
     extra: { reminderId: string; source: string };
+    smallIcon: "ic_stat_nutriai";
+    iconColor: "#0F3D2E";
   }> = [];
   const horizon = Date.now() + NATIVE_HORIZON_DAYS * 86_400_000;
 
@@ -208,6 +210,8 @@ function buildNativeNotifications(
           body: r.message ?? notificationCopy(r.type, r.title, i),
           schedule: { at: next, allowWhileIdle: true },
           extra: { reminderId: r.id, source: "nutriai-reminder" },
+          smallIcon: "ic_stat_nutriai",
+          iconColor: "#0F3D2E",
         });
       }
       from = new Date(next.getTime() + 1000);
