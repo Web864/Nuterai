@@ -2,10 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-<<<<<<< HEAD
-=======
 import { z } from "zod";
->>>>>>> d10ccd2 (Fix notification icon and app updates)
 import { useGamification } from "@/features/gamification/useGamification";
 import { toast } from "sonner";
 import {
@@ -57,16 +54,12 @@ import { analyzeMeal, type AnalyzedMeal } from "@/lib/ai-meal.functions";
 import { describeAnalysisError } from "@/lib/utils";
 import { PhotoTab, BarcodeTab } from "@/features/scan/FoodScan";
 
-<<<<<<< HEAD
-export const Route = createFileRoute("/_authenticated/log")({
-=======
 const searchSchema = z.object({
   tab: z.enum(["meal", "water", "weight"]).optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/log")({
   validateSearch: searchSchema,
->>>>>>> d10ccd2 (Fix notification icon and app updates)
   head: () => ({
     meta: [{ title: "Log — NutriAI" }, { name: "robots", content: "noindex" }],
   }),
@@ -75,10 +68,7 @@ export const Route = createFileRoute("/_authenticated/log")({
 
 function LogPage() {
   const { userId } = AuthedRoute.useRouteContext();
-<<<<<<< HEAD
-=======
   const { tab } = Route.useSearch();
->>>>>>> d10ccd2 (Fix notification icon and app updates)
   const navigate = useNavigate();
   const date = useMemo(() => todayISO(), []);
   const { track } = useGamification(userId);
@@ -158,11 +148,7 @@ function LogPage() {
           />
         </section>
 
-<<<<<<< HEAD
-        <Tabs defaultValue="meal" className="mt-6">
-=======
         <Tabs defaultValue={tab ?? "meal"} className="mt-6">
->>>>>>> d10ccd2 (Fix notification icon and app updates)
           <TabsList className="grid w-full min-w-0 grid-cols-3 rounded-full bg-secondary p-1">
             <TabsTrigger value="meal" className="rounded-full">
               <Utensils className="mr-2 h-4 w-4" /> Meal
