@@ -1,11 +1,11 @@
 ﻿-- Phase 2: Screen Break Reminder
 -- Dormant by feature flag. Stores preferences only; no app names, raw usage
 -- stats, or device usage timelines are persisted remotely.
-
+ 
 DO $$ BEGIN
   ALTER TYPE public.reminder_type ADD VALUE IF NOT EXISTS 'screen_break';
 END $$;
-
+ 
 CREATE TABLE IF NOT EXISTS public.screen_break_settings (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   enabled BOOLEAN NOT NULL DEFAULT false,
