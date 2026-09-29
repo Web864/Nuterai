@@ -1,5 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useSession } from "@/features/auth/use-session";
 import heroImage from "@/assets/hero-food.jpg";
 import howItWorksCta from "@/assets/how-it-works-cta.png";
 import Image from "@/assets/image.png";
@@ -95,6 +97,19 @@ const features = [
 ];
 
 function LandingPage() {
+  const session = useSession();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (session.data) {
+      void navigate({ to: "/dashboard", replace: true });
+    }
+  }, [navigate, session.data]);
+
+  if (session.isPending || session.data) {
+    return <div className="min-h-screen bg-background" aria-busy="true" />;
+  }
+
   return (
     <div className="landing-page premium-shell min-h-screen">
       <SiteHeader />
@@ -124,7 +139,12 @@ function LandingPage() {
                     Get started free <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="landing-secondary-action rounded-full px-7">
+                <Button
+                  asChild
+                  variant="outline"
+                  size="lg"
+                  className="landing-secondary-action rounded-full px-7"
+                >
                   <Link to="/auth">I already have an account</Link>
                 </Button>
               </div>
@@ -453,4 +473,3 @@ function FeatureCard({
     </div>
   );
 }
-
