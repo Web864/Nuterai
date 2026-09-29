@@ -382,9 +382,7 @@ export function PhotoTab({ userId }: { userId: string }) {
                   ) : (
                     <Sparkles className="mr-2 h-4 w-4" />
                   )}
-                  {busy
-                    ? "AnalyzingÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦"
-                    : "Analyze with AI"}
+                  {busy ? "Analyzing..." : "Analyze with AI"}
                 </Button>
               </div>
             )}
@@ -685,10 +683,7 @@ export function BarcodeTab({ userId }: { userId: string }) {
                 <div className="h-1/2 w-3/4 rounded-xl border-2 border-white/70 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
               </div>
             </div>
-            <p className="text-center text-sm text-muted-foreground">
-              Point at a
-              barcodeÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦
-            </p>
+            <p className="text-center text-sm text-muted-foreground">Point at a barcode...</p>
             <Button variant="outline" className="w-full rounded-full" onClick={stopScan}>
               Cancel
             </Button>
@@ -696,10 +691,7 @@ export function BarcodeTab({ userId }: { userId: string }) {
         ) : analyzing ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
             <Loader2 className="h-8 w-8 animate-spin text-accent" />
-            <p className="text-sm text-muted-foreground">
-              Analyzing
-              barcodeÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦
-            </p>
+            <p className="text-sm text-muted-foreground">Analyzing barcode...</p>
           </div>
         ) : product ? (
           <ProductCard

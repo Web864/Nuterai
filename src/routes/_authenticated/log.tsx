@@ -60,7 +60,7 @@ import {
   type FoodResolutionCandidate,
 } from "@/features/logging/food-resolution";
 import { FoodCandidatePicker } from "@/features/logging/FoodCandidatePicker";
-import { parseTextFoodItems } from "@/features/logging/text-food-parser";
+// import { parseTextFoodItems } from "@/features/logging/text-food-parser"; // Phase 11: Gemini is the default text understanding path.
 import {
   applyCanonicalNutritionSnapshot,
   mealNutritionMultiplier,
@@ -73,7 +73,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/_authenticated/log")({
   validateSearch: searchSchema,
   head: () => ({
-    meta: [{ title: "Log ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â NutriAI" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Log - NutriAI" }, { name: "robots", content: "noindex" }],
   }),
   component: LogPage,
 });
@@ -321,7 +321,10 @@ function TextMealTab({ userId }: { userId: string }) {
     }
     setAnalyzing(true);
     setAnalysis(null);
-    const parsedItems = parseTextFoodItems(description);
+    // const parsedItems = parseTextFoodItems(description); // Retained parser for manual/recovery paths.
+    const parsedItems: ReturnType<
+      typeof import("@/features/logging/text-food-parser").parseTextFoodItems
+    > = [];
     const resolveParsedItems = async (): Promise<ReviewedTextMealItem[]> =>
       Promise.all(
         parsedItems.map(async (item): Promise<ReviewedTextMealItem> => {
@@ -375,25 +378,10 @@ function TextMealTab({ userId }: { userId: string }) {
     }
     try {
       const result = await runAnalyze({ data: { description: description.trim() } });
-      const resolvedItems: ReviewedTextMealItem[] = await Promise.all(
-        result.items.map(async (item): Promise<ReviewedTextMealItem> => {
-          const resolution = await resolveCanonicalFoodNutrition({
-            name: item.name,
-            quantity: item.serving_qty,
-            unit: item.serving_unit,
-          });
-          return resolution.ok
-            ? {
-                ...item,
-                ...resolution.nutrition,
-                canonicalFoodId: resolution.foodId,
-                resolutionState: "canonical",
-              }
-            : resolution.code === "ambiguous_match"
-              ? { ...item, candidates: resolution.candidates, resolutionState: "ambiguous" }
-              : item;
-        }),
-      );
+      const resolvedItems: ReviewedTextMealItem[] = result.items.map((item) => ({
+        ...item,
+        resolutionState: "estimated",
+      }));
       setAnalysis({ ...result, items: resolvedItems });
     } catch {
       if (localItems.length) {
@@ -460,7 +448,10 @@ function TextMealTab({ userId }: { userId: string }) {
               source: "ai_text" as const,
               ai_model: (analysis as AnalyzedMeal & { model?: string }).model ?? null,
               ai_confidence: analysis.confidence,
-              ai_raw: JSON.parse(JSON.stringify(analysis)),
+              ai_raw: {
+                ...JSON.parse(JSON.stringify(analysis)),
+                nutrition_contract: "logged_quantity_v1",
+              },
             };
             return addMeal.mutateAsync(
               resolution.ok ? applyCanonicalNutritionSnapshot(row, resolution) : row,
@@ -569,7 +560,7 @@ function TextMealTab({ userId }: { userId: string }) {
             className="rounded-full"
           >
             {analyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {analyzing ? "LoggingÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦" : "Log meal"}
+            {analyzing ? "Logging..." : "Log meal"}
           </Button>
           {analysis && (
             <Button variant="outline" className="rounded-full" onClick={() => setAnalysis(null)}>
@@ -598,8 +589,8 @@ function TextMealTab({ userId }: { userId: string }) {
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-foreground">{item.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {item.serving_qty} {item.serving_unit} Ãƒâ€šÃ‚Â· P {item.protein_g.toFixed(0)}
-                      g Ãƒâ€šÃ‚Â· C {item.carbs_g.toFixed(0)}g Ãƒâ€šÃ‚Â· F {item.fat_g.toFixed(0)}g
+                      {item.serving_qty} {item.serving_unit} | P {item.protein_g.toFixed(0)}g | C{" "}
+                      {item.carbs_g.toFixed(0)}g | F {item.fat_g.toFixed(0)}g
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

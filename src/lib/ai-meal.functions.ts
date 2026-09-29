@@ -13,7 +13,7 @@ import { logAiSafetyEvent } from "@/lib/ai-safety-log.server";
 const NETWORK_ERROR_MESSAGE =
   "Unable to analyze because your internet connection is unavailable or too slow. Please try again.";
 
-const MODEL = "gemini-3.8-flash";
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
 // const MODEL = "gemini-flash-latest";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
@@ -149,7 +149,8 @@ export const analyzeMeal = createServerFn({ method: "POST" })
       throw new Error(CRISIS_SAFE_RESPONSE);
     }
 
-    if (longCatApiKey) {
+    // Phase 11 keeps LongCat configured for non-default recovery paths; Gemini is the paid primary for meal analysis.
+    if (longCatApiKey && process.env.NUTRIAI_ENABLE_LONGCAT_MEAL_FALLBACK === "true") {
       try {
         const longCatResponse = await fetchWithTimeout(
           LONGCAT_URL,
