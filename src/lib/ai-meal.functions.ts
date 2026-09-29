@@ -16,6 +16,8 @@ const NETWORK_ERROR_MESSAGE =
 const MODEL = "gemini-3.8-flash";
 // const MODEL = "gemini-flash-latest";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 const LONGCAT_MODEL = process.env.LONGCAT_MODEL ?? "LongCat-2.0";
 const LONGCAT_URL =
   (process.env.LONGCAT_BASE_URL ?? "https://api.longcat.chat/openai/v1").replace(/\/+$/, "") +
@@ -101,14 +103,42 @@ const TOOL = {
   },
 };
 
+async function requestOpenAiMeal(apiKey: string, description: string) {
+  const response = await fetchWithTimeout(
+    OPENAI_URL,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: `Food description: ${description}` },
+        ],
+        tools: [TOOL],
+        tool_choice: "auto",
+      }),
+    },
+    { timeoutMs: 20_000, label: "ai.meal_text.openai" },
+  );
+  if (!response.ok) throw new Error(`OpenAI HTTP ${response.status}`);
+  const payload = (await response.json()) as {
+    choices?: Array<{ message?: { tool_calls?: Array<{ function?: { arguments?: string } }> } }>;
+  };
+  const raw = payload.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  if (!raw) throw new Error("OpenAI returned no structured meal estimate.");
+  return { ...AnalyzedResponseSchema.parse(JSON.parse(raw)), model: OPENAI_MODEL };
+}
+
 export const analyzeMeal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
     const longCatApiKey = process.env.LONGCAT_API_KEY;
     const apiKey = process.env.GEMINI_API_KEY;
+    const openAiApiKey = process.env.OPENAI_API_KEY;
     // if (!apiKey) {
-    if (!longCatApiKey && !apiKey) {
+    if (!longCatApiKey && !apiKey && !openAiApiKey) {
       throw new Error("AI is not configured. Please contact support.");
     }
 
@@ -182,15 +212,28 @@ export const analyzeMeal = createServerFn({ method: "POST" })
         { timeoutMs: 20000, label: "ai.meal_text.gemini" },
       );
     } catch (err) {
+      if (openAiApiKey && isNetworkOrTimeoutError(err)) {
+        console.warn("[analyzeMeal] Gemini failed; falling back to OpenAI.", {
+          errorType: err instanceof Error ? err.name : "unknown",
+        });
+        return requestOpenAiMeal(openAiApiKey, data.description);
+      }
       if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
       throw err;
     }
     // debugger;
 
     if (res.status === 429) {
+      if (openAiApiKey) return requestOpenAiMeal(openAiApiKey, data.description);
       throw new Error("Rate limit reached. Please try again in a moment.");
     }
     if (!res.ok) {
+      if (openAiApiKey && (res.status === 429 || res.status >= 500)) {
+        console.warn("[analyzeMeal] Gemini failed; falling back to OpenAI.", {
+          status: res.status,
+        });
+        return requestOpenAiMeal(openAiApiKey, data.description);
+      }
       const text = await res.text().catch(() => "");
       console.error("[analyzeMeal] gateway error", res.status, text);
       throw new Error("Couldn't reach the AI service. Please try again.");

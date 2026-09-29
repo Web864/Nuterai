@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@/features/auth/use-session";
 import { isNative, OAUTH_REDIRECT_URL } from "@/lib/native";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
+  const session = useSession();
   const { next, mode } = Route.useSearch();
   const [tab, setTab] = useState<"signin" | "signup">(mode ?? "signin");
   const [email, setEmail] = useState("");
@@ -71,6 +73,14 @@ function AuthPage() {
   }, [mode]);
 
   const nextPath = safeNext(next);
+
+  useEffect(() => {
+    if (session.data) window.location.replace(nextPath);
+  }, [nextPath, session.data]);
+
+  if (session.isPending || session.data) {
+    return <AuthSessionLoading />;
+  }
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -440,6 +450,19 @@ function AuthPage() {
   );
 }
 
+function AuthSessionLoading() {
+  return (
+    <div className="premium-shell relative flex min-h-screen items-center justify-center overflow-hidden px-6">
+      <div className="absolute inset-0 bg-gradient-hero opacity-75" />
+      <div className="relative flex flex-col items-center gap-4 text-foreground" role="status">
+        <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-primary/30 bg-primary/15 text-primary backdrop-blur">
+          <Leaf className="h-5 w-5" />
+        </span>
+        <Loader2 className="h-5 w-5 animate-spin text-primary" aria-label="Checking your session" />
+      </div>
+    </div>
+  );
+}
 function safeNext(next: string | undefined): string {
   if (!next) return "/dashboard";
   if (!next.startsWith("/") || next.startsWith("//")) return "/dashboard";

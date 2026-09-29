@@ -5,7 +5,8 @@ import { profileQueryOptions, goalsQueryOptions } from "@/features/goals/queries
 import { remindersQueryOptions, type Reminder } from "@/features/reminders/queries";
 import { formatWhen, nextOccurrence, typeLabel } from "@/lib/reminders";
 import {
-  mealsTodayQueryOptions,
+  dateDaysBefore,
+  mealsDateRangeQueryOptions,
   waterTodayQueryOptions,
   sumMealTotals,
   sumWater,
@@ -21,17 +22,16 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Activity,
   Apple,
+  ClipboardList,
   ArrowRight,
-  Award,
   Bell,
-  Calendar,
+  BarChart3,
   Camera,
   Droplets,
   Dumbbell,
   Flame,
   Leaf,
   LogOut,
-  Moon,
   Plus,
   Settings,
   ShieldCheck,
@@ -41,6 +41,7 @@ import {
   Utensils,
 } from "lucide-react";
 import { adminWhoAmIQueryOptions } from "@/features/admin/queries";
+import { summarizeNutritionWeek } from "@/features/logging/nutrition-summary";
 
 import { toast } from "sonner";
 
@@ -73,11 +74,20 @@ function Dashboard() {
   const profile = useQuery(profileQueryOptions(userId));
   const goals = useQuery(goalsQueryOptions(userId));
   const today = useMemo(() => todayISO(), []);
-  const meals = useQuery(mealsTodayQueryOptions(userId, today));
+  const weekStart = useMemo(() => dateDaysBefore(today, 6), [today]);
+  const weeklyMeals = useQuery(mealsDateRangeQueryOptions(userId, weekStart, today));
   const water = useQuery(waterTodayQueryOptions(userId, today));
   const reminders = useQuery(remindersQueryOptions(userId));
 
-  const totals = useMemo(() => sumMealTotals(meals.data ?? []), [meals.data]);
+  const todayMeals = useMemo(
+    () => (weeklyMeals.data ?? []).filter((meal) => meal.logged_date === today),
+    [today, weeklyMeals.data],
+  );
+  const totals = useMemo(() => sumMealTotals(todayMeals), [todayMeals]);
+  const weeklySummary = useMemo(
+    () => summarizeNutritionWeek(weeklyMeals.data ?? [], today),
+    [today, weeklyMeals.data],
+  );
   const waterMl = useMemo(() => sumWater(water.data ?? []), [water.data]);
 
   const needsOnboarding = profile.data && profile.data.onboarding_completed === false;
@@ -115,9 +125,9 @@ function Dashboard() {
     <div className="dashboard-shell min-h-screen">
       <TopBar onSignOut={handleSignOut} name={firstName} />
 
-      <main className="dashboard-main mx-auto max-w-[1440px] px-4 pb-20 pt-8 sm:px-7 lg:px-10">
+      <main className="dashboard-main mx-auto max-w-[960px] px-4 pb-16 pt-6 sm:px-0">
         <header className="dashboard-hero dashboard-reference-hero mb-7 flex min-w-0 flex-wrap items-end justify-between gap-5">
-          <div>
+          <div className="dashboard-hero-copy">
             <p className="dashboard-eyebrow">
               {new Date().toLocaleDateString(undefined, {
                 weekday: "long",
@@ -130,7 +140,43 @@ function Dashboard() {
             </h1>
             <p className="mt-2 text-muted-foreground">Here's your personalized plan for today.</p>
           </div>
-          <Button asChild size="lg" className="rounded-xl">
+          <div className="dashboard-hero-art" aria-hidden="true">
+            <svg viewBox="0 0 420 180" role="presentation" focusable="false">
+              <defs>
+                <linearGradient id="heroLeaf" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stopColor="currentColor" stopOpacity="0.08" />
+                  <stop offset="0.65" stopColor="currentColor" stopOpacity="0.28" />
+                  <stop offset="1" stopColor="currentColor" stopOpacity="0.02" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M300 185C292 128 314 67 384 8c17 48 8 110-35 147-14 12-30 21-49 30Z"
+                fill="url(#heroLeaf)"
+              />
+              <path
+                d="M308 179C324 119 351 72 390 30"
+                fill="none"
+                stroke="currentColor"
+                strokeOpacity="0.18"
+                strokeWidth="1.5"
+              />
+              <path
+                d="M334 134c25-20 45-28 66-29M324 153c22-5 40-3 58 5M345 111c14-17 29-27 45-34"
+                fill="none"
+                stroke="currentColor"
+                strokeOpacity="0.12"
+                strokeWidth="1.25"
+              />
+            </svg>
+            <span className="dashboard-mantra">
+              Better
+              <br />
+              Food
+              <br />
+              <em>Brighter You</em>
+            </span>
+          </div>
+          <Button asChild size="lg" className="dashboard-log-button rounded-xl">
             <Link to="/log">
               <Plus className="mr-2 h-4 w-4" />
               Log now
@@ -205,6 +251,12 @@ function Dashboard() {
                     unit="g"
                   />
                   <MacroRow label="Fiber" value={totals.fiber} target={g.fiber_g ?? 0} unit="g" />
+                  {totals.sugar !== null ? (
+                    <MacroRow label="Sugar" value={totals.sugar} target={0} unit="g" />
+                  ) : null}
+                  {totals.sodium !== null ? (
+                    <MacroRow label="Sodium" value={totals.sodium} target={0} unit="mg" />
+                  ) : null}
                   <div className="dashboard-info rounded-2xl p-4 text-sm">
                     <p className="font-medium text-foreground">
                       Your maintenance is {g.tdee_kcal} kcal.
@@ -283,7 +335,7 @@ function Dashboard() {
               <Card className="dashboard-panel dashboard-plan-panel">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 font-display text-lg">
-                    <Award className="h-5 w-5 text-accent" />
+                    <ClipboardList className="h-5 w-5 text-accent" />
                     Your plan
                   </CardTitle>
                 </CardHeader>
@@ -295,19 +347,45 @@ function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="dashboard-panel dashboard-plan-panel">
+              <Card className="dashboard-panel dashboard-plan-panel dashboard-weekly-panel">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 font-display text-lg">
-                    <Calendar className="h-5 w-5 text-accent" />
+                    <BarChart3 className="h-5 w-5 text-accent" />
                     Weekly summary
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="dashboard-eyebrow">
-                    Your weekly nutrition, workouts, sleep and mood trends will appear here once you
-                    start logging.
-                  </p>
-                  <Button asChild variant="outline" className="mt-4 rounded-xl">
+                <CardContent className="space-y-3">
+                  {weeklySummary.daysLogged > 0 ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Average on {weeklySummary.daysLogged} logged{" "}
+                        {weeklySummary.daysLogged === 1 ? "day" : "days"}.
+                      </p>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <Row
+                          label="Calories"
+                          value={`${Math.round(weeklySummary.average.calories)} kcal`}
+                        />
+                        <Row
+                          label="Protein"
+                          value={`${Math.round(weeklySummary.average.protein)} g`}
+                        />
+                        <Row label="Carbs" value={`${Math.round(weeklySummary.average.carbs)} g`} />
+                        <Row label="Fat" value={`${Math.round(weeklySummary.average.fat)} g`} />
+                      </div>
+                      {weeklySummary.mostLoggedFood ? (
+                        <Row label="Most logged" value={weeklySummary.mostLoggedFood.name} />
+                      ) : null}
+                      {weeklySummary.mostLoggedRecipe ? (
+                        <Row label="Top recipe" value={weeklySummary.mostLoggedRecipe.name} />
+                      ) : null}
+                    </>
+                  ) : (
+                    <p className="dashboard-eyebrow">
+                      Your weekly nutrition summary will appear after you log a meal.
+                    </p>
+                  )}
+                  <Button asChild variant="outline" className="rounded-xl">
                     <Link to="/settings">
                       <Settings className="mr-2 h-4 w-4" />
                       Adjust goals
@@ -341,11 +419,11 @@ function TopBar({ onSignOut, name }: { onSignOut: () => void; name: string }) {
   return (
     <div className="dashboard-nav sticky top-0 z-30 border-b border-border/60 bg-background/75 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 py-4 sm:px-7 lg:px-10">
-        <Link to="/dashboard" className="flex items-center gap-2 text-foreground">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_22px_color-mix(in_oklch,var(--color-primary)_38%,transparent)]">
+        <Link to="/dashboard" className="dashboard-brand flex items-center gap-2 text-foreground">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_22px_color-mix(in_oklch,var(--color-primary)_38%,transparent)]">
             <Leaf className="h-4 w-4" />
           </span>
-          <span className="font-display text-lg">NutriAI</span>
+          <span className="font-display text-[1.05rem]">NutriAI</span>
         </Link>
         <div className="flex items-center gap-2">
           {who.data?.isAdmin && (
@@ -432,20 +510,21 @@ function MacroRow({
 }: {
   label: string;
   value: number;
-  target: number;
+  target?: number;
   unit: string;
 }) {
-  const pct = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
+  const hasTarget = Boolean(target && target > 0);
+  const pct = hasTarget ? Math.min(100, Math.round((value / (target ?? 1)) * 100)) : 0;
   return (
     <div>
       <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2 text-sm">
         <span className="font-medium text-foreground">{label}</span>
         <span className="text-muted-foreground">
-          <strong className="text-foreground">{Math.round(value)}</strong> / {target}
-          {unit}
+          <strong className="text-foreground">{Math.round(value)}</strong>
+          {hasTarget ? ` / ${target}` : null} {unit}
         </span>
       </div>
-      <Progress value={pct} className="h-2" />
+      {hasTarget ? <Progress value={pct} className="h-2" /> : null}
     </div>
   );
 }
@@ -472,7 +551,9 @@ function UpcomingReminderMini({ reminders }: { reminders: Reminder[] }) {
             <div key={r.id} className="flex min-w-0 items-center justify-between gap-3 text-sm">
               <div className="min-w-0">
                 <p className="truncate font-medium text-foreground">{r.title}</p>
-                <p className="truncate text-xs text-muted-foreground">{typeLabel(r.type)} - {r.message ?? "Balanced plan time"}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {typeLabel(r.type)} - {r.message ?? "Balanced plan time"}
+                </p>
               </div>
               <span className="shrink-0 text-xs text-muted-foreground">{formatWhen(next)}</span>
             </div>
@@ -562,8 +643,3 @@ function humanizeDiet(d: string | null): string {
     }[d ?? ""] ?? "—"
   );
 }
-
-
-
-
-

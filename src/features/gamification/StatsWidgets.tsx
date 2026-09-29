@@ -26,6 +26,17 @@ export function LevelCard({ userId }: { userId: string | undefined }) {
 
   return (
     <Card variant="progress" className="dashboard-level-card">
+      <svg className="dashboard-mountain-art" viewBox="0 0 720 250" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="mountainFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="currentColor" stopOpacity="0.22" />
+            <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d="M0 221 91 173 135 193 226 107 281 156 368 54 423 121 488 78 563 149 620 115 720 182V250H0Z" fill="url(#mountainFill)" />
+        <path d="m0 221 91-48 44 20 91-86 55 49 87-102 55 67 65-43 75 71 57-34 100 67" fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2" />
+        <path d="m226 107 20 27 35-18m87-62 31 37 24-26m129 59 28 31 25-21" fill="none" stroke="currentColor" strokeOpacity="0.13" strokeWidth="1.5" />
+      </svg>
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3">
           <div>

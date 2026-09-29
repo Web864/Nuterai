@@ -1,3 +1,5 @@
+import type { Tables } from "@/integrations/supabase/types";
+
 /**
  * Nutrition math: BMR (Mifflin-St Jeor), TDEE, calorie targets, macros, water.
  * Pure functions — safe to import from client or server.
@@ -6,12 +8,7 @@
 export type Sex = "male" | "female" | "other" | "prefer_not_to_say";
 export type Activity = "sedentary" | "light" | "moderate" | "active" | "very_active";
 export type Goal =
-  | "lose_weight"
-  | "maintain"
-  | "gain_weight"
-  | "build_muscle"
-  | "improve_health"
-  | "boost_energy";
+  "lose_weight" | "maintain" | "gain_weight" | "build_muscle" | "improve_health" | "boost_energy";
 
 const ACTIVITY_MULTIPLIER: Record<Activity, number> = {
   sedentary: 1.2,
@@ -116,4 +113,132 @@ export function calculateTargets(input: {
   const macros = macroSplit(calories, input.goal, input.weightKg);
   const waterMl = waterTargetMl(input.weightKg, input.activity);
   return { bmr, tdee: t, calories, ...macros, waterMl };
+}
+
+export type CanonicalFoodReference = Pick<Tables<"foods">, "id">;
+export type FoodNutritionFacts = Pick<
+  Tables<"food_nutrition_facts">,
+  | "food_id"
+  | "calories_per_100g"
+  | "protein_per_100g"
+  | "carbs_per_100g"
+  | "fat_per_100g"
+  | "fiber_per_100g"
+  | "sugar_per_100g"
+  | "sodium_mg_per_100g"
+>;
+export type FoodServingDefinition = Pick<
+  Tables<"food_servings">,
+  "food_id" | "name" | "unit" | "grams"
+>;
+
+export type CalculatedFoodNutrition = {
+  calories_kcal: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  fiber_g: number;
+  sugar_g: number | null;
+  sodium_mg: number | null;
+};
+
+export type NutritionCalculationErrorCode =
+  | "missing_food"
+  | "missing_nutrition_facts"
+  | "nutrition_facts_food_mismatch"
+  | "invalid_nutrition_facts"
+  | "missing_serving_conversion"
+  | "serving_food_mismatch"
+  | "invalid_serving_conversion"
+  | "invalid_quantity";
+
+export type NutritionCalculationResult =
+  | {
+      ok: true;
+      foodId: string;
+      grams: number;
+      nutrition: CalculatedFoodNutrition;
+    }
+  | {
+      ok: false;
+      code: NutritionCalculationErrorCode;
+    };
+
+function unresolved(code: NutritionCalculationErrorCode): NutritionCalculationResult {
+  return { ok: false, code };
+}
+
+function isNonNegativeFinite(value: number | null): boolean {
+  return value !== null && Number.isFinite(value) && value >= 0;
+}
+
+function isPositiveFinite(value: number): boolean {
+  return Number.isFinite(value) && value > 0;
+}
+
+function hasValidNutritionFacts(facts: FoodNutritionFacts): boolean {
+  return (
+    isNonNegativeFinite(facts.calories_per_100g) &&
+    isNonNegativeFinite(facts.protein_per_100g) &&
+    isNonNegativeFinite(facts.carbs_per_100g) &&
+    isNonNegativeFinite(facts.fat_per_100g) &&
+    isNonNegativeFinite(facts.fiber_per_100g) &&
+    (facts.sugar_per_100g === null || isNonNegativeFinite(facts.sugar_per_100g)) &&
+    (facts.sodium_mg_per_100g === null || isNonNegativeFinite(facts.sodium_mg_per_100g))
+  );
+}
+
+/**
+ * Calculates nutrition from a canonical food's per-100g facts. This is pure
+ * math: callers must resolve food and nutrition records before invoking it.
+ */
+export function calculateNutritionFromGrams(
+  food: CanonicalFoodReference | null | undefined,
+  facts: FoodNutritionFacts | null | undefined,
+  grams: number,
+): NutritionCalculationResult {
+  if (!food) return unresolved("missing_food");
+  if (!facts) return unresolved("missing_nutrition_facts");
+  if (facts.food_id !== food.id) return unresolved("nutrition_facts_food_mismatch");
+  if (!hasValidNutritionFacts(facts)) return unresolved("invalid_nutrition_facts");
+  if (!isPositiveFinite(grams)) return unresolved("invalid_quantity");
+
+  const scale = grams / 100;
+  return {
+    ok: true,
+    foodId: food.id,
+    grams,
+    nutrition: {
+      calories_kcal: facts.calories_per_100g * scale,
+      protein_g: facts.protein_per_100g * scale,
+      carbs_g: facts.carbs_per_100g * scale,
+      fat_g: facts.fat_per_100g * scale,
+      fiber_g: facts.fiber_per_100g * scale,
+      sugar_g: facts.sugar_per_100g === null ? null : facts.sugar_per_100g * scale,
+      sodium_mg: facts.sodium_mg_per_100g === null ? null : facts.sodium_mg_per_100g * scale,
+    },
+  };
+}
+
+/**
+ * Converts a database-defined serving to grams, then delegates to the same
+ * per-100g calculation. No UI or AI conversion values are accepted here.
+ */
+export function calculateNutritionFromServing(
+  food: CanonicalFoodReference | null | undefined,
+  facts: FoodNutritionFacts | null | undefined,
+  serving: FoodServingDefinition | null | undefined,
+  quantity: number,
+): NutritionCalculationResult {
+  if (!isPositiveFinite(quantity)) return unresolved("invalid_quantity");
+  if (!serving) return unresolved("missing_serving_conversion");
+  if (!isPositiveFinite(serving.grams) || !serving.name.trim() || !serving.unit.trim()) {
+    return unresolved("invalid_serving_conversion");
+  }
+  if (!food) return unresolved("missing_food");
+  if (serving.food_id !== food.id) return unresolved("serving_food_mismatch");
+
+  const grams = serving.grams * quantity;
+  if (!isPositiveFinite(grams)) return unresolved("invalid_quantity");
+  return calculateNutritionFromGrams(food, facts, grams);
 }

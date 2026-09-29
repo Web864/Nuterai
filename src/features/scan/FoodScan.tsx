@@ -1,5 +1,5 @@
 /**
- * Reusable food-capture panels — photo scan, barcode scan, and text search.
+ * Reusable food-capture panels ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â photo scan, barcode scan, and text search.
  * Shared by the dedicated /scan page and the compact "Log a meal" section on
  * the /log page so both surfaces use exactly one implementation of each
  * capture flow (no duplicated analyze/save logic between them).
@@ -47,7 +47,15 @@ import {
   type BarcodeProduct,
   type SearchProduct,
 } from "@/lib/ai-vision.functions";
+import { saveCustomFood } from "@/lib/recipes.functions";
 import { todayISO } from "@/features/logging/queries";
+import {
+  resolveCanonicalFoodNutrition,
+  resolveCanonicalFoodNutritionById,
+  type FoodResolutionCandidate,
+} from "@/features/logging/food-resolution";
+import { FoodCandidatePicker } from "@/features/logging/FoodCandidatePicker";
+import { applyCanonicalNutritionSnapshot } from "@/features/logging/nutrition-contract";
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
@@ -81,6 +89,8 @@ type EditableItem = {
   quantity: number; // multiplier
   meal_type: MealType;
   selected: boolean;
+  canonicalFoodId?: string;
+  candidates?: FoodResolutionCandidate[];
 };
 
 export function PhotoTab({ userId }: { userId: string }) {
@@ -92,6 +102,11 @@ export function PhotoTab({ userId }: { userId: string }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<(AnalyzedMealPhoto & { model?: string }) | null>(null);
   const [items, setItems] = useState<EditableItem[]>([]);
+  const [candidateTarget, setCandidateTarget] = useState<{
+    index: number;
+    candidates: FoodResolutionCandidate[];
+  } | null>(null);
+  const [resolvingCandidate, setResolvingCandidate] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const camRef = useRef<HTMLInputElement>(null);
 
@@ -123,15 +138,41 @@ export function PhotoTab({ userId }: { userId: string }) {
     setBusy(true);
     try {
       const r = await analyze({ data: { image_data_url: preview, hint: hint || undefined } });
-      if (!r.items.length) {
+      const resolvedItems: Array<
+        (typeof r.items)[number] & {
+          canonicalFoodId?: string;
+          candidates?: FoodResolutionCandidate[];
+        }
+      > = await Promise.all(
+        r.items.map(async (item) => {
+          const resolution = await resolveCanonicalFoodNutrition({
+            name: item.name,
+            quantity: item.serving_qty,
+            unit: item.serving_unit,
+          });
+          return resolution.ok
+            ? {
+                ...item,
+                ...resolution.nutrition,
+                sugar_g: resolution.nutrition.sugar_g ?? undefined,
+                canonicalFoodId: resolution.foodId,
+              }
+            : resolution.code === "ambiguous_match"
+              ? { ...item, candidates: resolution.candidates }
+              : item;
+        }),
+      );
+      if (!resolvedItems.length) {
         toast.error(r.notes ?? "We couldn't identify the food clearly. Please try another photo.");
       } else {
-        toast.success(`Detected ${r.items.length} item${r.items.length > 1 ? "s" : ""}`);
+        toast.success(
+          `Detected ${resolvedItems.length} item${resolvedItems.length > 1 ? "s" : ""}`,
+        );
       }
-      setResult(r);
+      setResult({ ...r, items: resolvedItems });
       const meal = currentMealType();
       setItems(
-        r.items.map((it) => ({
+        resolvedItems.map((it) => ({
           name: it.name,
           serving_qty: it.serving_qty,
           serving_unit: it.serving_unit,
@@ -145,6 +186,8 @@ export function PhotoTab({ userId }: { userId: string }) {
           quantity: 1,
           meal_type: meal,
           selected: true,
+          canonicalFoodId: it.canonicalFoodId,
+          candidates: it.candidates,
         })),
       );
     } catch (e) {
@@ -154,6 +197,43 @@ export function PhotoTab({ userId }: { userId: string }) {
     }
   }
 
+  async function selectCandidate(candidate: FoodResolutionCandidate) {
+    if (!candidateTarget || resolvingCandidate) return;
+    const item = items[candidateTarget.index];
+    if (!item) return;
+    setResolvingCandidate(true);
+    try {
+      const resolution = await resolveCanonicalFoodNutritionById(
+        { name: candidate.canonicalName, quantity: item.serving_qty, unit: item.serving_unit },
+        candidate.foodId,
+      );
+      if (!resolution.ok) {
+        toast.error(
+          "That food does not have compatible nutrition or serving data. Keeping current details.",
+        );
+        return;
+      }
+      setItems((current) =>
+        current.map((entry, index) =>
+          index === candidateTarget.index
+            ? {
+                ...entry,
+                name: candidate.canonicalName,
+                ...resolution.nutrition,
+                sugar_g: resolution.nutrition.sugar_g ?? undefined,
+                canonicalFoodId: candidate.foodId,
+                candidates: undefined,
+              }
+            : entry,
+        ),
+      );
+      setCandidateTarget(null);
+    } catch {
+      toast.error("Unable to load that food's nutrition. Keeping current details.");
+    } finally {
+      setResolvingCandidate(false);
+    }
+  }
   function reset() {
     setPreview(null);
     setResult(null);
@@ -170,24 +250,39 @@ export function PhotoTab({ userId }: { userId: string }) {
     }
     setBusy(true);
     try {
-      const rows: TablesInsert<"meal_entries">[] = chosen.map((i) => ({
-        user_id: userId,
-        name: i.name,
-        serving_qty: i.serving_qty * i.quantity,
-        serving_unit: i.serving_unit,
-        calories_kcal: Math.round(i.calories_kcal * i.quantity),
-        protein_g: Math.round(i.protein_g * i.quantity * 10) / 10,
-        carbs_g: Math.round(i.carbs_g * i.quantity * 10) / 10,
-        fat_g: Math.round(i.fat_g * i.quantity * 10) / 10,
-        fiber_g: Math.round(i.fiber_g * i.quantity * 10) / 10,
-        sugar_g: i.sugar_g != null ? Math.round(i.sugar_g * i.quantity * 10) / 10 : null,
-        meal_type: i.meal_type,
-        source: "ai_photo_scan",
-        ai_model: result?.model ?? null,
-        ai_confidence: result?.confidence ?? null,
-        description: i.ingredients?.join(", ") ?? null,
-        logged_date: todayISO(),
-      }));
+      const rows: TablesInsert<"meal_entries">[] = await Promise.all(
+        chosen.map(async (i) => {
+          const resolution = i.canonicalFoodId
+            ? await resolveCanonicalFoodNutritionById(
+                { name: i.name, quantity: i.serving_qty * i.quantity, unit: i.serving_unit },
+                i.canonicalFoodId,
+              )
+            : await resolveCanonicalFoodNutrition({
+                name: i.name,
+                quantity: i.serving_qty * i.quantity,
+                unit: i.serving_unit,
+              });
+          const row: TablesInsert<"meal_entries"> = {
+            user_id: userId,
+            name: i.name,
+            serving_qty: i.serving_qty * i.quantity,
+            serving_unit: i.serving_unit,
+            calories_kcal: Math.round(i.calories_kcal * i.quantity),
+            protein_g: Math.round(i.protein_g * i.quantity * 10) / 10,
+            carbs_g: Math.round(i.carbs_g * i.quantity * 10) / 10,
+            fat_g: Math.round(i.fat_g * i.quantity * 10) / 10,
+            fiber_g: Math.round(i.fiber_g * i.quantity * 10) / 10,
+            sugar_g: i.sugar_g != null ? Math.round(i.sugar_g * i.quantity * 10) / 10 : null,
+            meal_type: i.meal_type,
+            source: "ai_photo_scan",
+            ai_model: result?.model ?? null,
+            ai_confidence: result?.confidence ?? null,
+            description: i.ingredients?.join(", ") ?? null,
+            logged_date: todayISO(),
+          };
+          return resolution.ok ? applyCanonicalNutritionSnapshot(row, resolution) : row;
+        }),
+      );
       const { error } = await supabase.from("meal_entries").insert(rows);
       if (error) throw error;
       toast.success(`Logged ${rows.length} item${rows.length > 1 ? "s" : ""}`);
@@ -287,7 +382,9 @@ export function PhotoTab({ userId }: { userId: string }) {
                   ) : (
                     <Sparkles className="mr-2 h-4 w-4" />
                   )}
-                  {busy ? "Analyzing…" : "Analyze with AI"}
+                  {busy
+                    ? "AnalyzingÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦"
+                    : "Analyze with AI"}
                 </Button>
               </div>
             )}
@@ -298,8 +395,9 @@ export function PhotoTab({ userId }: { userId: string }) {
                   <div>
                     <p className="font-display text-lg">Detected items</p>
                     <p className="text-xs text-muted-foreground">
-                      Confidence: {Math.round((result.confidence ?? 0) * 100)}% — edit anything
-                      before saving
+                      Confidence: {Math.round((result.confidence ?? 0) * 100)}%
+                      ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â
+                      edit anything before saving
                     </p>
                   </div>
                   <Badge variant="outline" className="rounded-full">
@@ -315,9 +413,22 @@ export function PhotoTab({ userId }: { userId: string }) {
                         setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)))
                       }
                       onRemove={() => setItems((prev) => prev.filter((_, i) => i !== idx))}
+                      onConfirmFood={
+                        it.candidates?.length
+                          ? () =>
+                              setCandidateTarget({ index: idx, candidates: it.candidates ?? [] })
+                          : undefined
+                      }
                     />
                   ))}
                 </div>
+                <FoodCandidatePicker
+                  open={candidateTarget !== null}
+                  candidates={candidateTarget?.candidates ?? []}
+                  isResolving={resolvingCandidate}
+                  onSelect={selectCandidate}
+                  onCancel={() => !resolvingCandidate && setCandidateTarget(null)}
+                />{" "}
                 <div className="flex min-w-0 flex-wrap gap-2">
                   <Button
                     variant="outline"
@@ -354,10 +465,12 @@ function ItemEditor({
   item,
   onChange,
   onRemove,
+  onConfirmFood,
 }: {
   item: EditableItem;
   onChange: (p: Partial<EditableItem>) => void;
   onRemove: () => void;
+  onConfirmFood?: () => void;
 }) {
   const cal = Math.round(item.calories_kcal * item.quantity);
   const p = Math.round(item.protein_g * item.quantity * 10) / 10;
@@ -383,7 +496,10 @@ function ItemEditor({
           />
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
             <label className="text-xs">
-              <span className="text-muted-foreground">Qty ×</span>
+              <span className="text-muted-foreground">
+                Qty
+                ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â
+              </span>
               <Input
                 type="number"
                 step="0.25"
@@ -431,6 +547,17 @@ function ItemEditor({
             <Badge variant="outline" className="rounded-full">
               F {f}g
             </Badge>
+            {onConfirmFood ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-6 rounded-lg px-2 text-xs"
+                onClick={onConfirmFood}
+              >
+                Confirm food
+              </Button>
+            ) : null}
           </div>
           {item.ingredients && item.ingredients.length > 0 && (
             <p className="mt-2 text-xs text-muted-foreground truncate">
@@ -558,7 +685,10 @@ export function BarcodeTab({ userId }: { userId: string }) {
                 <div className="h-1/2 w-3/4 rounded-xl border-2 border-white/70 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
               </div>
             </div>
-            <p className="text-center text-sm text-muted-foreground">Point at a barcode…</p>
+            <p className="text-center text-sm text-muted-foreground">
+              Point at a
+              barcodeÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦
+            </p>
             <Button variant="outline" className="w-full rounded-full" onClick={stopScan}>
               Cancel
             </Button>
@@ -566,7 +696,10 @@ export function BarcodeTab({ userId }: { userId: string }) {
         ) : analyzing ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
             <Loader2 className="h-8 w-8 animate-spin text-accent" />
-            <p className="text-sm text-muted-foreground">Analyzing barcode…</p>
+            <p className="text-sm text-muted-foreground">
+              Analyzing
+              barcodeÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦
+            </p>
           </div>
         ) : product ? (
           <ProductCard
@@ -811,8 +944,12 @@ function CustomFoodForm({
   const [protein, setProtein] = useState("");
   const [carbs, setCarbs] = useState("");
   const [fat, setFat] = useState("");
+  const [fiber, setFiber] = useState("");
   const [meal, setMeal] = useState<MealType>(currentMealType());
   const [busy, setBusy] = useState(false);
+  const [servingGrams, setServingGrams] = useState("100");
+  const [savingCustomFood, setSavingCustomFood] = useState(false);
+  const saveFood = useServerFn(saveCustomFood);
   const { track } = useGamification(userId);
 
   async function submit(e: React.FormEvent) {
@@ -850,6 +987,47 @@ function CustomFoodForm({
     }
   }
 
+  async function saveAsCustomFood() {
+    if (busy || savingCustomFood) return;
+    const grams = Number.parseFloat(servingGrams);
+    const values = [cal, protein, carbs, fat, fiber].map((value) =>
+      Number.parseFloat(value || "0"),
+    );
+    if (
+      !name.trim() ||
+      !Number.isFinite(grams) ||
+      grams <= 0 ||
+      values.some((value) => !Number.isFinite(value) || value < 0)
+    ) {
+      toast.error("Enter a name, non-negative nutrition values, and a serving weight.");
+      return;
+    }
+    setSavingCustomFood(true);
+    try {
+      const scaleTo100g = 100 / grams;
+      await saveFood({
+        data: {
+          name: name.trim(),
+          nutrition: {
+            calories_per_100g: values[0] * scaleTo100g,
+            protein_per_100g: values[1] * scaleTo100g,
+            carbs_per_100g: values[2] * scaleTo100g,
+            fat_per_100g: values[3] * scaleTo100g,
+            fiber_per_100g: values[4] * scaleTo100g,
+            sugar_per_100g: null,
+            sodium_mg_per_100g: null,
+          },
+          servings: [{ name: "serving", unit: "serving", grams, is_default: true }],
+        },
+      });
+      toast.success("Custom food saved.");
+    } catch (error) {
+      toast.error(describeAnalysisError(error));
+    } finally {
+      setSavingCustomFood(false);
+    }
+  }
+
   return (
     <form onSubmit={submit} className="space-y-2">
       <Input
@@ -864,6 +1042,13 @@ function CustomFoodForm({
           inputMode="decimal"
           value={cal}
           onChange={(e) => setCal(e.target.value)}
+          className="rounded-xl"
+        />
+        <Input
+          placeholder="Fiber (g)"
+          inputMode="decimal"
+          value={fiber}
+          onChange={(e) => setFiber(e.target.value)}
           className="rounded-xl"
         />
         <Input
@@ -887,6 +1072,14 @@ function CustomFoodForm({
           onChange={(e) => setFat(e.target.value)}
           className="rounded-xl"
         />
+        <Input
+          placeholder="Serving weight (g)"
+          aria-label="Serving weight in grams"
+          inputMode="decimal"
+          value={servingGrams}
+          onChange={(e) => setServingGrams(e.target.value)}
+          className="rounded-xl"
+        />
       </div>
       <div className="flex min-w-0 flex-wrap gap-2">
         <Select value={meal} onValueChange={(v) => setMeal(v as MealType)}>
@@ -902,6 +1095,15 @@ function CustomFoodForm({
         </Select>
         <Button type="submit" className="rounded-full" disabled={busy}>
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="rounded-full"
+          onClick={saveAsCustomFood}
+          disabled={busy || savingCustomFood}
+        >
+          {savingCustomFood ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save custom food"}
         </Button>
       </div>
     </form>
@@ -1108,4 +1310,3 @@ function logImageTiming(file: File, dataUrl: string, started: number) {
     });
   }
 }
-
