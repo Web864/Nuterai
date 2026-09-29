@@ -18,6 +18,7 @@ const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+const GEMINI_TIMEOUT_MS = 28_000;
 const LONGCAT_MODEL = process.env.LONGCAT_MODEL ?? "LongCat-2.0";
 const LONGCAT_URL =
   (process.env.LONGCAT_BASE_URL ?? "https://api.longcat.chat/openai/v1").replace(/\/+$/, "") +
@@ -208,9 +209,10 @@ export const analyzeMeal = createServerFn({ method: "POST" })
             ],
             tools: [TOOL],
             tool_choice: "auto",
+            thinking: { type: "disabled" },
           }),
         },
-        { timeoutMs: 20000, label: "ai.meal_text.gemini" },
+        { timeoutMs: GEMINI_TIMEOUT_MS, label: "ai.meal_text.gemini" },
       );
     } catch (err) {
       if (openAiApiKey && isNetworkOrTimeoutError(err)) {
