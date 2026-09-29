@@ -394,17 +394,8 @@ function TextMealTab({ userId }: { userId: string }) {
         toast.message(
           "Nutrition analysis is temporarily unavailable. You can continue with resolved foods.",
         );
-      } else if (!parsedItems.length) {
-        toast.error(
-          "That doesn't appear to be a food. Please enter a food name or add it as a custom food.",
-        );
       } else {
-        setAnalysis({
-          items: localItems,
-          confidence: 0,
-          notes:
-            "We couldn't identify these foods. Try a more specific food name or add a custom food.",
-        });
+        toast.error("Nutrition analysis is temporarily unavailable. Please try again.");
       }
     } finally {
       setAnalyzing(false);
