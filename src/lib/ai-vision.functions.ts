@@ -99,14 +99,108 @@ const PHOTO_TOOL = {
   },
 };
 
+const IMAGE_ANALYSIS_ERROR = "Nutrition analysis is temporarily unavailable. Please try again.";
+const GEMINI_IMAGE_TIMEOUT_MS = 28_000;
+const NATIVE_GEMINI_URL =
+  "https://generativelanguage.googleapis.com/v1beta/models/" +
+  encodeURIComponent(process.env.GEMINI_MODEL ?? "gemini-3.8-flash") +
+  ":generateContent";
+
+type GeminiImageAnalysisInput = {
+  imageDataUrl: string;
+  hint?: string;
+  apiKey: string;
+};
+
+export async function analyzeMealPhotoWithGemini(
+  input: GeminiImageAnalysisInput,
+): Promise<AnalyzedMealPhoto & { model: string }> {
+  const image = /^data:(image\/[a-zA-Z0-9.+-]+);base64,([a-zA-Z0-9+/=]+)$/.exec(input.imageDataUrl);
+  if (!image) throw new Error(IMAGE_ANALYSIS_ERROR);
+
+  const model = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
+  const userText = input.hint
+    ? "Analyze this food photo. Additional hint from user: " + input.hint
+    : "Analyze this food photo and estimate nutrition for every visible item.";
+
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(
+      NATIVE_GEMINI_URL,
+      {
+        method: "POST",
+        headers: { "x-goog-api-key": input.apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: userText }, { inlineData: { mimeType: image[1], data: image[2] } }],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseJsonSchema: PHOTO_TOOL.function.parameters,
+            maxOutputTokens: 1024,
+            thinkingConfig: { thinkingLevel: "low" },
+          },
+        }),
+      },
+      { timeoutMs: GEMINI_IMAGE_TIMEOUT_MS, label: "ai.meal_photo.gemini" },
+    );
+  } catch (error) {
+    console.warn("[ai.meal_photo.result]", {
+      provider: "gemini",
+      model,
+      errorType: isNetworkOrTimeoutError(error) ? "GEMINI_TIMEOUT" : "GEMINI_NETWORK_ERROR",
+    });
+    throw new Error(IMAGE_ANALYSIS_ERROR);
+  }
+
+  if (!response.ok) {
+    console.warn("[ai.meal_photo.result]", {
+      provider: "gemini",
+      model,
+      status: response.status,
+      errorType:
+        response.status === 401 || response.status === 403
+          ? "GEMINI_AUTH_ERROR"
+          : response.status === 429
+            ? "GEMINI_RATE_LIMIT"
+            : response.status >= 500
+              ? "GEMINI_SERVER_ERROR"
+              : "GEMINI_REQUEST_ERROR",
+    });
+    throw new Error(IMAGE_ANALYSIS_ERROR);
+  }
+
+  try {
+    const payload = (await response.json()) as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    };
+    const raw = payload.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text ?? "")
+      .join("")
+      .trim();
+    if (!raw) throw new Error("empty Gemini response");
+
+    return { ...AnalyzedResponseSchema.parse(JSON.parse(raw)), model };
+  } catch {
+    console.warn("[ai.meal_photo.result]", {
+      provider: "gemini",
+      model,
+      errorType: "GEMINI_INVALID_RESPONSE",
+    });
+    throw new Error(IMAGE_ANALYSIS_ERROR);
+  }
+}
+
 export const analyzeMealPhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => PhotoInput.parse(input))
   .handler(async ({ data, context }) => {
-    const longCatApiKey = process.env.LONGCAT_API_KEY;
     const apiKey = process.env.GEMINI_API_KEY;
-    // if (!apiKey) throw new Error("AI is not configured. Please contact support.");
-    if (!longCatApiKey && !apiKey) throw new Error("AI is not configured. Please contact support.");
+    if (!apiKey) throw new Error(IMAGE_ANALYSIS_ERROR);
 
     await enforceAiRateLimit(context.supabase, "meal_vision");
 
@@ -115,109 +209,12 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
       throw new Error(CRISIS_SAFE_RESPONSE);
     }
 
-    const userText = data.hint
-      ? `Analyze this food photo. Additional hint from user: ${data.hint}`
-      : "Analyze this food photo and estimate nutrition for every visible item.";
-
-    if (longCatApiKey) {
-      try {
-        const longCatResponse = await fetchWithTimeout(
-          LONGCAT_URL,
-          {
-            method: "POST",
-            headers: {
-              Authorization: "Bearer " + longCatApiKey,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: LONGCAT_MODEL,
-              messages: [
-                { role: "system", content: SYSTEM_PROMPT },
-                {
-                  role: "user",
-                  content: [
-                    { type: "text", text: userText },
-                    { type: "image_url", image_url: { url: data.image_data_url } },
-                  ],
-                },
-              ],
-              tools: [PHOTO_TOOL],
-              tool_choice: { type: "function", function: { name: "record_photo_estimate" } },
-              thinking: { type: "disabled" },
-            }),
-          },
-          { timeoutMs: 25_000, label: "ai.meal_photo.longcat" },
-        );
-        if (!longCatResponse.ok) throw new Error("LongCat HTTP " + longCatResponse.status);
-        const longCatPayload = (await longCatResponse.json()) as {
-          choices?: Array<{
-            message?: { tool_calls?: Array<{ function?: { arguments?: string } }> };
-          }>;
-        };
-        const longCatRaw =
-          longCatPayload.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-        if (!longCatRaw) throw new Error("LongCat returned no structured photo estimate.");
-        const longCatParsed = AnalyzedResponseSchema.parse(JSON.parse(longCatRaw));
-        return { ...longCatParsed, model: LONGCAT_MODEL };
-      } catch (err) {
-        console.warn("[analyzeMealPhoto] LongCat failed; falling back to Gemini.", {
-          errorType: err instanceof Error ? err.name : "unknown",
-        });
-      }
-    }
-    let res: Response;
-    try {
-      res = await fetchWithTimeout(
-        GEMINI_URL,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: VISION_MODEL,
-            messages: [
-              { role: "system", content: SYSTEM_PROMPT },
-              {
-                role: "user",
-                content: [
-                  { type: "text", text: userText },
-                  { type: "image_url", image_url: { url: data.image_data_url } },
-                ],
-              },
-            ],
-            tools: [PHOTO_TOOL],
-            tool_choice: { type: "function", function: { name: "record_photo_estimate" } },
-          }),
-        },
-        { timeoutMs: 25000, label: "ai.meal_photo.gemini" },
-      );
-    } catch (err) {
-      if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
-      throw err;
-    }
-
-    if (res.status === 429) throw new Error("Rate limit reached. Please try again in a moment.");
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error("[analyzeMealPhoto] gateway error", res.status, text);
-      throw new Error("Couldn't reach the AI service. Please try again.");
-    }
-
-    const payload = (await res.json()) as {
-      choices?: Array<{ message?: { tool_calls?: Array<{ function?: { arguments?: string } }> } }>;
-    };
-    const raw = payload.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-    if (!raw) throw new Error("The AI didn't return a usable answer. Try a clearer photo.");
-
-    let parsedJson: unknown;
-    try {
-      parsedJson = JSON.parse(raw);
-    } catch {
-      throw new Error("The AI returned malformed data. Try again.");
-    }
-    const parsed = AnalyzedResponseSchema.parse(parsedJson);
-    return { ...parsed, model: VISION_MODEL };
+    return analyzeMealPhotoWithGemini({
+      imageDataUrl: data.image_data_url,
+      hint: data.hint,
+      apiKey,
+    });
   });
-
 // ---------------- Barcode lookup via Open Food Facts ----------------
 
 const BarcodeInput = z.object({

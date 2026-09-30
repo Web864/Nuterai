@@ -36,7 +36,7 @@ const AnalyzedItemSchema = z.object({
 });
 
 const AnalyzedResponseSchema = z.object({
-  items: z.array(AnalyzedItemSchema).min(1),
+  items: z.array(AnalyzedItemSchema),
   confidence: z.number().min(0).max(1).default(0.7),
   notes: z.string().optional(),
 });
@@ -57,6 +57,7 @@ Rules:
 - Values are per the serving_qty and serving_unit you output (NOT per 100g).
 - Be conservative and realistic. Round calories to nearest 5, macros to 1 decimal.
 - Set confidence 0-1 based on how specific the description was.
+- If the input is not food or a meal, return an empty items array with a short note.
 - Return ONLY the JSON object, no prose, no markdown fences.`;
 
 const TOOL = {
@@ -135,135 +136,112 @@ export const analyzeMeal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const longCatApiKey = process.env.LONGCAT_API_KEY;
     const apiKey = process.env.GEMINI_API_KEY;
-    const openAiApiKey = process.env.OPENAI_API_KEY;
-    // if (!apiKey) {
-    if (!longCatApiKey && !apiKey && !openAiApiKey) {
-      throw new Error("AI is not configured. Please contact support.");
-    }
+    if (!apiKey)
+      throw new Error("Nutrition analysis is temporarily unavailable. Please try again.");
 
     await enforceAiRateLimit(context.supabase, "meal_text");
-
     if (classifyHealthRisk(data.description).crisis) {
       void logAiSafetyEvent(context.userId, "meal_text", "crisis_input");
       throw new Error(CRISIS_SAFE_RESPONSE);
     }
 
-    // Phase 11 keeps LongCat configured for non-default recovery paths; Gemini is the paid primary for meal analysis.
-    if (longCatApiKey && process.env.NUTRIAI_ENABLE_LONGCAT_MEAL_FALLBACK === "true") {
-      try {
-        const longCatResponse = await fetchWithTimeout(
-          LONGCAT_URL,
-          {
-            method: "POST",
-            headers: {
-              Authorization: "Bearer " + longCatApiKey,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: LONGCAT_MODEL,
-              messages: [
-                { role: "system", content: SYSTEM_PROMPT },
-                { role: "user", content: "Food description: " + data.description },
-              ],
-              tools: [TOOL],
-              tool_choice: "auto",
-              thinking: { type: "disabled" },
-            }),
-          },
-          { timeoutMs: 20_000, label: "ai.meal_text.longcat" },
-        );
-        if (!longCatResponse.ok) throw new Error("LongCat HTTP " + longCatResponse.status);
-        const longCatPayload = (await longCatResponse.json()) as {
-          choices?: Array<{
-            message?: { tool_calls?: Array<{ function?: { arguments?: string } }> };
-          }>;
-        };
-        const longCatRaw =
-          longCatPayload.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-        if (!longCatRaw) throw new Error("LongCat returned no structured meal estimate.");
-        const longCatParsed = AnalyzedResponseSchema.parse(JSON.parse(longCatRaw));
-        return { ...longCatParsed, model: LONGCAT_MODEL };
-      } catch (err) {
-        console.warn("[analyzeMeal] LongCat failed; falling back to Gemini.", {
-          errorType: err instanceof Error ? err.name : "unknown",
-        });
-      }
-    }
-    let res: Response;
+    const started = performance.now();
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`;
+    let response: Response;
     try {
-      res = await fetchWithTimeout(
-        GEMINI_URL,
+      console.info("[ai.meal.provider]", { provider: "gemini", model: MODEL, event: "start" });
+      response = await fetchWithTimeout(
+        url,
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
+          headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: MODEL,
-            messages: [
-              { role: "system", content: SYSTEM_PROMPT },
-              { role: "user", content: `Food description: ${data.description}` },
+            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            contents: [
+              { role: "user", parts: [{ text: `Food description: ${data.description}` }] },
             ],
-            tools: [TOOL],
-            tool_choice: "auto",
-            thinking: { type: "disabled" },
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseJsonSchema: TOOL.function.parameters,
+              maxOutputTokens: 1024,
+              thinkingConfig: { thinkingLevel: "low" },
+            },
           }),
         },
         { timeoutMs: GEMINI_TIMEOUT_MS, label: "ai.meal_text.gemini" },
       );
-    } catch (err) {
-      if (openAiApiKey && isNetworkOrTimeoutError(err)) {
-        console.warn("[analyzeMeal] Gemini failed; falling back to OpenAI.", {
-          errorType: err instanceof Error ? err.name : "unknown",
-        });
-        return requestOpenAiMeal(openAiApiKey, data.description);
-      }
-      if (isNetworkOrTimeoutError(err)) throw new Error(NETWORK_ERROR_MESSAGE);
-      throw err;
-    }
-    // debugger;
-
-    if (res.status === 429) {
-      if (openAiApiKey) return requestOpenAiMeal(openAiApiKey, data.description);
-      throw new Error("Rate limit reached. Please try again in a moment.");
-    }
-    if (!res.ok) {
-      if (openAiApiKey && (res.status === 429 || res.status >= 500)) {
-        console.warn("[analyzeMeal] Gemini failed; falling back to OpenAI.", {
-          status: res.status,
-        });
-        return requestOpenAiMeal(openAiApiKey, data.description);
-      }
-      const text = await res.text().catch(() => "");
-      console.error("[analyzeMeal] gateway error", res.status, text);
-      throw new Error("Couldn't reach the AI service. Please try again.");
+    } catch (error) {
+      console.warn("[ai.meal.result]", {
+        provider: "gemini",
+        model: MODEL,
+        errorType: isNetworkOrTimeoutError(error) ? "GEMINI_TIMEOUT" : "GEMINI_NETWORK_ERROR",
+        durationMs: Math.round(performance.now() - started),
+      });
+      throw new Error("Nutrition analysis is temporarily unavailable. Please try again.");
     }
 
-    const payload = (await res.json()) as {
-      choices?: Array<{
-        message?: {
-          tool_calls?: Array<{ function?: { name?: string; arguments?: string } }>;
-          content?: string;
-        };
-      }>;
+    if (!response.ok) {
+      const errorType =
+        response.status === 401 || response.status === 403
+          ? "GEMINI_AUTH_ERROR"
+          : response.status === 429
+            ? "GEMINI_RATE_LIMIT"
+            : response.status >= 500
+              ? "GEMINI_SERVER_ERROR"
+              : "GEMINI_REQUEST_ERROR";
+      console.warn("[ai.meal.result]", {
+        provider: "gemini",
+        model: MODEL,
+        status: response.status,
+        errorType,
+        durationMs: Math.round(performance.now() - started),
+      });
+      throw new Error("Nutrition analysis is temporarily unavailable. Please try again.");
+    }
+
+    const payload = (await response.json()) as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
     };
-
-    const call = payload.choices?.[0]?.message?.tool_calls?.[0];
-    const raw = call?.function?.arguments;
+    const raw = payload.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text ?? "")
+      .join("")
+      .trim();
     if (!raw) {
-      throw new Error("The AI didn't return a usable answer. Try rephrasing.");
+      console.warn("[ai.meal.result]", {
+        provider: "gemini",
+        model: MODEL,
+        errorType: "GEMINI_INVALID_RESPONSE",
+        durationMs: Math.round(performance.now() - started),
+      });
+      throw new Error("Nutrition analysis is temporarily unavailable. Please try again.");
     }
-
-    let parsedJson: unknown;
     try {
-      parsedJson = JSON.parse(raw);
-    } catch {
-      throw new Error("The AI returned malformed data. Try again.");
+      const parsed = AnalyzedResponseSchema.parse(JSON.parse(raw));
+      if (parsed.items.length === 0) {
+        throw new Error("I couldn't identify that as food. Please enter a food or meal name.");
+      }
+      console.info("[ai.meal.result]", {
+        provider: "gemini",
+        model: MODEL,
+        status: response.status,
+        durationMs: Math.round(performance.now() - started),
+        parsing: "success",
+      });
+      return { ...parsed, model: MODEL };
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === "I couldn't identify that as food. Please enter a food or meal name."
+      ) {
+        throw error;
+      }
+      console.warn("[ai.meal.result]", {
+        provider: "gemini",
+        model: MODEL,
+        errorType: "GEMINI_INVALID_RESPONSE",
+        durationMs: Math.round(performance.now() - started),
+      });
+      throw new Error("Nutrition analysis is temporarily unavailable. Please try again.");
     }
-
-    const parsed = AnalyzedResponseSchema.parse(parsedJson);
-    return { ...parsed, model: MODEL };
   });

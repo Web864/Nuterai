@@ -53,18 +53,9 @@ import {
 import { analyzeMeal, type AnalyzedMeal } from "@/lib/ai-meal.functions";
 import { describeAnalysisError } from "@/lib/utils";
 import { PhotoTab, BarcodeTab } from "@/features/scan/FoodScan";
-import { RecipeLogger } from "@/features/recipes/RecipeLogger";
-import {
-  resolveCanonicalFoodNutrition,
-  resolveCanonicalFoodNutritionById,
-  type FoodResolutionCandidate,
-} from "@/features/logging/food-resolution";
-import { FoodCandidatePicker } from "@/features/logging/FoodCandidatePicker";
+// import { RecipeLogger } from "@/features/recipes/RecipeLogger"; // Recipe UI is retained for historical compatibility but not mounted in the normal meal flow.
 // import { parseTextFoodItems } from "@/features/logging/text-food-parser"; // Phase 11: Gemini is the default text understanding path.
-import {
-  applyCanonicalNutritionSnapshot,
-  mealNutritionMultiplier,
-} from "@/features/logging/nutrition-contract";
+import { mealNutritionMultiplier } from "@/features/logging/nutrition-contract";
 
 const searchSchema = z.object({
   tab: z.enum(["meal", "water", "weight"]).optional(),
@@ -280,19 +271,15 @@ function MealLogger({ userId }: { userId: string }) {
           <BarcodeTab userId={userId} />
         </TabsContent>
       </Tabs>
-      <RecipeLogger userId={userId} />
+      {/* RecipeLogger intentionally not mounted in the simplified production meal flow. */}
     </div>
   );
 }
 
-/** Free-text meal description ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ structured estimate ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ save. No "AI" framing
+/** Free-text meal description to structured estimate to save. No AI framing
  * in the UI: this is plain meal logging from the user's point of view, even
  * though the estimate is computed by the same AI model as the other tabs. */
-type ReviewedTextMealItem = AnalyzedMeal["items"][number] & {
-  canonicalFoodId?: string;
-  candidates?: FoodResolutionCandidate[];
-  resolutionState?: "canonical" | "ambiguous" | "estimated" | "unknown";
-};
+type ReviewedTextMealItem = AnalyzedMeal["items"][number];
 type ReviewedTextMeal = Omit<AnalyzedMeal, "items"> & { items: ReviewedTextMealItem[] };
 
 function TextMealTab({ userId }: { userId: string }) {
@@ -301,11 +288,6 @@ function TextMealTab({ userId }: { userId: string }) {
     defaultMealType(),
   );
   const [analysis, setAnalysis] = useState<ReviewedTextMeal | null>(null);
-  const [candidateTarget, setCandidateTarget] = useState<{
-    index: number;
-    candidates: FoodResolutionCandidate[];
-  } | null>(null);
-  const [resolvingCandidate, setResolvingCandidate] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
 
   const runAnalyze = useServerFn(analyzeMeal);
@@ -321,82 +303,12 @@ function TextMealTab({ userId }: { userId: string }) {
     }
     setAnalyzing(true);
     setAnalysis(null);
-    // const parsedItems = parseTextFoodItems(description); // Retained parser for manual/recovery paths.
-    const parsedItems: ReturnType<
-      typeof import("@/features/logging/text-food-parser").parseTextFoodItems
-    > = [];
-    const resolveParsedItems = async (): Promise<ReviewedTextMealItem[]> =>
-      Promise.all(
-        parsedItems.map(async (item): Promise<ReviewedTextMealItem> => {
-          const resolution = await resolveCanonicalFoodNutrition({
-            name: item.name,
-            quantity: item.quantity,
-            unit: item.unit,
-          });
-          if (resolution.ok) {
-            return {
-              name: item.name,
-              serving_qty: item.quantity,
-              serving_unit: item.unit,
-              ...resolution.nutrition,
-              canonicalFoodId: resolution.foodId,
-              resolutionState: "canonical",
-            };
-          }
-          if (resolution.code === "ambiguous_match") {
-            return {
-              name: item.name,
-              serving_qty: item.quantity,
-              serving_unit: item.unit,
-              calories_kcal: 0,
-              protein_g: 0,
-              carbs_g: 0,
-              fat_g: 0,
-              fiber_g: 0,
-              candidates: resolution.candidates,
-              resolutionState: "ambiguous",
-            };
-          }
-          return {
-            name: item.name,
-            serving_qty: item.quantity,
-            serving_unit: item.unit,
-            calories_kcal: 0,
-            protein_g: 0,
-            carbs_g: 0,
-            fat_g: 0,
-            fiber_g: 0,
-            resolutionState: "unknown",
-          };
-        }),
-      );
-    const localItems = parsedItems.length ? await resolveParsedItems() : [];
-    if (localItems.length && localItems.every((item) => item.resolutionState !== "unknown")) {
-      setAnalysis({ items: localItems, confidence: 1, notes: undefined });
-      setAnalyzing(false);
-      return;
-    }
+    // Gemini is the only active text-analysis path. It returns the complete, user-stated serving snapshot.
     try {
       const result = await runAnalyze({ data: { description: description.trim() } });
-      const resolvedItems: ReviewedTextMealItem[] = result.items.map((item) => ({
-        ...item,
-        resolutionState: "estimated",
-      }));
-      setAnalysis({ ...result, items: resolvedItems });
-    } catch {
-      if (localItems.length) {
-        setAnalysis({
-          items: localItems,
-          confidence: 0,
-          notes:
-            "Nutrition analysis is temporarily unavailable. Resolved foods are ready to save; remaining foods need attention.",
-        });
-        toast.message(
-          "Nutrition analysis is temporarily unavailable. You can continue with resolved foods.",
-        );
-      } else {
-        toast.error("Nutrition analysis is temporarily unavailable. Please try again.");
-      }
+      setAnalysis({ ...result, items: result.items });
+    } catch (error) {
+      toast.error(describeAnalysisError(error));
     } finally {
       setAnalyzing(false);
     }
@@ -405,49 +317,29 @@ function TextMealTab({ userId }: { userId: string }) {
   async function handleSaveAll() {
     if (!analysis || addMeal.isPending) return;
     try {
-      // Save every detected item in parallel ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the previous sequential
-      // await-in-a-loop made a multi-item meal (e.g. "eggs, toast, coffee")
-      // take 3x as long to save as it needed to.
+      // Gemini values are final for the user's stated serving. Persist this snapshot unchanged.
       await Promise.all(
-        analysis.items
-          .filter(
-            (item) => item.resolutionState !== "unknown" && item.resolutionState !== "ambiguous",
-          )
-          .map(async (item) => {
-            const resolution = item.canonicalFoodId
-              ? await resolveCanonicalFoodNutritionById(
-                  { name: item.name, quantity: item.serving_qty, unit: item.serving_unit },
-                  item.canonicalFoodId,
-                )
-              : await resolveCanonicalFoodNutrition({
-                  name: item.name,
-                  quantity: item.serving_qty,
-                  unit: item.serving_unit,
-                });
-            const row = {
-              user_id: userId,
-              meal_type: mealType,
-              name: item.name,
-              description: description.trim(),
-              serving_qty: item.serving_qty,
-              serving_unit: item.serving_unit,
-              calories_kcal: item.calories_kcal,
-              protein_g: item.protein_g,
-              carbs_g: item.carbs_g,
-              fat_g: item.fat_g,
-              fiber_g: item.fiber_g,
-              source: "ai_text" as const,
-              ai_model: (analysis as AnalyzedMeal & { model?: string }).model ?? null,
-              ai_confidence: analysis.confidence,
-              ai_raw: {
-                ...JSON.parse(JSON.stringify(analysis)),
-                nutrition_contract: "logged_quantity_v1",
-              },
-            };
-            return addMeal.mutateAsync(
-              resolution.ok ? applyCanonicalNutritionSnapshot(row, resolution) : row,
-            );
+        analysis.items.map((item) =>
+          addMeal.mutateAsync({
+            meal_type: mealType,
+            name: item.name,
+            description: description.trim(),
+            serving_qty: item.serving_qty,
+            serving_unit: item.serving_unit,
+            calories_kcal: item.calories_kcal,
+            protein_g: item.protein_g,
+            carbs_g: item.carbs_g,
+            fat_g: item.fat_g,
+            fiber_g: item.fiber_g,
+            source: "ai_text" as const,
+            ai_model: (analysis as AnalyzedMeal & { model?: string }).model ?? null,
+            ai_confidence: analysis.confidence,
+            ai_raw: {
+              ...JSON.parse(JSON.stringify(analysis)),
+              nutrition_contract: "logged_quantity_v1",
+            },
           }),
+        ),
       );
       toast.success(
         `Logged ${analysis.items.length} item${analysis.items.length === 1 ? "" : "s"}.`,
@@ -461,55 +353,8 @@ function TextMealTab({ userId }: { userId: string }) {
     }
   }
 
-  async function selectCandidate(candidate: FoodResolutionCandidate) {
-    if (!analysis || !candidateTarget || resolvingCandidate) return;
-    const item = analysis.items[candidateTarget.index];
-    if (!item) return;
-    setResolvingCandidate(true);
-    try {
-      const resolution = await resolveCanonicalFoodNutritionById(
-        { name: candidate.canonicalName, quantity: item.serving_qty, unit: item.serving_unit },
-        candidate.foodId,
-      );
-      if (!resolution.ok) {
-        toast.error(
-          "That food does not have compatible nutrition or serving data. Keeping current details.",
-        );
-        return;
-      }
-      setAnalysis((current) =>
-        current
-          ? {
-              ...current,
-              items: current.items.map((entry, index) =>
-                index === candidateTarget.index
-                  ? {
-                      ...entry,
-                      name: candidate.canonicalName,
-                      ...resolution.nutrition,
-                      canonicalFoodId: candidate.foodId,
-                      candidates: undefined,
-                    }
-                  : entry,
-              ),
-            }
-          : current,
-      );
-      setCandidateTarget(null);
-    } catch {
-      toast.error("Unable to load that food's nutrition. Keeping current details.");
-    } finally {
-      setResolvingCandidate(false);
-    }
-  }
   const totalKcal = analysis
-    ? Math.round(
-        analysis.items.reduce(
-          (total, item) =>
-            total + item.calories_kcal * (item.canonicalFoodId ? 1 : item.serving_qty),
-          0,
-        ),
-      )
+    ? Math.round(analysis.items.reduce((total, item) => total + item.calories_kcal, 0))
     : 0;
 
   return (
@@ -585,26 +430,8 @@ function TextMealTab({ userId }: { userId: string }) {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {item.resolutionState === "unknown" ? (
-                      <span className="text-xs text-destructive">Needs a food match</span>
-                    ) : item.candidates?.length ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8 rounded-lg"
-                        onClick={() =>
-                          setCandidateTarget({ index: idx, candidates: item.candidates ?? [] })
-                        }
-                      >
-                        Confirm food
-                      </Button>
-                    ) : null}
                     <span className="whitespace-nowrap text-sm font-medium text-foreground">
-                      {Math.round(
-                        item.calories_kcal * (item.canonicalFoodId ? 1 : item.serving_qty),
-                      )}{" "}
-                      kcal
+                      {Math.round(item.calories_kcal)} kcal
                     </span>
                   </div>
                 </li>
@@ -613,13 +440,6 @@ function TextMealTab({ userId }: { userId: string }) {
             {analysis.notes && (
               <p className="mt-3 text-xs italic text-muted-foreground">{analysis.notes}</p>
             )}
-            <FoodCandidatePicker
-              open={candidateTarget !== null}
-              candidates={candidateTarget?.candidates ?? []}
-              isResolving={resolvingCandidate}
-              onSelect={selectCandidate}
-              onCancel={() => !resolvingCandidate && setCandidateTarget(null)}
-            />{" "}
             <Button
               onClick={handleSaveAll}
               disabled={addMeal.isPending}
@@ -686,9 +506,8 @@ function MealList({ userId, date }: { userId: string; date: string }) {
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-foreground">{m.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {Number(m.serving_qty)} {m.serving_unit} Ãƒâ€šÃ‚Â· P{" "}
-                      {Number(m.protein_g).toFixed(0)}g Ãƒâ€šÃ‚Â· C {Number(m.carbs_g).toFixed(0)}g
-                      Ãƒâ€šÃ‚Â· F {Number(m.fat_g).toFixed(0)}g
+                      {Number(m.serving_qty)} {m.serving_unit} | P {Number(m.protein_g).toFixed(0)}g
+                      | C {Number(m.carbs_g).toFixed(0)}g | F {Number(m.fat_g).toFixed(0)}g
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -924,7 +743,7 @@ function WeightLogger({
                 id="weight-note"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Morning, after workoutÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦"
+                placeholder="Morning, after workout"
                 className="h-11"
               />
             </div>
@@ -974,7 +793,7 @@ function WeightList({ userId }: { userId: string }) {
                   day: "numeric",
                   year: "numeric",
                 })}
-                {w.note ? ` Ãƒâ€šÃ‚Â· ${w.note}` : ""}
+                {w.note ? ` | ${w.note}` : ""}
               </p>
             </div>
             <Button

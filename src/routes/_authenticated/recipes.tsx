@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -26,7 +26,13 @@ import {
 import { calculateRecipeNutrition } from "@/lib/recipe-nutrition";
 import { saveRecipe } from "@/lib/recipes.functions";
 
-export const Route = createFileRoute("/_authenticated/recipes")({ component: RecipesPage });
+export const Route = createFileRoute("/_authenticated/recipes")({
+  // Recipe data is retained, but the production recipe UI is intentionally dormant.
+  beforeLoad: () => {
+    throw redirect({ to: "/dashboard" });
+  },
+  component: RecipesPage,
+});
 
 type DraftIngredient = { data: RecipeFoodData; servingId: string | null; quantity: number };
 

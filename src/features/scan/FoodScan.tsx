@@ -1,5 +1,4 @@
-/**
- * Reusable food-capture panels ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â photo scan, barcode scan, and text search.
+/** Reusable food-capture panels for photo scan, barcode scan, and text search.
  * Shared by the dedicated /scan page and the compact "Log a meal" section on
  * the /log page so both surfaces use exactly one implementation of each
  * capture flow (no duplicated analyze/save logic between them).
@@ -49,13 +48,6 @@ import {
 } from "@/lib/ai-vision.functions";
 import { saveCustomFood } from "@/lib/recipes.functions";
 import { todayISO } from "@/features/logging/queries";
-import {
-  resolveCanonicalFoodNutrition,
-  resolveCanonicalFoodNutritionById,
-  type FoodResolutionCandidate,
-} from "@/features/logging/food-resolution";
-import { FoodCandidatePicker } from "@/features/logging/FoodCandidatePicker";
-import { applyCanonicalNutritionSnapshot } from "@/features/logging/nutrition-contract";
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
@@ -89,8 +81,6 @@ type EditableItem = {
   quantity: number; // multiplier
   meal_type: MealType;
   selected: boolean;
-  canonicalFoodId?: string;
-  candidates?: FoodResolutionCandidate[];
 };
 
 export function PhotoTab({ userId }: { userId: string }) {
@@ -102,11 +92,6 @@ export function PhotoTab({ userId }: { userId: string }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<(AnalyzedMealPhoto & { model?: string }) | null>(null);
   const [items, setItems] = useState<EditableItem[]>([]);
-  const [candidateTarget, setCandidateTarget] = useState<{
-    index: number;
-    candidates: FoodResolutionCandidate[];
-  } | null>(null);
-  const [resolvingCandidate, setResolvingCandidate] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const camRef = useRef<HTMLInputElement>(null);
 
@@ -138,30 +123,8 @@ export function PhotoTab({ userId }: { userId: string }) {
     setBusy(true);
     try {
       const r = await analyze({ data: { image_data_url: preview, hint: hint || undefined } });
-      const resolvedItems: Array<
-        (typeof r.items)[number] & {
-          canonicalFoodId?: string;
-          candidates?: FoodResolutionCandidate[];
-        }
-      > = await Promise.all(
-        r.items.map(async (item) => {
-          const resolution = await resolveCanonicalFoodNutrition({
-            name: item.name,
-            quantity: item.serving_qty,
-            unit: item.serving_unit,
-          });
-          return resolution.ok
-            ? {
-                ...item,
-                ...resolution.nutrition,
-                sugar_g: resolution.nutrition.sugar_g ?? undefined,
-                canonicalFoodId: resolution.foodId,
-              }
-            : resolution.code === "ambiguous_match"
-              ? { ...item, candidates: resolution.candidates }
-              : item;
-        }),
-      );
+      // Gemini vision values are the review snapshot; no database match is required.
+      const resolvedItems = r.items;
       if (!resolvedItems.length) {
         toast.error(r.notes ?? "We couldn't identify the food clearly. Please try another photo.");
       } else {
@@ -186,8 +149,6 @@ export function PhotoTab({ userId }: { userId: string }) {
           quantity: 1,
           meal_type: meal,
           selected: true,
-          canonicalFoodId: it.canonicalFoodId,
-          candidates: it.candidates,
         })),
       );
     } catch (e) {
@@ -197,43 +158,6 @@ export function PhotoTab({ userId }: { userId: string }) {
     }
   }
 
-  async function selectCandidate(candidate: FoodResolutionCandidate) {
-    if (!candidateTarget || resolvingCandidate) return;
-    const item = items[candidateTarget.index];
-    if (!item) return;
-    setResolvingCandidate(true);
-    try {
-      const resolution = await resolveCanonicalFoodNutritionById(
-        { name: candidate.canonicalName, quantity: item.serving_qty, unit: item.serving_unit },
-        candidate.foodId,
-      );
-      if (!resolution.ok) {
-        toast.error(
-          "That food does not have compatible nutrition or serving data. Keeping current details.",
-        );
-        return;
-      }
-      setItems((current) =>
-        current.map((entry, index) =>
-          index === candidateTarget.index
-            ? {
-                ...entry,
-                name: candidate.canonicalName,
-                ...resolution.nutrition,
-                sugar_g: resolution.nutrition.sugar_g ?? undefined,
-                canonicalFoodId: candidate.foodId,
-                candidates: undefined,
-              }
-            : entry,
-        ),
-      );
-      setCandidateTarget(null);
-    } catch {
-      toast.error("Unable to load that food's nutrition. Keeping current details.");
-    } finally {
-      setResolvingCandidate(false);
-    }
-  }
   function reset() {
     setPreview(null);
     setResult(null);
@@ -250,39 +174,25 @@ export function PhotoTab({ userId }: { userId: string }) {
     }
     setBusy(true);
     try {
-      const rows: TablesInsert<"meal_entries">[] = await Promise.all(
-        chosen.map(async (i) => {
-          const resolution = i.canonicalFoodId
-            ? await resolveCanonicalFoodNutritionById(
-                { name: i.name, quantity: i.serving_qty * i.quantity, unit: i.serving_unit },
-                i.canonicalFoodId,
-              )
-            : await resolveCanonicalFoodNutrition({
-                name: i.name,
-                quantity: i.serving_qty * i.quantity,
-                unit: i.serving_unit,
-              });
-          const row: TablesInsert<"meal_entries"> = {
-            user_id: userId,
-            name: i.name,
-            serving_qty: i.serving_qty * i.quantity,
-            serving_unit: i.serving_unit,
-            calories_kcal: Math.round(i.calories_kcal * i.quantity),
-            protein_g: Math.round(i.protein_g * i.quantity * 10) / 10,
-            carbs_g: Math.round(i.carbs_g * i.quantity * 10) / 10,
-            fat_g: Math.round(i.fat_g * i.quantity * 10) / 10,
-            fiber_g: Math.round(i.fiber_g * i.quantity * 10) / 10,
-            sugar_g: i.sugar_g != null ? Math.round(i.sugar_g * i.quantity * 10) / 10 : null,
-            meal_type: i.meal_type,
-            source: "ai_photo_scan",
-            ai_model: result?.model ?? null,
-            ai_confidence: result?.confidence ?? null,
-            description: i.ingredients?.join(", ") ?? null,
-            logged_date: todayISO(),
-          };
-          return resolution.ok ? applyCanonicalNutritionSnapshot(row, resolution) : row;
-        }),
-      );
+      const rows: TablesInsert<"meal_entries">[] = chosen.map((i) => ({
+        user_id: userId,
+        name: i.name,
+        serving_qty: i.serving_qty * i.quantity,
+        serving_unit: i.serving_unit,
+        calories_kcal: Math.round(i.calories_kcal * i.quantity),
+        protein_g: Math.round(i.protein_g * i.quantity * 10) / 10,
+        carbs_g: Math.round(i.carbs_g * i.quantity * 10) / 10,
+        fat_g: Math.round(i.fat_g * i.quantity * 10) / 10,
+        fiber_g: Math.round(i.fiber_g * i.quantity * 10) / 10,
+        sugar_g: i.sugar_g != null ? Math.round(i.sugar_g * i.quantity * 10) / 10 : null,
+        meal_type: i.meal_type,
+        source: "ai_photo_scan",
+        ai_model: result?.model ?? null,
+        ai_confidence: result?.confidence ?? null,
+        description: i.ingredients?.join(", ") ?? null,
+        logged_date: todayISO(),
+        ai_raw: { nutrition_contract: "logged_quantity_v1" },
+      }));
       const { error } = await supabase.from("meal_entries").insert(rows);
       if (error) throw error;
       toast.success(`Logged ${rows.length} item${rows.length > 1 ? "s" : ""}`);
@@ -393,9 +303,8 @@ export function PhotoTab({ userId }: { userId: string }) {
                   <div>
                     <p className="font-display text-lg">Detected items</p>
                     <p className="text-xs text-muted-foreground">
-                      Confidence: {Math.round((result.confidence ?? 0) * 100)}%
-                      ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â
-                      edit anything before saving
+                      Confidence: {Math.round((result.confidence ?? 0) * 100)}% edit anything before
+                      saving
                     </p>
                   </div>
                   <Badge variant="outline" className="rounded-full">
@@ -411,22 +320,9 @@ export function PhotoTab({ userId }: { userId: string }) {
                         setItems((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)))
                       }
                       onRemove={() => setItems((prev) => prev.filter((_, i) => i !== idx))}
-                      onConfirmFood={
-                        it.candidates?.length
-                          ? () =>
-                              setCandidateTarget({ index: idx, candidates: it.candidates ?? [] })
-                          : undefined
-                      }
                     />
                   ))}
                 </div>
-                <FoodCandidatePicker
-                  open={candidateTarget !== null}
-                  candidates={candidateTarget?.candidates ?? []}
-                  isResolving={resolvingCandidate}
-                  onSelect={selectCandidate}
-                  onCancel={() => !resolvingCandidate && setCandidateTarget(null)}
-                />{" "}
                 <div className="flex min-w-0 flex-wrap gap-2">
                   <Button
                     variant="outline"
@@ -463,12 +359,10 @@ function ItemEditor({
   item,
   onChange,
   onRemove,
-  onConfirmFood,
 }: {
   item: EditableItem;
   onChange: (p: Partial<EditableItem>) => void;
   onRemove: () => void;
-  onConfirmFood?: () => void;
 }) {
   const cal = Math.round(item.calories_kcal * item.quantity);
   const p = Math.round(item.protein_g * item.quantity * 10) / 10;
@@ -494,10 +388,7 @@ function ItemEditor({
           />
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
             <label className="text-xs">
-              <span className="text-muted-foreground">
-                Qty
-                ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â
-              </span>
+              <span className="text-muted-foreground">Qty</span>
               <Input
                 type="number"
                 step="0.25"
@@ -545,17 +436,6 @@ function ItemEditor({
             <Badge variant="outline" className="rounded-full">
               F {f}g
             </Badge>
-            {onConfirmFood ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-6 rounded-lg px-2 text-xs"
-                onClick={onConfirmFood}
-              >
-                Confirm food
-              </Button>
-            ) : null}
           </div>
           {item.ingredients && item.ingredients.length > 0 && (
             <p className="mt-2 text-xs text-muted-foreground truncate">

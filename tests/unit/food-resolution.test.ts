@@ -184,16 +184,14 @@ describe("international food resolution", () => {
     );
   });
 
-  it("keeps Open Food Facts and AI fallback code paths available", () => {
+  it("keeps Open Food Facts while Gemini meal snapshots save directly", () => {
     const vision = readFileSync(resolve(__dirname, "../../src/lib/ai-vision.functions.ts"), "utf8");
     const logging = readFileSync(
       resolve(__dirname, "../../src/routes/_authenticated/log.tsx"),
       "utf8",
     );
     expect(vision).toContain('source: "openfoodfacts"');
-    expect(logging).toContain(
-      "resolution.ok ? applyCanonicalNutritionSnapshot(row, resolution) : row",
-    );
+    expect(logging).toContain('nutrition_contract: "logged_quantity_v1"');
   });
 
   it("keeps source identity duplicate protection additive", () => {

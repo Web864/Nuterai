@@ -33,7 +33,7 @@ export const Route = createFileRoute("/auth")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Sign in â€” NutriAI" },
+      { title: "Sign in - NutriAI" },
       {
         name: "description",
         content: "Sign in to NutriAI to access your personalized AI health coach.",
