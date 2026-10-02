@@ -126,11 +126,12 @@ function CallbackPage() {
         );
         return;
       }
-      const target = passwordRecoveryReceived
-        ? "/auth/reset-password"
-        : next && next.startsWith("/") && !next.startsWith("//")
-          ? next
-          : "/dashboard";
+      const target =
+        explicitRecoveryIntent || next === "/auth/reset-password" || passwordRecoveryReceived
+          ? "/auth/reset-password"
+          : next && next.startsWith("/") && !next.startsWith("//")
+            ? next
+            : "/dashboard";
       if (target === "/auth/reset-password") {
         sessionStorage.setItem(PASSWORD_RECOVERY_STORAGE_KEY, "true");
       }

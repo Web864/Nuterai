@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/native", () => ({
   isNative: false,
@@ -14,10 +14,11 @@ describe("authentication redirect URLs", () => {
     );
   });
 
-  it("always targets the reset-password route for recovery emails", () => {
-    expect(passwordResetRedirectUrl()).toBe(
-      "https://nutriai-cyan.vercel.app/auth/callback?next=%2Fauth%2Freset-password",
-    );
+  it("marks recovery emails with a reset target and explicit recovery intent", () => {
+    const url = new URL(passwordResetRedirectUrl());
+    expect(`${url.origin}${url.pathname}`).toBe("https://nutriai-cyan.vercel.app/auth/callback");
+    expect(url.searchParams.get("next")).toBe("/auth/reset-password");
+    expect(url.searchParams.get("flow")).toBe("recovery");
   });
 
   it("rejects unsafe next paths", () => {

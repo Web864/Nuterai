@@ -22,5 +22,7 @@ export function authRedirectUrl(next: string): string {
 }
 
 export function passwordResetRedirectUrl(): string {
-  return authRedirectUrl("/auth/reset-password");
+  const url = new URL(authRedirectUrl("/auth/reset-password"));
+  url.searchParams.set("flow", "recovery");
+  return url.toString();
 }
