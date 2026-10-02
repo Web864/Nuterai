@@ -1,4 +1,4 @@
-﻿import { isNative, OAUTH_REDIRECT_URL } from "@/lib/native";
+import { isNative, OAUTH_REDIRECT_URL } from "@/lib/native";
 
 const PRODUCTION_ORIGIN = "https://nutriai-cyan.vercel.app";
 const AUTH_CALLBACK_PATH = "/auth/callback";

@@ -15,7 +15,7 @@ const capturedSearch = typeof window !== "undefined" ? window.location.search : 
 const capturedHash = typeof window !== "undefined" ? window.location.hash : "";
 const PASSWORD_RECOVERY_STORAGE_KEY = "nutriai:password-recovery-session";
 
-const search = z.object({ next: z.string().optional() });
+const search = z.object({ next: z.string().optional(), flow: z.literal("recovery").optional() });
 
 export const Route = createFileRoute("/auth_/callback")({
   validateSearch: search,
@@ -26,10 +26,11 @@ export const Route = createFileRoute("/auth_/callback")({
 });
 
 function CallbackPage() {
-  const { next } = Route.useSearch();
+  const { next, flow } = Route.useSearch();
 
   useEffect(() => {
     let cancelled = false;
+    const explicitRecoveryIntent = flow === "recovery";
     let passwordRecoveryReceived = false;
     const { data: authState } = supabase.auth.onAuthStateChange((event, eventSession) => {
       if (event === "PASSWORD_RECOVERY" && eventSession) passwordRecoveryReceived = true;
@@ -117,7 +118,8 @@ function CallbackPage() {
       });
 
       if (!session) {
-        const isPasswordReset = next === "/auth/reset-password" || passwordRecoveryReceived;
+        const isPasswordReset =
+          explicitRecoveryIntent || next === "/auth/reset-password" || passwordRecoveryReceived;
         toast.error(callbackErrorMessage(exchangeError?.message, isPasswordReset));
         window.location.replace(
           isPasswordReset ? "/auth/forgot-password?error=invalid-reset-link" : "/auth",
@@ -139,7 +141,7 @@ function CallbackPage() {
       cancelled = true;
       authState.subscription.unsubscribe();
     };
-  }, [next]);
+  }, [flow, next]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-hero">
