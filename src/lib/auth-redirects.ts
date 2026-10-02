@@ -8,6 +8,13 @@ export function safeAuthNext(next: string | undefined, fallback = "/dashboard"):
   return next;
 }
 
+export function isPasswordRecoveryCallback(
+  next: string | undefined,
+  flow: string | undefined,
+): boolean {
+  return next === "/auth/reset-password" || flow === "recovery";
+}
+
 export function authCallbackUrl(): string {
   if (isNative) return OAUTH_REDIRECT_URL;
 

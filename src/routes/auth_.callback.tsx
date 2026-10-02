@@ -4,15 +4,8 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Leaf } from "lucide-react";
+import { isPasswordRecoveryCallback, safeAuthNext } from "@/lib/auth-redirects";
 
-// Captured at module evaluation time, before the router's own hydration can
-// touch window.location (a known class of bug: SPA routers reconstructing
-// the URL from their internal {pathname, search} model can silently drop a
-// hash fragment they don't track, and by the time a useEffect runs it may
-// already be gone). exchangeCodeForSession/setSession below use these
-// snapshots instead of re-reading window.location live.
-const capturedSearch = typeof window !== "undefined" ? window.location.search : "";
-const capturedHash = typeof window !== "undefined" ? window.location.hash : "";
 const PASSWORD_RECOVERY_STORAGE_KEY = "nutriai:password-recovery-session";
 
 const search = z.object({ next: z.string().optional(), flow: z.literal("recovery").optional() });
@@ -37,16 +30,16 @@ function CallbackPage() {
     });
 
     async function finish() {
-      // Don't rely solely on supabase-js's own auto-detection (which reads
-      // window.location fresh, at whatever moment its lazily-constructed
-      // client happens to initialize) — exchange explicitly using the
-      // snapshot taken at module load. Covers both PKCE (email confirmation,
-      // OAuth — this client uses flowType: "pkce") and, defensively, any
-      // legacy implicit-flow hash tokens.
-      const params = new URLSearchParams(capturedSearch);
+      // Read the callback URL when this effect executes. A module-level
+      // snapshot can be created during SSR or before router hydration and
+      // miss the single-use PKCE code from this browser callback.
+      const callbackUrl = new URL(window.location.href);
+      const params = callbackUrl.searchParams;
+      const callbackNext = next ?? params.get("next") ?? undefined;
       const code = params.get("code");
       const oauthError = params.get("error_description") || params.get("error");
-      const hashParams = new URLSearchParams(capturedHash.replace(/^#/, ""));
+      const hashParams = new URLSearchParams(callbackUrl.hash.replace(/^#/, ""));
+
       const hashError =
         hashParams.get("error_description") ||
         hashParams.get("error_code") ||
@@ -59,14 +52,14 @@ function CallbackPage() {
       // fixed or its real cause is captured.
       const hasVerifier = Object.keys(localStorage).some((k) => k.endsWith("-code-verifier"));
       console.info("[auth/callback] reached", {
-        origin: window.location.origin,
-        pathname: window.location.pathname,
+        pathname: callbackUrl.pathname,
         hasCode: !!code,
+        next: callbackNext,
+        flow,
         hasAuthError: !!(oauthError || hashError),
         hasHashTokens: !!(access_token && refresh_token),
         hasVerifier,
       });
-
       let exchangeError: { message: string; name?: string; status?: number; code?: string } | null =
         null;
       // Trust the session returned directly by the exchange call itself
@@ -111,28 +104,32 @@ function CallbackPage() {
         }
       }
       if (cancelled) return;
+      const isRecovery = isPasswordRecoveryCallback(callbackNext, flow) || passwordRecoveryReceived;
+      const target = !session
+        ? isRecovery
+          ? "/auth/forgot-password?error=invalid-reset-link"
+          : "/auth"
+        : isRecovery
+          ? "/auth/reset-password"
+          : safeAuthNext(callbackNext);
 
-      console.info("[auth/callback] result", {
-        hadExchangeError: !!exchangeError,
-        foundSession: !!session,
+      console.info("[auth/callback] routing", {
+        pathname: callbackUrl.pathname,
+        hasCode: !!code,
+        next: callbackNext,
+        flow,
+        hasExchangeError: !!exchangeError,
+        hasSession: !!session,
+        isRecovery,
+        selectedTarget: target,
       });
 
       if (!session) {
-        const isPasswordReset =
-          explicitRecoveryIntent || next === "/auth/reset-password" || passwordRecoveryReceived;
-        toast.error(callbackErrorMessage(exchangeError?.message, isPasswordReset));
-        window.location.replace(
-          isPasswordReset ? "/auth/forgot-password?error=invalid-reset-link" : "/auth",
-        );
+        toast.error(callbackErrorMessage(exchangeError?.message, isRecovery));
+        window.location.replace(target);
         return;
       }
-      const target =
-        explicitRecoveryIntent || next === "/auth/reset-password" || passwordRecoveryReceived
-          ? "/auth/reset-password"
-          : next && next.startsWith("/") && !next.startsWith("//")
-            ? next
-            : "/dashboard";
-      if (target === "/auth/reset-password") {
+      if (isRecovery) {
         sessionStorage.setItem(PASSWORD_RECOVERY_STORAGE_KEY, "true");
       }
       window.location.replace(target);
