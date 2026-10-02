@@ -158,7 +158,7 @@ function AutoDietCard({ userId, timezone }: { userId: string; timezone: string }
     <Card className="rounded-3xl"><CardContent className="p-5">
       <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-primary"><Utensils className="h-5 w-5" /></div>
       <p className="mt-4 font-medium">Diet plan reminders</p><p className="mt-1 text-sm text-muted-foreground">Breakfast {DEFAULT_MEAL_TIMES.breakfast}, lunch {DEFAULT_MEAL_TIMES.lunch}, dinner {DEFAULT_MEAL_TIMES.dinner}. Updates instead of duplicating.</p>
-      <Button className="mt-4 rounded-xl" onClick={() => create.mutate({ timezone }, { onSuccess: () => toast.success("Diet reminders synced") })} disabled={create.isPending}>Sync diet reminders</Button>
+      <Button className="mt-4 rounded-xl" onClick={() => create.mutate({ timezone }, { onSuccess: () => toast.success("Diet reminders synced"), onError: (error) => toast.error(error instanceof Error ? error.message : "Could not sync diet reminders") })} disabled={create.isPending}>Sync diet reminders</Button>
     </CardContent></Card>
   );
 }
@@ -170,7 +170,7 @@ function HydrationCard({ userId, timezone, waterTarget, wakeTime, sleepTime }: {
     <Card className="rounded-3xl"><CardContent className="p-5">
       <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-primary"><Droplets className="h-5 w-5" /></div>
       <p className="mt-4 font-medium">Hydration plan</p><p className="mt-1 text-sm text-muted-foreground">Distribute {waterTarget} ml between {wakeTime} and {sleepTime}; quiet hours still apply.</p>
-      <div className="mt-4 flex flex-wrap items-end gap-2"><div><Label>Interval</Label><Select value={String(intervalMinutes)} onValueChange={(v) => setIntervalMinutes(Number(v))}><SelectTrigger className="mt-1 w-32 max-w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="60">1 hour</SelectItem><SelectItem value="90">90 min</SelectItem><SelectItem value="120">2 hours</SelectItem><SelectItem value="180">3 hours</SelectItem></SelectContent></Select></div><Button className="rounded-xl" onClick={() => create.mutate({ timezone, targetMl: waterTarget, wakeTime, sleepTime, intervalMinutes }, { onSuccess: () => toast.success("Hydration reminders synced") })} disabled={create.isPending}>Sync</Button></div>
+      <div className="mt-4 flex flex-wrap items-end gap-2"><div><Label>Interval</Label><Select value={String(intervalMinutes)} onValueChange={(v) => setIntervalMinutes(Number(v))}><SelectTrigger className="mt-1 w-32 max-w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="60">1 hour</SelectItem><SelectItem value="90">90 min</SelectItem><SelectItem value="120">2 hours</SelectItem><SelectItem value="180">3 hours</SelectItem></SelectContent></Select></div><Button className="rounded-xl" onClick={() => create.mutate({ timezone, targetMl: waterTarget, wakeTime, sleepTime, intervalMinutes }, { onSuccess: () => toast.success("Hydration reminders synced"), onError: (error) => toast.error(error instanceof Error ? error.message : "Could not sync hydration reminders") })} disabled={create.isPending}>Sync</Button></div>
     </CardContent></Card>
   );
 }
@@ -182,7 +182,7 @@ function AutoWorkoutCard({ userId, timezone, planId }: { userId: string; timezon
       <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-primary"><Dumbbell className="h-5 w-5" /></div>
       <p className="mt-4 font-medium">Workout plan reminders</p>
       <p className="mt-1 text-sm text-muted-foreground">Create reminders from active workout days. Plan days update existing reminders instead of duplicating.</p>
-      <Button className="mt-4 rounded-xl" disabled={!planId || sync.isPending} onClick={() => planId && sync.mutate({ planId, timezone }, { onSuccess: () => toast.success("Workout reminders synced") })}>Sync workout plan</Button>
+      <Button className="mt-4 rounded-xl" disabled={!planId || sync.isPending} onClick={() => planId && sync.mutate({ planId, timezone }, { onSuccess: () => toast.success("Workout reminders synced"), onError: (error) => toast.error(error instanceof Error ? error.message : "Could not sync workout reminders") })}>Sync workout plan</Button>
     </CardContent></Card>
   );
 }

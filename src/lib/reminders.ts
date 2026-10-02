@@ -322,6 +322,7 @@ export function sourceLabel(source?: string | null): string {
       manual: "Manual",
       diet_plan: "Diet plan",
       water_plan: "Hydration",
+      workout_plan: "Workout plan",
       ai_coach: "AI Coach",
       system: "System",
     }[source ?? "manual"] ?? "Manual"
@@ -334,7 +335,34 @@ export function notificationCopy(type: string, title: string, seed = 0): string 
   return options[Math.abs(seed) % options.length] ?? title;
 }
 
+export function validateReminderDraft(draft: Partial<ReminderDraft>): asserts draft is ReminderDraft {
+  const title = draft.title?.trim();
+  if (!title) throw new Error("Reminder title is required.");
+
+  if (!draft.scheduled_time || !parseHHMM(draft.scheduled_time)) {
+    throw new Error(`Reminder scheduled_time must be a valid HH:MM value. Received: ${String(draft.scheduled_time ?? "missing")}`);
+  }
+
+  if (!draft.timezone || !draft.timezone.trim()) {
+    throw new Error("Reminder timezone is required.");
+  }
+
+  if (!draft.source) {
+    throw new Error("Reminder source is required.");
+  }
+
+  if (!draft.created_by) {
+    throw new Error("Reminder creator is required.");
+  }
+
+  if (!draft.recurrence_rule?.frequency) {
+    throw new Error("Reminder recurrence_rule.frequency is required.");
+  }
+}
+
 export function toInsertPayload(draft: ReminderDraft) {
+  validateReminderDraft(draft);
+
   const recurrence = draft.recurrence_rule;
   const recurring = recurrence.frequency !== "once";
   return {

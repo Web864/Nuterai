@@ -152,6 +152,34 @@ export function useReminderEngine(userId: string | undefined) {
 
   useEffect(() => {
     if (!isNative || !userId) return;
+    let listener: { remove: () => Promise<void> } | undefined;
+    let cancelled = false;
+
+    async function listenForNotificationActions() {
+      const { LocalNotifications } = await import("@capacitor/local-notifications");
+      const registration = await LocalNotifications.addListener(
+        "localNotificationActionPerformed",
+        () => {
+          if (cancelled || typeof window === "undefined") return;
+          window.location.assign("/reminders");
+        },
+      );
+      if (cancelled) {
+        await registration.remove();
+      } else {
+        listener = registration;
+      }
+    }
+
+    void listenForNotificationActions();
+    return () => {
+      cancelled = true;
+      void listener?.remove();
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    if (!isNative || !userId) return;
     const profile = profileQ.data;
     let cancelled = false;
 

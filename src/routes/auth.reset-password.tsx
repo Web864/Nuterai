@@ -75,7 +75,7 @@ function ResetPasswordPage() {
     setSuccess(true);
     toast.success("Password updated.");
     setTimeout(() => {
-      void navigate({ to: "/dashboard", replace: true });
+      void navigate({ to: "/auth", replace: true });
     }, 900);
   }
 
@@ -96,10 +96,10 @@ function ResetPasswordPage() {
           {success ? (
             <div className="mt-4 space-y-4">
               <p className="text-sm text-muted-foreground">
-                Your password has been updated. Taking you to your dashboard...
+                Your password has been updated. Taking you to Sign In...
               </p>
               <Button asChild className="w-full" size="lg">
-                <Link to="/dashboard">Go to dashboard</Link>
+                <Link to="/auth">Sign in</Link>
               </Button>
             </div>
           ) : (

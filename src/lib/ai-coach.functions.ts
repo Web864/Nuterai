@@ -238,9 +238,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
       const generation = await generateCoachResponse({
         requestId,
         messages,
-        longCatApiKey,
         geminiApiKey,
-        openAiApiKey,
         supabaseContextDurationMs,
         requestStarted,
       });
@@ -327,97 +325,113 @@ class CoachProviderError extends Error {
 async function generateCoachResponse({
   requestId,
   messages,
-  longCatApiKey,
   geminiApiKey,
-  openAiApiKey,
   supabaseContextDurationMs,
   requestStarted,
 }: {
   requestId: number;
   messages: CoachMessage[];
-  longCatApiKey?: string;
   geminiApiKey?: string;
-  openAiApiKey?: string;
   supabaseContextDurationMs: number;
   requestStarted: number;
 }): Promise<CoachGeneration> {
-  const promptChars = estimateMessagesSize(messages);
-  const promptMessages = messages.length;
-  let failure: unknown;
-  let fallbackUsed = false;
-  if (longCatApiKey) {
+  if (!geminiApiKey) throw new Error("AI Coach is temporarily unavailable. Please try again.");
+
+  const model = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
+  const url =
+    "https://generativelanguage.googleapis.com/v1beta/models/" +
+    encodeURIComponent(model) +
+    ":generateContent";
+  const system = messages.find((message) => message.role === "system")?.content ?? SYSTEM_PROMPT;
+  const contents = messages
+    .filter((message) => message.role !== "system")
+    .map((message) => ({
+      role: message.role === "assistant" ? "model" : "user",
+      parts: [{ text: message.content }],
+    }));
+
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const started = performance.now();
     try {
-      return await generateFromProvider({
+      const response = await fetchWithTimeout(
+        url,
+        {
+          method: "POST",
+          headers: { "x-goog-api-key": geminiApiKey, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: system }] },
+            contents,
+            generationConfig: {
+              maxOutputTokens: MAX_REPLY_TOKENS,
+              temperature: 0.5,
+              thinkingConfig: { thinkingLevel: "low" },
+            },
+          }),
+        },
+        { timeoutMs: 25_000, label: "ai.coach.gemini." + attempt },
+      );
+      if (!response.ok) {
+        throw new CoachProviderError(
+          "Gemini returned an error.",
+          isTransientStatus(response.status),
+          response.status,
+          "http_" + response.status,
+        );
+      }
+      const payload = (await response.json()) as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      };
+      const reply = payload.candidates?.[0]?.content?.parts
+        ?.map((part) => part.text ?? "")
+        .join("")
+        .trim();
+      if (!reply)
+        throw new CoachProviderError(
+          "Gemini returned no reply.",
+          false,
+          response.status,
+          "invalid_response",
+        );
+      console.info("[ai.coach.provider]", {
         requestId,
-        provider: "longcat",
-        model: LONGCAT_MODEL,
-        apiKey: longCatApiKey,
-        messages,
-        timeoutMs: LONGCAT_TIMEOUT_MS,
+        providerAttempted: "gemini",
+        model,
+        attempt,
+        providerStatus: response.status,
+        providerDurationMs: Math.round(performance.now() - started),
+        supabaseContextDurationMs,
         fallbackUsed: false,
-        attempt: 1,
-        promptChars,
-        promptMessages,
-        supabaseContextDurationMs,
-        requestStarted,
       });
-    } catch (err) {
-      failure = err;
-      if (!isFallbackEligible(err) && !isTransientProviderFailure(err)) throw err;
-      fallbackUsed = true;
-    }
-  }
-  if (geminiApiKey && !isGeminiCircuitOpen()) {
-    try {
-      const generation = await generateFromProvider({
-        requestId,
+      return {
+        reply,
+        model,
+        tokensIn: null,
+        tokensOut: null,
         provider: "gemini",
-        model: GEMINI_MODEL,
-        apiKey: geminiApiKey,
-        messages,
-        timeoutMs: GEMINI_TIMEOUT_MS,
-        fallbackUsed,
-        attempt: 1,
-        promptChars,
-        promptMessages,
+        status: response.status,
+        fallbackUsed: false,
+      };
+    } catch (error) {
+      const failure = toCoachProviderError(error);
+      console.warn("[ai.coach.provider]", {
+        requestId,
+        providerAttempted: "gemini",
+        model,
+        attempt,
+        providerStatus: failure.status,
+        providerErrorCode: failure.code,
+        providerDurationMs: Math.round(performance.now() - started),
         supabaseContextDurationMs,
-        requestStarted,
+        fallbackUsed: false,
       });
-      resetGeminiCircuit();
-      return generation;
-    } catch (err) {
-      failure = err;
-      if (shouldShortCircuitGemini(err)) recordGeminiFailure(err);
-      if (!openAiApiKey || (!isFallbackEligible(err) && !isTransientProviderFailure(err)))
-        throw err;
+      if (!failure.transient || attempt === 2)
+        throw new Error("AI Coach is temporarily unavailable. Please try again.");
+      await new Promise<void>((resolve) =>
+        setTimeout(resolve, 300 * attempt + Math.floor(Math.random() * 100)),
+      );
     }
-  } else if (!geminiApiKey) {
-    failure = new CoachProviderError("Gemini is not configured.", true, undefined, "missing_key");
-  } else {
-    failure = new CoachProviderError("Gemini is in cooldown.", true, undefined, "circuit_open");
   }
-  if (!openAiApiKey) {
-    if (failure instanceof CoachProviderError) throw new Error(providerUserMessage(failure));
-    throw new Error("AI Coach is temporarily unavailable. Please try again shortly.");
-  }
-  try {
-    return await generateFromProvider({
-      requestId,
-      provider: "openai",
-      model: OPENAI_MODEL,
-      apiKey: openAiApiKey,
-      messages,
-      timeoutMs: OPENAI_TIMEOUT_MS,
-      fallbackUsed: true,
-      attempt: 1,
-      promptChars,
-      promptMessages,
-      supabaseContextDurationMs,
-      requestStarted,
-    });
-  } catch (err) {
-    throw new Error(providerUserMessage(toCoachProviderError(err)));
-  }
+  throw new Error("AI Coach is temporarily unavailable. Please try again.");
 }
 async function generateFromProvider({
   requestId,

@@ -18,7 +18,7 @@ const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 const LONGCAT_URL =
   (process.env.LONGCAT_BASE_URL ?? "https://api.longcat.chat/openai/v1").replace(/\/+$/, "") +
   "/chat/completions";
-const GEMINI_TIMEOUT_MS = 12_000;
+const GEMINI_TIMEOUT_MS = 30_000;
 const OPENAI_TIMEOUT_MS = 18_000;
 const LONGCAT_TIMEOUT_MS = 12_000;
 const GEMINI_FAILURE_THRESHOLD = 2;
@@ -98,7 +98,10 @@ Rules:
 - For "no_equipment", stick to bodyweight movements.
 - Give clear rep ranges (e.g. "8-12" or 15) and appropriate rest.
 - Provide days_per_week workout days. Do not include rest days as workout entries.
-- Return ONLY the tool call, no prose.`;
+- Return ONLY one valid JSON object, with no markdown fences or prose.
+- JSON fields: name, goal, difficulty, days_per_week, optional duration_weeks and notes, and days.
+- Each day must include day_index, title, focus, estimated_minutes, and exercises.
+- Each exercise must include name, sets as an integer, reps as a string, optional muscle_group, rest_seconds, and notes.`;
 
 const TOOL = {
   type: "function" as const,
@@ -151,7 +154,7 @@ const TOOL = {
                     name: { type: "string" },
                     muscle_group: { type: "string" },
                     sets: { type: "number" },
-                    reps: { type: ["number", "string"] },
+                    reps: { type: "string" },
                     rest_seconds: { type: "number" },
                     notes: { type: "string" },
                   },
@@ -216,7 +219,7 @@ function toWorkoutProviderError(err: unknown): WorkoutProviderError {
       timeout ? "Workout generation timed out." : "Workout provider network failure.",
       true,
       undefined,
-      timeout ? "timeout" : "network",
+      timeout ? "GEMINI_TIMEOUT" : "GEMINI_NETWORK_ERROR",
     );
   }
   return new WorkoutProviderError("Workout provider request failed.", false, undefined, "unknown");
@@ -304,7 +307,7 @@ async function generateFromProvider({
         "Workout provider returned no plan.",
         false,
         status,
-        "invalid_response",
+        "GEMINI_EMPTY_RESPONSE",
       );
     let parsedJson: unknown;
     try {
@@ -314,7 +317,7 @@ async function generateFromProvider({
         "Workout provider returned malformed plan data.",
         false,
         status,
-        "malformed_plan",
+        "GEMINI_PARSE_ERROR",
       );
     }
     const plan = PlanSchema.safeParse(parsedJson);
@@ -323,7 +326,7 @@ async function generateFromProvider({
         "Workout provider returned an invalid plan.",
         false,
         status,
-        "invalid_plan",
+        "GEMINI_SCHEMA_ERROR",
       );
     console.info("[ai.workout.provider]", {
       requestId,
@@ -352,96 +355,160 @@ async function generateFromProvider({
   }
 }
 
-async function generateWorkoutWithFallback({
+async function generateWorkoutWithGemini({
   requestId,
-  longCatApiKey,
   geminiApiKey,
-  openAiApiKey,
   userPrompt,
   requestStarted,
 }: {
   requestId: number;
-  longCatApiKey?: string;
   geminiApiKey?: string;
-  openAiApiKey?: string;
   userPrompt: string;
   requestStarted: number;
 }): Promise<ProviderGeneration> {
-  if (longCatApiKey) {
-    try {
-      return await generateFromProvider({
-        requestId,
-        provider: "longcat",
-        apiKey: longCatApiKey,
-        model: LONGCAT_MODEL,
-        userPrompt,
-        timeoutMs: LONGCAT_TIMEOUT_MS,
-        fallbackUsed: false,
-        requestStarted,
-      });
-    } catch (err) {
-      if (!shouldFallBackFromLongCat(err)) throw toWorkoutProviderError(err);
-    }
+  if (!geminiApiKey) {
+    throw new WorkoutProviderError("Gemini is not configured.", false, undefined, "missing_key");
   }
 
-  let geminiFailure: WorkoutProviderError | undefined;
-  if (geminiApiKey && !isGeminiCircuitOpen()) {
+  const model = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
+  const url =
+    "https://generativelanguage.googleapis.com/v1beta/models/" +
+    encodeURIComponent(model) +
+    ":generateContent";
+  let lastFailure: WorkoutProviderError | undefined;
+
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const started = performance.now();
     try {
-      const generation = await generateFromProvider({
+      const response = await fetchWithTimeout(
+        url,
+        {
+          method: "POST",
+          headers: { "x-goog-api-key": geminiApiKey, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              maxOutputTokens: 4096,
+            },
+          }),
+        },
+        { timeoutMs: GEMINI_TIMEOUT_MS, label: "ai.workout.gemini." + attempt },
+      );
+
+      const responseContentType = response.headers.get("content-type") ?? "unknown";
+      if (!response.ok) {
+        const errorBody = await response.text();
+        const providerCode = /"status"\s*:\s*"([A-Z_]+)"/.exec(errorBody)?.[1] ?? "unknown";
+        console.warn("[ai.workout.gemini.failure]", {
+          operation: "generateWorkoutWithGemini",
+          model,
+          attempt,
+          status: response.status,
+          errorType: "GEMINI_HTTP_ERROR",
+          providerCode,
+          contentType: responseContentType,
+          durationMs: Math.round(performance.now() - started),
+        });
+        throw new WorkoutProviderError(
+          "Gemini returned an error.",
+          isTransientStatus(response.status),
+          response.status,
+          "GEMINI_HTTP_ERROR",
+        );
+      }
+
+      let payload: { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+      try {
+        payload = (await response.json()) as typeof payload;
+      } catch {
+        throw new WorkoutProviderError(
+          "Gemini returned an unreadable response.",
+          false,
+          response.status,
+          "GEMINI_PARSE_ERROR",
+        );
+      }
+      const raw = payload.candidates?.[0]?.content?.parts
+        ?.map((part) => part.text ?? "")
+        .join("")
+        .trim();
+      if (!raw) {
+        throw new WorkoutProviderError(
+          "Gemini returned no workout plan.",
+          false,
+          response.status,
+          "GEMINI_EMPTY_RESPONSE",
+        );
+      }
+
+      let parsedJson: unknown;
+      try {
+        parsedJson = JSON.parse(raw);
+      } catch {
+        throw new WorkoutProviderError(
+          "Gemini returned malformed workout data.",
+          false,
+          response.status,
+          "GEMINI_PARSE_ERROR",
+        );
+      }
+
+      const plan = PlanSchema.safeParse(parsedJson);
+      if (!plan.success) {
+        throw new WorkoutProviderError(
+          "Gemini returned an invalid workout plan.",
+          false,
+          response.status,
+          "GEMINI_SCHEMA_ERROR",
+        );
+      }
+
+      console.info("[ai.workout.provider]", {
         requestId,
         provider: "gemini",
-        apiKey: geminiApiKey,
-        model: GEMINI_MODEL,
-        userPrompt,
-        timeoutMs: GEMINI_TIMEOUT_MS,
+        model,
+        attempt,
+        status: response.status,
+        duration: Math.round(performance.now() - started),
         fallbackUsed: false,
-        requestStarted,
+        totalMs: Math.round(performance.now() - requestStarted),
+        errorType: undefined,
       });
-      resetGeminiCircuit();
-      return generation;
-    } catch (err) {
-      geminiFailure = toWorkoutProviderError(err);
-      if (!geminiFailure.transient) throw geminiFailure;
-      recordGeminiFailure();
+      return { plan: plan.data, raw: parsedJson, model, provider: "gemini", fallbackUsed: false };
+    } catch (error) {
+      const failure = toWorkoutProviderError(error);
+      lastFailure = failure;
+      console.warn("[ai.workout.provider]", {
+        requestId,
+        provider: "gemini",
+        model,
+        attempt,
+        status: failure.status,
+        duration: Math.round(performance.now() - started),
+        fallbackUsed: false,
+        totalMs: Math.round(performance.now() - requestStarted),
+        errorType: failure.errorType,
+      });
+      if (!failure.transient || attempt === 2) throw failure;
+      await new Promise<void>((resolve) =>
+        setTimeout(resolve, 300 * attempt + Math.floor(Math.random() * 100)),
+      );
     }
-  } else {
-    geminiFailure = new WorkoutProviderError(
-      geminiApiKey ? "Gemini is in cooldown." : "Gemini is not configured.",
-      true,
-      undefined,
-      geminiApiKey ? "circuit_open" : "missing_key",
-    );
   }
 
-  if (openAiApiKey) {
-    try {
-      return await generateFromProvider({
-        requestId,
-        provider: "openai",
-        apiKey: openAiApiKey,
-        model: OPENAI_MODEL,
-        userPrompt,
-        timeoutMs: OPENAI_TIMEOUT_MS,
-        fallbackUsed: true,
-        requestStarted,
-      });
-    } catch {
-      // The final result log records a single user-safe combined failure.
-    }
-  }
-  throw geminiFailure;
+  throw lastFailure ?? new WorkoutProviderError("Workout generation failed.", false);
 }
+
 export const generateWorkoutPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
     const requestId = ++workoutState.requestSeq;
     const requestStarted = performance.now();
-    const longCatApiKey = process.env.LONGCAT_API_KEY;
     const geminiApiKey = process.env.GEMINI_API_KEY;
-    const openAiApiKey = process.env.OPENAI_API_KEY;
-    // if (!geminiApiKey && !openAiApiKey) {
-    if (!longCatApiKey && !geminiApiKey && !openAiApiKey) {
+    if (!geminiApiKey) {
       throw new Error("Workout generation is temporarily unavailable. Please try again.");
     }
 
@@ -461,11 +528,9 @@ Target session length: ${data.minutes_per_session} minutes
 ${data.focus_notes ? `Preferences: ${data.focus_notes}` : ""}`;
 
     try {
-      const generation = await generateWorkoutWithFallback({
+      const generation = await generateWorkoutWithGemini({
         requestId,
-        longCatApiKey,
         geminiApiKey,
-        openAiApiKey,
         userPrompt,
         requestStarted,
       });
@@ -502,7 +567,16 @@ ${data.focus_notes ? `Preferences: ${data.focus_notes}` : ""}`;
       const { error: daysErr } = await supabase.from("workout_plan_days").insert(dayRows);
       if (daysErr) {
         console.error("[generateWorkoutPlan] day insert error", daysErr);
-        throw new Error("Saved plan but failed to save days.");
+        const { error: cleanupErr } = await supabase
+          .from("workout_plans")
+          .delete()
+          .eq("id", planRow.id)
+          .eq("user_id", userId);
+        if (cleanupErr) {
+          console.error("[generateWorkoutPlan] plan cleanup error", cleanupErr);
+          throw new Error("Could not save the workout plan. Please try again.");
+        }
+        throw new Error("Could not save the workout plan. Please try again.");
       }
 
       console.info("[ai.workout.result]", {
@@ -519,15 +593,15 @@ ${data.focus_notes ? `Preferences: ${data.focus_notes}` : ""}`;
     } catch (err) {
       console.warn("[ai.workout.result]", {
         requestId,
-        provider: "openai",
-        model: OPENAI_MODEL,
+        provider: "gemini",
+        model: process.env.GEMINI_MODEL ?? "gemini-3.8-flash",
         status: err instanceof WorkoutProviderError ? err.status : undefined,
         duration: Math.round(performance.now() - requestStarted),
-        fallbackUsed: Boolean(openAiApiKey),
+        fallbackUsed: false,
         totalMs: Math.round(performance.now() - requestStarted),
         errorType: err instanceof WorkoutProviderError ? err.errorType : "persistence",
       });
-      if (err instanceof WorkoutProviderError && err.transient) {
+      if (err instanceof WorkoutProviderError) {
         throw new Error("Workout generation is temporarily unavailable. Please try again.");
       }
       throw err;

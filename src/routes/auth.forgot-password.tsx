@@ -2,13 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { isNative, OAUTH_REDIRECT_URL } from "@/lib/native";
+import { passwordResetRedirectUrl } from "@/lib/auth-redirects";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Leaf, Loader2 } from "lucide-react";
 
-const PASSWORD_RESET_CALLBACK_URL = "https://nutriai-cyan.vercel.app/auth/callback";
 const emailSchema = z.string().trim().email();
 const searchSchema = z.object({
   error: z.enum(["invalid-reset-link"]).optional(),
@@ -116,11 +115,6 @@ function ForgotPasswordPage() {
       </div>
     </div>
   );
-}
-
-function passwordResetRedirectUrl(): string {
-  const callbackUrl = isNative ? OAUTH_REDIRECT_URL : PASSWORD_RESET_CALLBACK_URL;
-  return `${callbackUrl}?next=/auth/reset-password`;
 }
 
 function shouldShowRequestError(error: { message?: string; status?: number }): boolean {

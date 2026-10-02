@@ -79,7 +79,11 @@ export function useDeletePlan(userId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("workout_plans").delete().eq("id", id);
+      const { error } = await supabase
+        .from("workout_plans")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["workout-plans", userId] }),
@@ -126,7 +130,11 @@ export function useDeleteSession(userId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("workout_sessions").delete().eq("id", id);
+      const { error } = await supabase
+        .from("workout_sessions")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["workout-sessions", userId] }),

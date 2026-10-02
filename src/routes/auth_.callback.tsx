@@ -30,6 +30,10 @@ function CallbackPage() {
 
   useEffect(() => {
     let cancelled = false;
+    let passwordRecoveryReceived = false;
+    const { data: authState } = supabase.auth.onAuthStateChange((event, eventSession) => {
+      if (event === "PASSWORD_RECOVERY" && eventSession) passwordRecoveryReceived = true;
+    });
 
     async function finish() {
       // Don't rely solely on supabase-js's own auto-detection (which reads
@@ -87,7 +91,6 @@ function CallbackPage() {
         // Supabase rejected the exchange, which .message alone has not been
         // enough to pin down in prior production failures.
         console.error("[auth/callback] sign-in failed", {
-          message: exchangeError.message,
           name: exchangeError.name,
           status: exchangeError.status,
           code: exchangeError.code,
@@ -114,14 +117,14 @@ function CallbackPage() {
       });
 
       if (!session) {
-        const isPasswordReset = next === "/auth/reset-password";
+        const isPasswordReset = next === "/auth/reset-password" || passwordRecoveryReceived;
         toast.error(callbackErrorMessage(exchangeError?.message, isPasswordReset));
         window.location.replace(
           isPasswordReset ? "/auth/forgot-password?error=invalid-reset-link" : "/auth",
         );
         return;
       }
-      const target = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+      const target = passwordRecoveryReceived ? "/auth/reset-password" : next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
       if (target === "/auth/reset-password") {
         sessionStorage.setItem(PASSWORD_RECOVERY_STORAGE_KEY, "true");
       }
@@ -130,6 +133,7 @@ function CallbackPage() {
     finish();
     return () => {
       cancelled = true;
+      authState.subscription.unsubscribe();
     };
   }, [next]);
 

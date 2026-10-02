@@ -57,7 +57,11 @@ export function useDeleteThread(userId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("coach_threads").delete().eq("id", id);
+      const { error } = await supabase
+        .from("coach_threads")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["coach-threads", userId] }),
@@ -68,7 +72,11 @@ export function useRenameThread(userId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, title }: { id: string; title: string }) => {
-      const { error } = await supabase.from("coach_threads").update({ title }).eq("id", id);
+      const { error } = await supabase
+        .from("coach_threads")
+        .update({ title })
+        .eq("id", id)
+        .eq("user_id", userId);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["coach-threads", userId] }),

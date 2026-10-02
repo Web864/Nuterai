@@ -125,7 +125,7 @@ function CoachPage() {
                   {threadsQ.data?.map((t) => (
                     <div
                       key={t.id}
-                      className={`group flex items-center gap-1 rounded-2xl px-2 py-2 text-sm transition-organic ${
+                      className={`group flex items-center gap-1 rounded-2xl  text-sm transition-organic ${
                         activeId === t.id ? "bg-secondary text-foreground" : "hover:bg-secondary/50"
                       }`}
                     >
@@ -570,8 +570,8 @@ function MessageBubble({
   return (
     <div className={`flex min-w-0 ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`min-w-0 max-w-[85%] overflow-hidden rounded-2xl px-3 py-3 text-sm sm:px-4 ${
-          isUser ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
+        className={`min-w-0 max-w-[85%]  overflow-hidden px-3 py-3 text-sm sm:px-4 ${
+          isUser ? "bg-primary text-primary-foreground rounded-2xl" : "bg-secondary text-foreground"
         }`}
       >
         {isUser ? (

@@ -1353,6 +1353,8 @@
 }
 @utility transition-organic {
   transition: all var(--transition-base);
+  max-width:230px ;
+  padding: 17px;
 }
 
 @layer base {

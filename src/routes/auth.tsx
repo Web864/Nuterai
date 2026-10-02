@@ -4,6 +4,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/features/auth/use-session";
 import { isNative, OAUTH_REDIRECT_URL } from "@/lib/native";
+import { authRedirectUrl, passwordResetRedirectUrl, safeAuthNext } from "@/lib/auth-redirects";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,8 +21,6 @@ import {
 import { toast } from "sonner";
 import { Leaf, Loader2 } from "lucide-react";
 
-const EMAIL_CONFIRMATION_CALLBACK_URL = "http://localhost:8080//auth/callback";
-const PASSWORD_RESET_CALLBACK_URL = "http://localhost:8080//auth/callback";
 const forgotEmailSchema = z.string().trim().email();
 
 const searchSchema = z.object({
@@ -464,20 +463,11 @@ function AuthSessionLoading() {
   );
 }
 function safeNext(next: string | undefined): string {
-  if (!next) return "/dashboard";
-  if (!next.startsWith("/") || next.startsWith("//")) return "/dashboard";
-  return next;
-}
-
-function passwordResetRedirectUrl(): string {
-  const callbackUrl = isNative ? OAUTH_REDIRECT_URL : PASSWORD_RESET_CALLBACK_URL;
-  return `${callbackUrl}?next=/auth/reset-password`;
+  return safeAuthNext(next);
 }
 
 function confirmationRedirectUrl(nextPath: string): string {
-  const url = new URL(EMAIL_CONFIRMATION_CALLBACK_URL);
-  url.searchParams.set("next", nextPath);
-  return url.toString();
+  return authRedirectUrl(nextPath);
 }
 
 function shouldShowPasswordResetRequestError(error: {
