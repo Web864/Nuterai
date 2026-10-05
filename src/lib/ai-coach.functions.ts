@@ -45,13 +45,13 @@ const InputSchema = z.object({
 });
 const SYSTEM_PROMPT = `${AI_WELLNESS_SAFETY_POLICY}
 
-You are NutriAI's personal coach - a warm, evidence-based nutrition and fitness expert.You have concise context about this user (profile, goals, recent meals, workouts, weight). Use it to give specific, personalized advice.Style:- Be concise, actionable, and encouraging. Never lecture.- Default to 3-8 short paragraphs or bullets.- Use markdown: short paragraphs, bullet lists, bold for key numbers.- When giving nutrition or workout advice, tie back to THIS user's goals and recent data.- If asked for a meal or workout, give a concrete plan (foods, macros, sets/reps).- If user asks about medical conditions, medications, or eating disorders, recommend a licensed professional.- Never make up data you don't have. If context is missing, ask a quick clarifying question.`;
+You are NutriAI's personal coach - a warm, evidence-based nutrition and fitness expert. You have concise context about this user (profile, goals, recent meals, workouts, weight, and reminders). Use it to give specific, personalized advice. NutriAI has its own reminder system: help the user review reminders and use NutriAI reminder actions for reminder requests. Do not send them to a phone Clock or external reminder app for requests NutriAI can handle.Style:- Be concise, actionable, and encouraging. Never lecture.- Default to 3-8 short paragraphs or bullets.- Use markdown: short paragraphs, bullet lists, bold for key numbers.- When giving nutrition or workout advice, tie back to THIS user's goals and recent data.- If asked for a meal or workout, give a concrete plan (foods, macros, sets/reps).- If user asks about medical conditions, medications, or eating disorders, recommend a licensed professional.- Never make up data you don't have. If context is missing, ask a quick clarifying question.`;
 async function buildUserContext(
   supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<string> {
   const started = performance.now();
-  const [goalsRes, mealsRes, workoutsRes, weightRes] = await Promise.all([
+  const [goalsRes, mealsRes, workoutsRes, weightRes, remindersRes] = await Promise.all([
     supabase
       .from("user_goals")
       .select(
@@ -77,15 +77,28 @@ async function buildUserContext(
       .eq("user_id", userId)
       .order("logged_at", { ascending: false })
       .limit(2),
+    supabase
+      .from("reminders")
+      .select(
+        "title,type,message,enabled,is_active,scheduled_time,next_trigger_at,recurrence_rule,source,timezone",
+      )
+      .eq("user_id", userId)
+      .or("enabled.eq.true,is_active.eq.true")
+      .order("next_trigger_at", { ascending: true })
+      .limit(8),
   ]);
   if (import.meta.env.DEV) {
     console.info("[timing] ai.coach.supabase_context end", {
       durationMs: Math.round(performance.now() - started),
     });
   }
-  const contextErrors = [goalsRes.error, mealsRes.error, workoutsRes.error, weightRes.error].filter(
-    Boolean,
-  );
+  const contextErrors = [
+    goalsRes.error,
+    mealsRes.error,
+    workoutsRes.error,
+    weightRes.error,
+    remindersRes.error,
+  ].filter(Boolean);
   if (contextErrors.length) {
     console.warn("[ai.coach.context_error]", { count: contextErrors.length });
     throw new Error("AI Coach could not load your context. Please try again.");
@@ -94,6 +107,7 @@ async function buildUserContext(
   const meals = mealsRes.data ?? [];
   const workouts = workoutsRes.data ?? [];
   const weights = weightRes.data ?? [];
+  const reminders = remindersRes.data ?? [];
   const parts: string[] = ["=== USER CONTEXT ==="];
   if (goals) {
     parts.push(
@@ -115,6 +129,11 @@ async function buildUserContext(
   if (workouts.length) {
     parts.push(
       `Recent workouts: ${workouts.map((w) => `${w.name} (${w.duration_minutes ?? 0}min, ${w.calories_kcal ?? 0}kcal)`).join("; ")}`,
+    );
+  }
+  if (reminders.length) {
+    parts.push(
+      `Active reminders: ${reminders.map((r) => `${r.title} [${r.type}] at ${r.scheduled_time ?? "unscheduled"}; ${(r.enabled ?? r.is_active) ? "enabled" : "paused"}; next:${r.next_trigger_at?.slice(0, 16) ?? "not set"}`).join("; ")}`,
     );
   }
   parts.push("=== END CONTEXT ===");

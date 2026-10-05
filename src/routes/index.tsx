@@ -25,17 +25,17 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NutriAI - AI Meal Plans, Workouts & Habit Tracking" },
+      { title: "NutriAI - Personalized AI Meal Planner & Nutrition Coach" },
       {
         name: "description",
         content:
-          "Get an AI nutrition and fitness plan built around your body, goals, and schedule - meal plans, adaptive workouts, food scanning, and habit tracking, free.",
+          "Create personalized meal plans around your goals, food preferences, budget, and lifestyle with NutriAI.",
       },
-      { property: "og:title", content: "NutriAI - AI Meal Plans, Workouts & Habit Tracking" },
+      { property: "og:title", content: "NutriAI - Personalized AI Meal Planner & Nutrition Coach" },
       {
         property: "og:description",
         content:
-          "An AI health coach that builds your meals and workouts, scans your food, and adapts as your week changes. Free to start.",
+          "Personalized meal plans, food logging, and practical nutrition guidance for the food you actually eat.",
       },
     ],
     scripts: [
@@ -48,7 +48,7 @@ export const Route = createFileRoute("/")({
           applicationCategory: "HealthApplication",
           operatingSystem: "Web, iOS, Android",
           description:
-            "AI-powered nutrition, fitness, and lifestyle coaching that adapts to your body, goals, and day.",
+            "Personalized meal planning and general-wellness nutrition guidance based on your goals, preferences, and lifestyle.",
           offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
         }),
       },
@@ -120,23 +120,21 @@ function LandingPage() {
             <div className="landing-hero-copy max-w-xl">
               <span className="premium-glass inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-medium text-foreground">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
-                Your personal AI health coach
+                Nutrition for the food you actually eat
               </span>
               <h1 className="landing-hero-title mt-6 text-balance font-display">
-                Eat well.
+                Eat better without giving up
                 <br />
-                Move often.
-                <br />
-                <span className="emerald-text">Live better.</span>
+                the food you <span className="emerald-text">love.</span>
               </h1>
               <p className="landing-hero-description mt-6 max-w-lg text-muted-foreground">
-                NutriAI builds a nutrition, fitness, and lifestyle plan around your body, your
-                goals, and your day - then adapts it as you go.
+                NutriAI creates personalized meal plans around your goals, budget, allergies,
+                preferences, and the foods you actually eat.
               </p>
               <div className="landing-hero-actions mt-8 flex flex-wrap gap-3">
                 <Button asChild size="lg" className="landing-primary-action rounded-full px-7">
                   <Link to="/auth" search={{ mode: "signup" }}>
-                    Get started free <ArrowRight className="h-4 w-4" />
+                    Create my free plan <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
                 <Button
@@ -145,7 +143,7 @@ function LandingPage() {
                   size="lg"
                   className="landing-secondary-action rounded-full px-7"
                 >
-                  <Link to="/auth">I already have an account</Link>
+                  <a href="#how-it-works">See how it works</a>
                 </Button>
               </div>
               <p className="mt-4 text-xs text-muted-foreground">
@@ -212,25 +210,71 @@ function LandingPage() {
         <section className="border-b border-border/60 bg-background/25 py-20 sm:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
             <SectionHeading
-              eyebrow="One app. Everything."
+              eyebrow="A simpler nutrition routine"
               title={
                 <>
-                  Health that fits <span className="emerald-text">your life.</span>
+                  A plan, a log, and a better <span className="emerald-text">next meal.</span>
                 </>
               }
-              description="No generic plans. No calorie guessing. Just a coach that understands your body, your goals, and the way you actually live."
+              description="NutriAI keeps the daily loop focused: plan meals around your life, track what you ate, then make the next choice easier."
             />
             <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {features.map((feature) => (
+              {features.slice(0, 3).map((feature) => (
                 <FeatureCard key={feature.title} {...feature} />
               ))}
             </div>
           </div>
         </section>
 
-        <section className="border-t border-border/60 py-20 sm:py-24">
+        <section className="border-b border-border/60 bg-background/20 py-20 sm:py-24">
+          <div className="mx-auto grid max-w-7xl gap-10 px-5 sm:px-8 lg:grid-cols-2 lg:px-10">
+            <div>
+              <SectionHeading
+                eyebrow="Made for familiar food"
+                title={
+                  <>
+                    Plan around <span className="emerald-text">your table.</span>
+                  </>
+                }
+                description="Log meals in familiar portions where available, then review the nutrition estimate before saving. NutriAI makes everyday choices easier without forcing every meal into a generic template."
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {[
+                "Roti",
+                "Paratha",
+                "Biryani",
+                "Daal chawal",
+                "Chicken karahi",
+                "Chana",
+                "Tikka",
+                "Raita",
+                "Doodh patti",
+              ].map((food) => (
+                <div
+                  key={food}
+                  className="rounded-xl border border-border/70 bg-card/70 px-4 py-3 text-sm font-medium text-foreground"
+                >
+                  {food}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-border/60 py-20 sm:py-24">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+            <SectionHeading
+              eyebrow="Built for responsible guidance"
+              title="Useful nutrition support, with you in control."
+              description="Targets and estimates support general wellness. Plans are editable, food entries are reviewable, and NutriAI does not diagnose or treat medical conditions."
+            />
+          </div>
+        </section>
+
+        <section id="how-it-works" className="border-t border-border/60 py-20 sm:py-24">
           <div className="mx-auto max-w-6xl px-5 sm:px-8">
-            <SectionHeading eyebrow="How it works" title="Three steps to a healthier you." />
+            <SectionHeading eyebrow="How it works" title="A better next meal, in three steps." />
             <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-8">
               <JourneyStep
                 number="1"
@@ -243,7 +287,7 @@ function LandingPage() {
                 number="2"
                 icon={ChefHat}
                 title="Get your plan"
-                description="AI builds calorie targets, meals, and workouts personalized to you."
+                description="NutriAI builds calorie targets and meal guidance around your goals and preferences."
                 backgroundPosition="-376px -89px"
               />
               <JourneyStep

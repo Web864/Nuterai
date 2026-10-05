@@ -256,6 +256,40 @@ function ChatPanel({
     sendInFlightRef.current = true;
     setInput("");
     setSending(true);
+    if (pendingReminderAction && isReminderConfirmation(content)) {
+      try {
+        await applyReminder({ data: { action: pendingReminderAction.action } });
+        toast.success("Reminder updated");
+        setPendingReminderAction(null);
+        await qc.invalidateQueries({ queryKey: ["reminders", userId] });
+      } catch (error) {
+        toast.error(describeAiActionError(error, "Could not apply reminder action."));
+      } finally {
+        sendInFlightRef.current = false;
+        setSending(false);
+      }
+      return;
+    }
+
+    try {
+      const proposal = await proposeReminder({ data: { message: content } });
+      if (proposal.action && proposal.confirmation) {
+        setPendingReminderAction({
+          action: proposal.action,
+          confirmation: proposal.confirmation,
+          preview: proposal.preview,
+        });
+        sendInFlightRef.current = false;
+        setSending(false);
+        return;
+      }
+    } catch (error) {
+      toast.error(describeAiActionError(error, "Could not prepare that reminder action."));
+      sendInFlightRef.current = false;
+      setSending(false);
+      return;
+    }
+
     // Optimistic append
     qc.setQueryData(["coach-messages", threadId], (old: unknown) => {
       const list = Array.isArray(old) ? old : [];
@@ -436,6 +470,9 @@ function ChatPanel({
   );
 }
 
+function isReminderConfirmation(message: string): boolean {
+  return /^(yes|yeah|yep|okay|ok|do it|set them up)$/i.test(message.trim());
+}
 function MessageFeedback({ messageId }: { messageId: string }) {
   const submitFeedback = useServerFn(submitAiFeedback);
   const [reportOpen, setReportOpen] = useState(false);
