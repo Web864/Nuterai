@@ -23,9 +23,10 @@ import { plansQueryOptions } from "@/features/workout/queries";
 import { checkNotificationPermission, requestNotificationPermission } from "@/features/reminders/useReminderEngine";
 import { isNative } from "@/lib/native";
 import {
-  DEFAULT_MEAL_TIMES,
   REMINDER_TYPES,
   SNOOZE_OPTIONS,
+  deriveRoutineMealTimes,
+  deriveRoutineWorkoutTime,
   detectTimezone,
   formatWhen,
   nextOccurrence,
@@ -102,9 +103,20 @@ function RemindersPage() {
         {permission !== "granted" && <PermissionCard permission={permission} onChange={setPermission} />}
 
         <div className="mb-6 grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <AutoDietCard userId={userId} timezone={timezone} />
+          <AutoDietCard
+            userId={userId}
+            timezone={timezone}
+            wakeTime={goals.data?.wake_time}
+            sleepTime={goals.data?.sleep_time}
+          />
           <HydrationCard userId={userId} timezone={timezone} waterTarget={goals.data?.water_target_ml ?? goals.data?.daily_water_ml ?? 2500} wakeTime={goals.data?.wake_time ?? "08:00"} sleepTime={goals.data?.sleep_time ?? "22:00"} />
-          <AutoWorkoutCard userId={userId} timezone={timezone} planId={(workoutPlans.data ?? []).find((p) => p.is_active)?.id} />
+          <AutoWorkoutCard
+            userId={userId}
+            timezone={timezone}
+            planId={(workoutPlans.data ?? []).find((p) => p.is_active)?.id}
+            wakeTime={goals.data?.wake_time}
+            sleepTime={goals.data?.sleep_time}
+          />
           <Card className="rounded-3xl">
             <CardContent className="p-5">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-primary"><Sparkles className="h-5 w-5" /></div>
@@ -152,17 +164,27 @@ function PermissionCard({ permission, onChange }: { permission: NotificationPerm
   );
 }
 
-function AutoDietCard({ userId, timezone }: { userId: string; timezone: string }) {
+function AutoDietCard({
+  userId,
+  timezone,
+  wakeTime,
+  sleepTime,
+}: {
+  userId: string;
+  timezone: string;
+  wakeTime?: string | null;
+  sleepTime?: string | null;
+}) {
   const create = useCreateDietPlanReminders(userId);
+  const mealTimes = deriveRoutineMealTimes({ wakeTime, sleepTime });
   return (
     <Card className="rounded-3xl"><CardContent className="p-5">
       <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-primary"><Utensils className="h-5 w-5" /></div>
-      <p className="mt-4 font-medium">Diet plan reminders</p><p className="mt-1 text-sm text-muted-foreground">Breakfast {DEFAULT_MEAL_TIMES.breakfast}, lunch {DEFAULT_MEAL_TIMES.lunch}, dinner {DEFAULT_MEAL_TIMES.dinner}. Updates instead of duplicating.</p>
-      <Button className="mt-4 rounded-xl" onClick={() => create.mutate({ timezone }, { onSuccess: () => toast.success("Diet reminders synced"), onError: (error) => toast.error(error instanceof Error ? error.message : "Could not sync diet reminders") })} disabled={create.isPending}>Sync diet reminders</Button>
+      <p className="mt-4 font-medium">Diet plan reminders</p><p className="mt-1 text-sm text-muted-foreground">Breakfast {mealTimes.breakfast}, lunch {mealTimes.lunch}, dinner {mealTimes.dinner}. Updates instead of duplicating.</p>
+      <Button className="mt-4 rounded-xl" onClick={() => create.mutate({ timezone, mealTimes }, { onSuccess: () => toast.success("Diet reminders synced"), onError: (error) => toast.error(error instanceof Error ? error.message : "Could not sync diet reminders") })} disabled={create.isPending}>Sync diet reminders</Button>
     </CardContent></Card>
   );
 }
-
 function HydrationCard({ userId, timezone, waterTarget, wakeTime, sleepTime }: { userId: string; timezone: string; waterTarget: number; wakeTime: string; sleepTime: string }) {
   const create = useCreateHydrationReminders(userId);
   const [intervalMinutes, setIntervalMinutes] = useState(120);
@@ -175,14 +197,27 @@ function HydrationCard({ userId, timezone, waterTarget, wakeTime, sleepTime }: {
   );
 }
 
-function AutoWorkoutCard({ userId, timezone, planId }: { userId: string; timezone: string; planId?: string }) {
+function AutoWorkoutCard({
+  userId,
+  timezone,
+  planId,
+  wakeTime,
+  sleepTime,
+}: {
+  userId: string;
+  timezone: string;
+  planId?: string;
+  wakeTime?: string | null;
+  sleepTime?: string | null;
+}) {
   const sync = useCreateWorkoutPlanReminders(userId);
+  const defaultTime = deriveRoutineWorkoutTime({ wakeTime, sleepTime });
   return (
     <Card className="rounded-3xl"><CardContent className="p-5">
       <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-primary"><Dumbbell className="h-5 w-5" /></div>
       <p className="mt-4 font-medium">Workout plan reminders</p>
-      <p className="mt-1 text-sm text-muted-foreground">Create reminders from active workout days. Plan days update existing reminders instead of duplicating.</p>
-      <Button className="mt-4 rounded-xl" disabled={!planId || sync.isPending} onClick={() => planId && sync.mutate({ planId, timezone }, { onSuccess: () => toast.success("Workout reminders synced"), onError: (error) => toast.error(error instanceof Error ? error.message : "Could not sync workout reminders") })}>Sync workout plan</Button>
+      <p className="mt-1 text-sm text-muted-foreground">Create reminders from active workout days around {defaultTime}. Plan days update existing reminders instead of duplicating.</p>
+      <Button className="mt-4 rounded-xl" disabled={!planId || sync.isPending} onClick={() => planId && sync.mutate({ planId, timezone, defaultTime }, { onSuccess: () => toast.success("Workout reminders synced"), onError: (error) => toast.error(error instanceof Error ? error.message : "Could not sync workout reminders") })}>Sync workout plan</Button>
     </CardContent></Card>
   );
 }

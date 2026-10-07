@@ -79,6 +79,71 @@ export const DEFAULT_MEAL_TIMES: Record<"breakfast" | "lunch" | "dinner" | "snac
   snack: "16:30",
 };
 
+export type MealReminderTime = keyof typeof DEFAULT_MEAL_TIMES;
+export type MealReminderTimes = Partial<Record<MealReminderTime, string>>;
+
+const DEFAULT_WORKOUT_REMINDER_TIME = "19:00";
+const MIN_ROUTINE_WINDOW_MINUTES = 8 * 60;
+const MAX_ROUTINE_WINDOW_MINUTES = 20 * 60;
+
+function toMinuteOfDay(time: string | null | undefined): number | null {
+  if (!time) return null;
+  const parsed = parseHHMM(time);
+  return parsed ? parsed.h * 60 + parsed.m : null;
+}
+
+function formatMinuteOfDay(minutes: number): string {
+  const normalized = ((minutes % 1440) + 1440) % 1440;
+  return `${String(Math.floor(normalized / 60)).padStart(2, "0")}:${String(normalized % 60).padStart(2, "0")}`;
+}
+
+function routineWindowMinutes(wakeTime?: string | null, sleepTime?: string | null): { wake: number; duration: number } | null {
+  const wake = toMinuteOfDay(wakeTime);
+  const sleep = toMinuteOfDay(sleepTime);
+  if (wake === null || sleep === null) return null;
+
+  const duration = (sleep - wake + 1440) % 1440;
+  if (duration < MIN_ROUTINE_WINDOW_MINUTES || duration > MAX_ROUTINE_WINDOW_MINUTES) return null;
+  return { wake, duration };
+}
+
+/**
+ * Produces automatic meal defaults from a complete daily routine. Explicit meal
+ * times always win; incomplete or implausible routines retain the legacy defaults.
+ */
+export function deriveRoutineMealTimes(options: {
+  wakeTime?: string | null;
+  sleepTime?: string | null;
+  explicitMealTimes?: MealReminderTimes;
+}): Record<MealReminderTime, string> {
+  const routine = routineWindowMinutes(options.wakeTime, options.sleepTime);
+  const derived: Record<MealReminderTime, string> = routine
+    ? {
+        breakfast: formatMinuteOfDay(routine.wake + 90),
+        lunch: formatMinuteOfDay(routine.wake + Math.round(routine.duration * 0.45)),
+        snack: formatMinuteOfDay(routine.wake + Math.round(routine.duration * 0.6)),
+        dinner: formatMinuteOfDay(routine.wake + Math.round(routine.duration * 0.75)),
+      }
+    : { ...DEFAULT_MEAL_TIMES };
+
+  for (const meal of Object.keys(DEFAULT_MEAL_TIMES) as MealReminderTime[]) {
+    const explicit = options.explicitMealTimes?.[meal];
+    if (explicit !== undefined && toMinuteOfDay(explicit) !== null) derived[meal] = explicit;
+  }
+  return derived;
+}
+
+/** Uses the existing workout defaultTime hook while keeping the workout inside the awake window. */
+export function deriveRoutineWorkoutTime(options: {
+  wakeTime?: string | null;
+  sleepTime?: string | null;
+}): string {
+  const routine = routineWindowMinutes(options.wakeTime, options.sleepTime);
+  if (!routine) return DEFAULT_WORKOUT_REMINDER_TIME;
+
+  const latestSafeStart = routine.wake + routine.duration - 120;
+  return formatMinuteOfDay(Math.min(routine.wake + Math.round(routine.duration * 0.75), latestSafeStart));
+}
 export const REMINDER_TYPES: Array<{ value: ReminderType; label: string }> = [
   { value: "breakfast", label: "Breakfast" },
   { value: "lunch", label: "Lunch" },
@@ -389,7 +454,7 @@ export function toInsertPayload(draft: ReminderDraft) {
   };
 }
 
-export function buildDietReminderDrafts(timezone: string, mealTimes?: Partial<Record<"breakfast" | "lunch" | "dinner" | "snack", string>>): ReminderDraft[] {
+export function buildDietReminderDrafts(timezone: string, mealTimes?: MealReminderTimes): ReminderDraft[] {
   return (["breakfast", "lunch", "dinner"] as const).map((meal) => ({
     title: `${typeLabel(meal)} reminder`,
     message: notificationCopy(meal, meal),
