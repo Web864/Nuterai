@@ -7,6 +7,7 @@ import { Capacitor } from "@capacitor/core";
 import type { AnyRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { DARK_THEME_COLOR, LIGHT_THEME_COLOR, type ResolvedTheme } from "@/lib/theme";
+import { isPasswordRecoveryCallback, safeAuthNext } from "@/lib/auth-redirects";
 
 export const isNative = Capacitor.isNativePlatform();
 
@@ -46,11 +47,9 @@ export async function initializeNative(router: AnyRouter): Promise<void> {
     }
   });
 
-  // OAuth callback: Google refuses to authenticate inside an embedded
-  // WebView, so native sign-in opens the system browser (see handleGoogle in
-  // routes/auth.tsx) and Supabase redirects back to this custom scheme
-  // instead of a web URL. Capture it here, exchange the code for a session,
-  // and hand off to the router — this event never becomes a normal route.
+  // Auth links return through this custom scheme instead of a web URL.
+  // Capture them here, exchange the code for a session, and hand off to the
+  // router — this event never becomes a normal route.
   App.addListener("appUrlOpen", ({ url }) => {
     if (!url.startsWith(OAUTH_REDIRECT_URL)) return;
     void handleOAuthCallback(url, router);
@@ -102,7 +101,14 @@ async function handleOAuthCallback(url: string, router: AnyRouter): Promise<void
   const code = parsed.searchParams.get("code");
   const errorDescription = parsed.searchParams.get("error_description");
   const next = parsed.searchParams.get("next");
-  const target = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  const flow = parsed.searchParams.get("flow");
+  const type = parsed.searchParams.get("type");
+  const isRecovery = isPasswordRecoveryCallback(
+    next ?? undefined,
+    flow ?? undefined,
+    type ?? undefined,
+  );
+  const target = isRecovery ? "/auth/reset-password" : safeAuthNext(next ?? undefined);
 
   if (errorDescription) {
     const { toast } = await import("sonner");
@@ -117,7 +123,7 @@ async function handleOAuthCallback(url: string, router: AnyRouter): Promise<void
     toast.error("Sign-in failed. Please try again.");
     return;
   }
-  if (target === "/auth/reset-password") {
+  if (isRecovery) {
     sessionStorage.setItem(PASSWORD_RECOVERY_STORAGE_KEY, "true");
   }
   await router.navigate({ to: target as "/auth/reset-password" | "/dashboard", replace: true });

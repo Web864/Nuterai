@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,7 +40,8 @@ export const Route = createFileRoute("/auth")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  beforeLoad: async ({ search }) => {
+  beforeLoad: async ({ search, location }) => {
+    if (location.pathname !== "/auth") return;
     if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getSession();
     if (data.session) {
@@ -51,6 +52,8 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isAuthPage = pathname === "/auth";
   const session = useSession();
   const { next, mode } = Route.useSearch();
   const [tab, setTab] = useState<"signin" | "signup">(mode ?? "signin");
@@ -74,8 +77,10 @@ function AuthPage() {
   const nextPath = safeNext(next);
 
   useEffect(() => {
-    if (session.data) window.location.replace(nextPath);
-  }, [nextPath, session.data]);
+    if (isAuthPage && session.data) window.location.replace(nextPath);
+  }, [isAuthPage, nextPath, session.data]);
+
+  if (!isAuthPage) return <Outlet />;
 
   if (session.isPending || session.data) {
     return <AuthSessionLoading />;

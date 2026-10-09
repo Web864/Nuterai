@@ -20,11 +20,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- OAuth / auth-callback deep link. Supabase's signInWithOAuth
-                 redirectTo is set to "nutriai://auth-callback" only on native
-                 platforms (src/routes/auth.tsx) so Google's redirect back
-                 from the system browser re-opens this app instead of Google
-                 rejecting an in-WebView OAuth attempt. -->
+            <!-- Auth callback deep link used for OAuth and password recovery.
+                 OAuth redirects back from the system browser, while reset
+                 links return here with their recovery intent and destination. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -58,4 +56,3 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
 </manifest>
-
