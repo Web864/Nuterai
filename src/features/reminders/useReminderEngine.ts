@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useRef } from "react";
+﻿import { useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { PluginListenerHandle } from "@capacitor/core";
+import type { LocalNotificationSchema } from "@capacitor/local-notifications";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { profileQueryOptions } from "@/features/goals/queries";
@@ -16,7 +18,20 @@ import { isNative } from "@/lib/native";
 const WEB_TICK_MS = 60_000;
 const LOOKAHEAD_MS = 75_000;
 const NATIVE_HORIZON_DAYS = 7;
+const MAX_OCCURRENCES_PER_REMINDER = NATIVE_HORIZON_DAYS * 24 * 60 + 1;
+const NUTRIAI_REMINDER_CHANNEL_ID = "nutriai_reminders";
 let reminderEngineMounts = 0;
+
+export type ExactAlarmAccess = "granted" | "denied" | "unavailable";
+
+function notificationPermission(display: string): NotificationPermission {
+  return display === "granted" ? "granted" : display === "denied" ? "denied" : "default";
+}
+
+function devLog(level: "info" | "warn" | "error", event: string, details: Record<string, unknown>) {
+  if (!import.meta.env.DEV) return;
+  console[level](event, details);
+}
 
 export function useReminderEngine(userId: string | undefined) {
   const qc = useQueryClient();
@@ -182,11 +197,27 @@ export function useReminderEngine(userId: string | undefined) {
     if (!isNative || !userId) return;
     const profile = profileQ.data;
     let cancelled = false;
+    let appListener: PluginListenerHandle | undefined;
 
     async function syncNativeSchedule() {
       const { LocalNotifications } = await import("@capacitor/local-notifications");
       const perm = await LocalNotifications.checkPermissions();
       if (perm.display !== "granted" || cancelled) return;
+      const exact = await LocalNotifications.checkExactNotificationSetting();
+      if (exact.exact_alarm !== "granted" || cancelled) {
+        devLog("warn", "[reminder.native.sync]", {
+          status: "exact-alarm-not-granted",
+          exactAlarm: exact.exact_alarm,
+        });
+        return;
+      }
+      await LocalNotifications.createChannel({
+        id: NUTRIAI_REMINDER_CHANNEL_ID,
+        name: "NutriAI Reminders",
+        description: "Meal, hydration, workout and nutrition reminders",
+        importance: 4,
+        vibration: true,
+      });
 
       const pending = await LocalNotifications.getPending();
       const expected = buildNativeNotifications(reminders, profile);
@@ -199,56 +230,92 @@ export function useReminderEngine(userId: string | undefined) {
 
       const pendingIds = new Set(pending.notifications.map((n) => n.id));
       const missing = expected.filter((n) => !pendingIds.has(n.id));
-      if (missing.length) await LocalNotifications.schedule({ notifications: missing });
+      if (missing.length) {
+        const scheduled = await LocalNotifications.schedule({ notifications: missing });
+        devLog(scheduled.warning ? "warn" : "info", "[reminder.native.schedule]", {
+          expected: expected.length,
+          requested: missing.length,
+          scheduled: scheduled.notifications.length,
+          warning: scheduled.warning?.code ?? null,
+        });
+      }
+      const verified = await LocalNotifications.getPending();
+      const verifiedIds = new Set(verified.notifications.map((notification) => notification.id));
+      const failed = expected.filter((notification) => !verifiedIds.has(notification.id)).length;
+      devLog(failed ? "warn" : "info", "[reminder.native.verify]", {
+        expected: expected.length,
+        failed,
+        staleRemoved: stale.length,
+      });
     }
 
-    void syncNativeSchedule();
+    async function startNativeSync() {
+      await syncNativeSchedule();
+      const { App } = await import("@capacitor/app");
+      const registration = await App.addListener("appStateChange", ({ isActive }) => {
+        if (isActive && !cancelled) void syncNativeSchedule();
+      });
+      if (cancelled) await registration.remove();
+      else appListener = registration;
+    }
+
+    void startNativeSync();
     return () => {
       cancelled = true;
+      void appListener?.remove();
     };
   }, [userId, reminders, profileQ.data]);
 }
 
-function buildNativeNotifications(
+export function buildNativeNotifications(
   reminders: Reminder[],
-  profile: Tables<"profiles"> | null | undefined,
-) {
+  profile:
+    | Pick<
+        Tables<"profiles">,
+        "notifications_enabled" | "timezone" | "quiet_hours_start" | "quiet_hours_end"
+      >
+    | null
+    | undefined,
+): LocalNotificationSchema[] {
   if (profile?.notifications_enabled === false) return [];
   const tz = profile?.timezone || detectTimezone();
-  const result: Array<{
-    id: number;
-    title: string;
-    body: string;
-    schedule: { at: Date; allowWhileIdle: true };
-    extra: { reminderId: string; source: string };
-    smallIcon: "ic_stat_nutriai";
-    iconColor: "#0F3D2E";
-  }> = [];
+  const result: LocalNotificationSchema[] = [];
   const horizon = Date.now() + NATIVE_HORIZON_DAYS * 86_400_000;
 
-  for (const r of reminders) {
+  for (const reminder of reminders) {
     let from = new Date();
-    for (let i = 0; i < 16; i++) {
-      const next = nextOccurrence(r, from);
+    let occurrence = 0;
+    while (occurrence < MAX_OCCURRENCES_PER_REMINDER) {
+      const next = nextOccurrence(reminder, from);
       if (!next || next.getTime() > horizon) break;
       if (!inQuietHours(next, tz, profile?.quiet_hours_start, profile?.quiet_hours_end)) {
         result.push({
-          id: notificationId(r.id, next),
-          title: r.title,
-          body: r.message ?? notificationCopy(r.type, r.title, i),
+          id: notificationId(reminder.id, next),
+          title: reminder.title,
+          body: reminder.message ?? notificationCopy(reminder.type, reminder.title, occurrence),
           schedule: { at: next, allowWhileIdle: true },
-          extra: { reminderId: r.id, source: "nutriai-reminder" },
+          extra: { reminderId: reminder.id, source: "nutriai-reminder" },
+          channelId: NUTRIAI_REMINDER_CHANNEL_ID,
+          isExactNotification: true,
+          isExactMandatory: true,
           smallIcon: "ic_stat_nutriai",
           iconColor: "#0F3D2E",
         });
       }
+      occurrence += 1;
       from = new Date(next.getTime() + 1000);
+    }
+    if (occurrence === MAX_OCCURRENCES_PER_REMINDER) {
+      devLog("warn", "[reminder.native.schedule.guard]", {
+        reminderId: reminder.id,
+        maxOccurrences: MAX_OCCURRENCES_PER_REMINDER,
+      });
     }
   }
   return result;
 }
 
-function notificationId(reminderId: string, at: Date): number {
+export function notificationId(reminderId: string, at: Date): number {
   const key = `nutriai:${reminderId}:${at.toISOString()}`;
   let hash = 17;
   for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) | 0;
@@ -259,6 +326,27 @@ function isNutriReminderId(id: number): boolean {
   return id >= 1_000_000_000 && id < 2_000_000_000;
 }
 
+export async function checkNativeExactAlarmAccess(): Promise<ExactAlarmAccess> {
+  if (!isNative) return "unavailable";
+  const { LocalNotifications } = await import("@capacitor/local-notifications");
+  try {
+    const setting = await LocalNotifications.checkExactNotificationSetting();
+    return setting.exact_alarm === "granted" ? "granted" : "denied";
+  } catch {
+    return "unavailable";
+  }
+}
+
+export async function requestNativeExactAlarmAccess(): Promise<ExactAlarmAccess> {
+  if (!isNative) return "unavailable";
+  const { LocalNotifications } = await import("@capacitor/local-notifications");
+  try {
+    const setting = await LocalNotifications.changeExactNotificationSetting();
+    return setting.exact_alarm === "granted" ? "granted" : "denied";
+  } catch {
+    return "unavailable";
+  }
+}
 export async function checkNotificationPermission(): Promise<NotificationPermission> {
   if (isNative) {
     const { LocalNotifications } = await import("@capacitor/local-notifications");
