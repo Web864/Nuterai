@@ -31,6 +31,13 @@ describe("authentication redirect URLs", () => {
     expect(isPasswordRecoveryCallback("/auth/reset-password", "recovery")).toBe(true);
   });
 
+  it("recognizes Supabase recovery type without app-owned redirect parameters", () => {
+    expect(isPasswordRecoveryCallback(undefined, undefined, "recovery")).toBe(true);
+  });
+
+  it("recognizes recovery flow without a reset target", () => {
+    expect(isPasswordRecoveryCallback(undefined, "recovery")).toBe(true);
+  });
   it("keeps normal callbacks on their safe destination", () => {
     expect(isPasswordRecoveryCallback(undefined, undefined)).toBe(false);
     expect(safeAuthNext(undefined)).toBe("/dashboard");

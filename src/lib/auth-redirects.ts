@@ -11,8 +11,9 @@ export function safeAuthNext(next: string | undefined, fallback = "/dashboard"):
 export function isPasswordRecoveryCallback(
   next: string | undefined,
   flow: string | undefined,
+  type?: string,
 ): boolean {
-  return next === "/auth/reset-password" || flow === "recovery";
+  return next === "/auth/reset-password" || flow === "recovery" || type === "recovery";
 }
 
 export function authCallbackUrl(): string {

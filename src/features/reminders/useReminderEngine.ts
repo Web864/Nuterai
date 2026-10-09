@@ -29,7 +29,7 @@ function notificationPermission(display: string): NotificationPermission {
 }
 
 function devLog(level: "info" | "warn" | "error", event: string, details: Record<string, unknown>) {
-  if (!import.meta.env.DEV) return;
+  if (!isNative && !import.meta.env.DEV) return;
   console[level](event, details);
 }
 
@@ -200,55 +200,128 @@ export function useReminderEngine(userId: string | undefined) {
     let appListener: PluginListenerHandle | undefined;
 
     async function syncNativeSchedule() {
-      const { LocalNotifications } = await import("@capacitor/local-notifications");
-      const perm = await LocalNotifications.checkPermissions();
-      if (perm.display !== "granted" || cancelled) return;
-      const exact = await LocalNotifications.checkExactNotificationSetting();
-      if (exact.exact_alarm !== "granted" || cancelled) {
-        devLog("warn", "[reminder.native.sync]", {
-          status: "exact-alarm-not-granted",
-          exactAlarm: exact.exact_alarm,
+      try {
+        const { LocalNotifications } = await import("@capacitor/local-notifications");
+        const perm = await LocalNotifications.checkPermissions();
+        devLog("info", "[reminder.native.diagnostic.permissions]", {
+          notificationPermission: perm.display,
         });
-        return;
-      }
-      await LocalNotifications.createChannel({
-        id: NUTRIAI_REMINDER_CHANNEL_ID,
-        name: "NutriAI Reminders",
-        description: "Meal, hydration, workout and nutrition reminders",
-        importance: 4,
-        vibration: true,
-      });
+        if (perm.display !== "granted" || cancelled) return;
+        const exact = await LocalNotifications.checkExactNotificationSetting();
+        devLog("info", "[reminder.native.diagnostic.exact]", { exactAlarm: exact.exact_alarm });
+        if (exact.exact_alarm !== "granted" || cancelled) {
+          devLog("warn", "[reminder.native.sync]", {
+            status: "exact-alarm-not-granted",
+            exactAlarm: exact.exact_alarm,
+          });
+          return;
+        }
+        await LocalNotifications.createChannel({
+          id: NUTRIAI_REMINDER_CHANNEL_ID,
+          name: "NutriAI Reminders",
+          description: "Meal, hydration, workout and nutrition reminders",
+          importance: 4,
+          vibration: true,
+        });
 
-      const pending = await LocalNotifications.getPending();
-      const expected = buildNativeNotifications(reminders, profile);
-      const expectedIds = new Set(expected.map((n) => n.id));
-      const stale = pending.notifications.filter(
-        (n) => isNutriReminderId(n.id) && !expectedIds.has(n.id),
-      );
-      if (stale.length)
-        await LocalNotifications.cancel({ notifications: stale.map((n) => ({ id: n.id })) });
-
-      const pendingIds = new Set(pending.notifications.map((n) => n.id));
-      const missing = expected.filter((n) => !pendingIds.has(n.id));
-      if (missing.length) {
-        const scheduled = await LocalNotifications.schedule({ notifications: missing });
-        devLog(scheduled.warning ? "warn" : "info", "[reminder.native.schedule]", {
+        const channels = await LocalNotifications.listChannels();
+        devLog("info", "[reminder.native.diagnostic.channel]", {
+          channelId: NUTRIAI_REMINDER_CHANNEL_ID,
+          exists: channels.channels.some((channel) => channel.id === NUTRIAI_REMINDER_CHANNEL_ID),
+          importance:
+            channels.channels.find((channel) => channel.id === NUTRIAI_REMINDER_CHANNEL_ID)
+              ?.importance ?? null,
+        });
+        const pending = await LocalNotifications.getPending();
+        const expected = buildNativeNotifications(reminders, profile);
+        devLog("info", "[reminder.native.diagnostic.expected]", {
+          currentTime: new Date().toISOString(),
+          timezone: profile?.timezone || detectTimezone(),
           expected: expected.length,
-          requested: missing.length,
-          scheduled: scheduled.notifications.length,
-          warning: scheduled.warning?.code ?? null,
+          notifications: expected.map((notification) => ({
+            reminderId: String(notification.extra?.reminderId ?? ""),
+            notificationId: notification.id,
+            scheduledAt: notification.schedule?.at?.toISOString() ?? null,
+            isFuture: (notification.schedule?.at?.getTime() ?? 0) > Date.now(),
+            channelId: notification.channelId,
+            validNotificationId:
+              Number.isInteger(notification.id) &&
+              notification.id >= -2147483648 &&
+              notification.id <= 2147483647,
+            exact: notification.isExactNotification,
+            exactMandatory: notification.isExactMandatory,
+            allowWhileIdle: notification.schedule?.allowWhileIdle ?? false,
+            smallIcon: notification.smallIcon,
+          })),
+        });
+        const expectedIds = new Set(expected.map((n) => n.id));
+        const stale = pending.notifications.filter(
+          (n) => isNutriReminderId(n.id) && !expectedIds.has(n.id),
+        );
+        if (stale.length)
+          await LocalNotifications.cancel({ notifications: stale.map((n) => ({ id: n.id })) });
+
+        devLog("info", "[reminder.native.diagnostic.pending-before]", {
+          pending: pending.notifications.length,
+          nutriPending: pending.notifications.filter((notification) =>
+            isNutriReminderId(notification.id),
+          ).length,
+        });
+        const pendingIds = new Set(pending.notifications.map((n) => n.id));
+        const missing = expected.filter((n) => !pendingIds.has(n.id));
+        if (missing.length) {
+          devLog("info", "[reminder.native.diagnostic.schedule-request]", {
+            requested: missing.length,
+            notificationIds: missing.map((notification) => notification.id),
+            notifications: missing.map((notification) => ({
+              id: notification.id,
+              at: notification.schedule?.at?.toISOString() ?? null,
+              channelId: notification.channelId,
+              exact: notification.isExactNotification,
+              exactMandatory: notification.isExactMandatory,
+              allowWhileIdle: notification.schedule?.allowWhileIdle ?? false,
+              smallIcon: notification.smallIcon,
+            })),
+          });
+          const scheduled = await LocalNotifications.schedule({ notifications: missing });
+          devLog(scheduled.warning ? "warn" : "info", "[reminder.native.schedule]", {
+            expected: expected.length,
+            requested: missing.length,
+            scheduled: scheduled.notifications.length,
+            warning: scheduled.warning?.code ?? null,
+          });
+        }
+        const verified = await LocalNotifications.getPending();
+        devLog("info", "[reminder.native.diagnostic.pending-after]", {
+          pending: verified.notifications.length,
+          nutriPending: verified.notifications.filter((notification) =>
+            isNutriReminderId(notification.id),
+          ).length,
+          notificationIds: verified.notifications
+            .filter((notification) => isNutriReminderId(notification.id))
+            .map((notification) => notification.id),
+        });
+        const verifiedIds = new Set(verified.notifications.map((notification) => notification.id));
+        const failed = expected.filter((notification) => !verifiedIds.has(notification.id)).length;
+        devLog(failed ? "warn" : "info", "[reminder.native.verify]", {
+          expected: expected.length,
+          failed,
+          staleRemoved: stale.length,
+          expectedPendingIds: expected.map((notification) => notification.id),
+          presentPendingIds: expected
+            .filter((notification) => verifiedIds.has(notification.id))
+            .map((notification) => notification.id),
+        });
+      } catch (error) {
+        devLog("error", "[reminder.native.diagnostic.schedule-error]", {
+          code:
+            error instanceof Error && "code" in error
+              ? String((error as { code?: unknown }).code ?? "unknown")
+              : "unknown",
+          message: error instanceof Error ? error.message : "unknown-native-error",
         });
       }
-      const verified = await LocalNotifications.getPending();
-      const verifiedIds = new Set(verified.notifications.map((notification) => notification.id));
-      const failed = expected.filter((notification) => !verifiedIds.has(notification.id)).length;
-      devLog(failed ? "warn" : "info", "[reminder.native.verify]", {
-        expected: expected.length,
-        failed,
-        staleRemoved: stale.length,
-      });
     }
-
     async function startNativeSync() {
       await syncNativeSchedule();
       const { App } = await import("@capacitor/app");

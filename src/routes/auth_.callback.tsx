@@ -23,7 +23,6 @@ function CallbackPage() {
 
   useEffect(() => {
     let cancelled = false;
-    const explicitRecoveryIntent = flow === "recovery";
     let passwordRecoveryReceived = false;
     const { data: authState } = supabase.auth.onAuthStateChange((event, eventSession) => {
       if (event === "PASSWORD_RECOVERY" && eventSession) passwordRecoveryReceived = true;
@@ -35,11 +34,14 @@ function CallbackPage() {
       // miss the single-use PKCE code from this browser callback.
       const callbackUrl = new URL(window.location.href);
       const params = callbackUrl.searchParams;
-      const callbackNext = next ?? params.get("next") ?? undefined;
+      const callbackNext = params.get("next") ?? next ?? undefined;
       const code = params.get("code");
       const oauthError = params.get("error_description") || params.get("error");
       const hashParams = new URLSearchParams(callbackUrl.hash.replace(/^#/, ""));
 
+      const recoveryType = params.get("type") ?? hashParams.get("type") ?? undefined;
+      const hashFlow = hashParams.get("flow") ?? undefined;
+      const callbackFlow = params.get("flow") ?? hashFlow ?? flow;
       const hashError =
         hashParams.get("error_description") ||
         hashParams.get("error_code") ||
@@ -54,8 +56,9 @@ function CallbackPage() {
       console.info("[auth/callback] reached", {
         pathname: callbackUrl.pathname,
         hasCode: !!code,
-        next: callbackNext,
-        flow,
+        hasNext: !!callbackNext,
+        hasRecoveryType: recoveryType === "recovery",
+        hasRecoveryFlow: callbackFlow === "recovery",
         hasAuthError: !!(oauthError || hashError),
         hasHashTokens: !!(access_token && refresh_token),
         hasVerifier,
@@ -104,7 +107,9 @@ function CallbackPage() {
         }
       }
       if (cancelled) return;
-      const isRecovery = isPasswordRecoveryCallback(callbackNext, flow) || passwordRecoveryReceived;
+      const isRecovery =
+        isPasswordRecoveryCallback(callbackNext, callbackFlow, recoveryType) ||
+        passwordRecoveryReceived;
       const target = !session
         ? isRecovery
           ? "/auth/forgot-password?error=invalid-reset-link"
@@ -116,8 +121,9 @@ function CallbackPage() {
       console.info("[auth/callback] routing", {
         pathname: callbackUrl.pathname,
         hasCode: !!code,
-        next: callbackNext,
-        flow,
+        hasNext: !!callbackNext,
+        hasRecoveryType: recoveryType === "recovery",
+        hasRecoveryFlow: callbackFlow === "recovery",
         hasExchangeError: !!exchangeError,
         hasSession: !!session,
         isRecovery,
