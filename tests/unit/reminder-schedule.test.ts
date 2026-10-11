@@ -7,9 +7,17 @@ import {
   buildWorkoutPlanReminderDrafts,
   deriveRoutineMealTimes,
   deriveRoutineWorkoutTime,
+  detectTimezone,
+  resolveTimezone,
 } from "@/lib/reminders";
 
 describe("automatic reminder schedule", () => {
+  it("uses the device region when the stored timezone is missing or the UTC placeholder", () => {
+    expect(resolveTimezone(null)).toBe(detectTimezone());
+    expect(resolveTimezone("UTC")).toBe(detectTimezone());
+    expect(resolveTimezone("Asia/Karachi")).toBe("Asia/Karachi");
+  });
+
   it.each([
     ["05:00", "22:00", { breakfast: "06:30", lunch: "12:39", snack: "15:12", dinner: "17:45" }],
     ["07:00", "22:00", { breakfast: "08:30", lunch: "13:45", snack: "16:00", dinner: "18:15" }],

@@ -38,6 +38,7 @@ import {
   nextOccurrence,
   normalizeRule,
   recurrenceLabel,
+  resolveTimezone,
   sourceLabel,
   type ReminderType,
   typeLabel,
@@ -131,7 +132,7 @@ function RemindersPage() {
   );
   const paused = (reminders.data ?? []).filter((r) => !(r.enabled ?? r.is_active));
   const unread = (notifications.data ?? []).filter((n) => !n.read_at).length;
-  const timezone = profile.data?.timezone ?? detectTimezone();
+  const timezone = resolveTimezone(profile.data?.timezone);
 
   return (
     <div className="min-h-screen bg-background">
@@ -930,7 +931,7 @@ function PreferencesCard({ userId }: { userId: string }) {
           <Label>Timezone</Label>
           <Input
             className="mt-1 max-w-xs"
-            value={p.timezone ?? ""}
+            value={resolveTimezone(p.timezone)}
             onChange={(e) => update.mutate({ timezone: e.target.value })}
           />
           <button

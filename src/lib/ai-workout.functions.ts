@@ -98,6 +98,9 @@ Rules:
 - For "no_equipment", stick to bodyweight movements.
 - Give clear rep ranges (e.g. "8-12" or 15) and appropriate rest.
 - Provide days_per_week workout days. Do not include rest days as workout entries.
+- Return exactly the requested number of workout days. Number day_index values from 1 through days_per_week.
+- Use only these focus values: full_body, upper, lower, push, pull, legs, core, cardio, hiit, mobility, rest, custom.
+- Keep sets between 1 and 10, estimated_minutes between 10 and 180, and rest_seconds between 0 and 600.
 - Return ONLY one valid JSON object, with no markdown fences or prose.
 - JSON fields: name, goal, difficulty, days_per_week, optional duration_weeks and notes, and days.
 - Each day must include day_index, title, focus, estimated_minutes, and exercises.
@@ -390,6 +393,65 @@ async function generateWorkoutWithGemini({
             contents: [{ role: "user", parts: [{ text: userPrompt }] }],
             generationConfig: {
               responseMimeType: "application/json",
+              responseSchema: {
+                type: "OBJECT",
+                properties: {
+                  name: { type: "STRING" },
+                  goal: { type: "STRING" },
+                  difficulty: {
+                    type: "STRING",
+                    enum: ["beginner", "intermediate", "advanced"],
+                  },
+                  days_per_week: { type: "NUMBER" },
+                  duration_weeks: { type: "NUMBER" },
+                  notes: { type: "STRING" },
+                  days: {
+                    type: "ARRAY",
+                    items: {
+                      type: "OBJECT",
+                      properties: {
+                        day_index: { type: "NUMBER" },
+                        title: { type: "STRING" },
+                        focus: {
+                          type: "STRING",
+                          enum: [
+                            "full_body",
+                            "upper",
+                            "lower",
+                            "push",
+                            "pull",
+                            "legs",
+                            "core",
+                            "cardio",
+                            "hiit",
+                            "mobility",
+                            "rest",
+                            "custom",
+                          ],
+                        },
+                        estimated_minutes: { type: "NUMBER" },
+                        exercises: {
+                          type: "ARRAY",
+                          items: {
+                            type: "OBJECT",
+                            properties: {
+                              name: { type: "STRING" },
+                              muscle_group: { type: "STRING" },
+                              sets: { type: "NUMBER" },
+                              reps: { type: "STRING" },
+                              rest_seconds: { type: "NUMBER" },
+                              notes: { type: "STRING" },
+                            },
+                            required: ["name", "sets", "reps"],
+                          },
+                        },
+                      },
+                      required: ["day_index", "title", "focus", "estimated_minutes", "exercises"],
+                    },
+                  },
+                },
+                required: ["name", "goal", "difficulty", "days_per_week", "days"],
+              },
               maxOutputTokens: 4096,
             },
           }),
@@ -457,6 +519,13 @@ async function generateWorkoutWithGemini({
 
       const plan = PlanSchema.safeParse(parsedJson);
       if (!plan.success) {
+        console.warn("[ai.workout.schema]", {
+          requestId,
+          issues: plan.error.issues.map((issue) => ({
+            path: issue.path.join("."),
+            code: issue.code,
+          })),
+        });
         throw new WorkoutProviderError(
           "Gemini returned an invalid workout plan.",
           false,
@@ -491,7 +560,9 @@ async function generateWorkoutWithGemini({
         totalMs: Math.round(performance.now() - requestStarted),
         errorType: failure.errorType,
       });
-      if (!failure.transient || attempt === 2) throw failure;
+      if ((!failure.transient && failure.errorType !== "GEMINI_SCHEMA_ERROR") || attempt === 2) {
+        throw failure;
+      }
       await new Promise<void>((resolve) =>
         setTimeout(resolve, 300 * attempt + Math.floor(Math.random() * 100)),
       );

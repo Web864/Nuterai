@@ -253,6 +253,10 @@ export function detectTimezone(): string {
   }
 }
 
+export function resolveTimezone(timezone: string | null | undefined): string {
+  return !timezone || timezone === "UTC" ? detectTimezone() : timezone;
+}
+
 function partsInTz(date: Date, tz: string) {
   const fmt = new Intl.DateTimeFormat("en-US", {
     timeZone: tz,
@@ -604,7 +608,6 @@ function legacyCompatibleType(type: ReminderType): ReminderType {
   if (type === "ai-created") return "custom";
   return type;
 }
-
 
 
 

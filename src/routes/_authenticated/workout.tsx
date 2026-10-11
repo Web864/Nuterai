@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -50,10 +50,7 @@ import {
   type WorkoutPlan,
 } from "@/features/workout/queries";
 import { generateWorkoutPlan } from "@/lib/ai-workout.functions";
-import {
-  disableWorkoutPlanReminders,
-  useCreateWorkoutPlanReminders,
-} from "@/features/reminders/queries";
+import { disableWorkoutPlanReminders } from "@/features/reminders/queries";
 import { describeAiActionError } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/workout")({
@@ -70,10 +67,7 @@ function WorkoutPage() {
   const plans = useQuery(plansQueryOptions(userId));
   const sessions = useQuery(sessionsQueryOptions(userId));
 
-  const activePlan = useMemo(
-    () => (plans.data ?? []).find((p) => p.is_active) ?? plans.data?.[0],
-    [plans.data],
-  );
+  const activePlan = useMemo(() => (plans.data ?? []).find((plan) => plan.is_active), [plans.data]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -125,7 +119,13 @@ function WorkoutPage() {
               defaultGym={goals.data?.gym_access ?? undefined}
               defaultExp={goals.data?.workout_experience ?? undefined}
             />
-            <PlansList userId={userId} plans={plans.data ?? []} activePlanId={activePlan?.id} />
+            <PlansList
+              userId={userId}
+              plans={plans.data ?? []}
+              activePlanId={activePlan?.id}
+              isLoading={plans.isPending}
+              error={plans.error}
+            />
           </TabsContent>
 
           <TabsContent value="log" className="mt-6">
@@ -133,7 +133,12 @@ function WorkoutPage() {
           </TabsContent>
 
           <TabsContent value="history" className="mt-6">
-            <SessionHistory userId={userId} sessions={sessions.data ?? []} />
+            <SessionHistory
+              userId={userId}
+              sessions={sessions.data ?? []}
+              isLoading={sessions.isPending}
+              error={sessions.error}
+            />
           </TabsContent>
         </Tabs>
       </main>
@@ -169,6 +174,22 @@ function AIGeneratorCard({
   const [minutes, setMinutes] = useState(45);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [hasEditedPreferences, setHasEditedPreferences] = useState(false);
+
+  useEffect(() => {
+    if (hasEditedPreferences) return;
+    if (defaultGoal) {
+      setGoal(
+        defaultGoal === "build_muscle"
+          ? "Build lean muscle"
+          : defaultGoal === "lose_weight"
+            ? "Lose fat and stay lean"
+            : "Get stronger and healthier",
+      );
+    }
+    if (defaultGym) setGym(defaultGym);
+    if (defaultExp) setExperience(defaultExp);
+  }, [defaultGoal, defaultGym, defaultExp, hasEditedPreferences]);
 
   async function handleGenerate() {
     if (loading) return;
@@ -209,7 +230,10 @@ function AIGeneratorCard({
           <Input
             id="goal"
             value={goal}
-            onChange={(e) => setGoal(e.target.value)}
+            onChange={(e) => {
+              setHasEditedPreferences(true);
+              setGoal(e.target.value);
+            }}
             placeholder="e.g. Build muscle and lose 5 kg"
             className="mt-1.5 rounded-2xl"
           />
@@ -218,7 +242,13 @@ function AIGeneratorCard({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label>Experience</Label>
-            <Select value={experience} onValueChange={setExperience}>
+            <Select
+              value={experience}
+              onValueChange={(value) => {
+                setHasEditedPreferences(true);
+                setExperience(value);
+              }}
+            >
               <SelectTrigger className="mt-1.5 rounded-2xl">
                 <SelectValue />
               </SelectTrigger>
@@ -232,7 +262,13 @@ function AIGeneratorCard({
           </div>
           <div>
             <Label>Equipment access</Label>
-            <Select value={gym} onValueChange={setGym}>
+            <Select
+              value={gym}
+              onValueChange={(value) => {
+                setHasEditedPreferences(true);
+                setGym(value);
+              }}
+            >
               <SelectTrigger className="mt-1.5 rounded-2xl">
                 <SelectValue />
               </SelectTrigger>
@@ -310,14 +346,32 @@ function PlansList({
   userId,
   plans,
   activePlanId,
+  isLoading,
+  error,
 }: {
   userId: string;
   plans: WorkoutPlan[];
   activePlanId?: string;
+  isLoading: boolean;
+  error: Error | null;
 }) {
   const setActive = useSetActivePlan(userId);
   const del = useDeletePlan(userId);
-  const syncWorkoutReminders = useCreateWorkoutPlanReminders(userId);
+
+  if (isLoading) {
+    return (
+      <Card className="rounded-3xl p-6 text-center text-sm text-muted-foreground">
+        Loading workout plans…
+      </Card>
+    );
+  }
+  if (error) {
+    return (
+      <Card role="alert" className="rounded-3xl p-6 text-center text-sm text-destructive">
+        Could not load workout plans: {error.message}
+      </Card>
+    );
+  }
 
   if (plans.length === 0) {
     return (
@@ -341,13 +395,29 @@ function PlansList({
           plan={plan}
           isActive={plan.id === activePlanId}
           onActivate={() =>
-            setActive.mutate(plan.id, { onSuccess: () => toast.success("Set as active plan") })
+            setActive.mutate(plan.id, {
+              onSuccess: () => toast.success("Set as active plan"),
+              onError: (error) =>
+                toast.error(error instanceof Error ? error.message : "Could not activate plan"),
+            })
           }
           onDelete={() =>
-            del.mutate(plan.id, {
-              onSuccess: () => toast.success("Plan deleted"),
-              onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
-            })
+            void (async () => {
+              try {
+                await disableWorkoutPlanReminders(userId, plan.id);
+                del.mutate(plan.id, {
+                  onSuccess: () => toast.success("Plan deleted"),
+                  onError: (error) =>
+                    toast.error(error instanceof Error ? error.message : "Could not delete plan"),
+                });
+              } catch (error) {
+                toast.error(
+                  error instanceof Error
+                    ? error.message
+                    : "Could not disable reminders for this plan",
+                );
+              }
+            })()
           }
         />
       ))}
@@ -422,6 +492,14 @@ function PlanCard({
         {open && (
           <div className="mt-4 space-y-3">
             {days.isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}
+            {days.isError && (
+              <p role="alert" className="text-sm text-destructive">
+                Could not load plan days: {days.error.message}
+              </p>
+            )}
+            {!days.isLoading && !days.isError && (days.data?.length ?? 0) === 0 && (
+              <p className="text-sm text-muted-foreground">No workout days in this plan yet.</p>
+            )}
             {(days.data ?? []).map((day) => {
               const exercises = parseExercises(day.exercises);
               return (
@@ -549,6 +627,11 @@ function QuickLogCard({ userId, activePlanId }: { userId: string; activePlanId?:
             </Select>
           </div>
         )}
+        {days.isError && (
+          <p role="alert" className="text-sm text-destructive">
+            Could not load active plan days: {days.error.message}
+          </p>
+        )}
 
         <div>
           <Label htmlFor="wname">Session name</Label>
@@ -675,8 +758,33 @@ function QuickLogCard({ userId, activePlanId }: { userId: string; activePlanId?:
 }
 
 // ---------------- History ----------------
-function SessionHistory({ userId, sessions }: { userId: string; sessions: WorkoutSession[] }) {
+function SessionHistory({
+  userId,
+  sessions,
+  isLoading,
+  error,
+}: {
+  userId: string;
+  sessions: WorkoutSession[];
+  isLoading: boolean;
+  error: Error | null;
+}) {
   const del = useDeleteSession(userId);
+
+  if (isLoading) {
+    return (
+      <Card className="rounded-3xl p-6 text-center text-sm text-muted-foreground">
+        Loading workout history…
+      </Card>
+    );
+  }
+  if (error) {
+    return (
+      <Card role="alert" className="rounded-3xl p-6 text-center text-sm text-destructive">
+        Could not load workout history: {error.message}
+      </Card>
+    );
+  }
 
   if (sessions.length === 0) {
     return (
@@ -730,6 +838,10 @@ function SessionHistory({ userId, sessions }: { userId: string; sessions: Workou
                 onClick={() =>
                   del.mutate(s.id, {
                     onSuccess: () => toast.success("Session deleted"),
+                    onError: (error) =>
+                      toast.error(
+                        error instanceof Error ? error.message : "Could not delete session",
+                      ),
                   })
                 }
                 aria-label="Delete session"

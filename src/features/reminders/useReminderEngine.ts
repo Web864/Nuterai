@@ -7,10 +7,10 @@ import type { Tables } from "@/integrations/supabase/types";
 import { profileQueryOptions } from "@/features/goals/queries";
 import { remindersQueryOptions, type Reminder } from "./queries";
 import {
-  detectTimezone,
   inQuietHours,
   nextOccurrence,
   notificationCopy,
+  resolveTimezone,
   typeLabel,
 } from "@/lib/reminders";
 import { isNative } from "@/lib/native";
@@ -20,9 +20,15 @@ const LOOKAHEAD_MS = 75_000;
 const NATIVE_HORIZON_DAYS = 7;
 const MAX_OCCURRENCES_PER_REMINDER = NATIVE_HORIZON_DAYS * 24 * 60 + 1;
 const NUTRIAI_REMINDER_CHANNEL_ID = "nutriai_reminders";
+const NUTRIAI_REMINDER_SYNC_EVENT = "nutriai:reminder-sync";
 let reminderEngineMounts = 0;
 
 export type ExactAlarmAccess = "granted" | "denied" | "unavailable";
+
+function dispatchReminderSyncRefresh() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(NUTRIAI_REMINDER_SYNC_EVENT));
+}
 
 function notificationPermission(display: string): NotificationPermission {
   return display === "granted" ? "granted" : display === "denied" ? "denied" : "default";
@@ -61,12 +67,41 @@ export function useReminderEngine(userId: string | undefined) {
   useEffect(() => {
     if (!userId || !profileQ.data) return;
     if (timezoneSyncedRef.current === userId) return;
-    const detected = detectTimezone();
-    if (!profileQ.data.timezone || profileQ.data.timezone === "UTC") {
+    const detected = resolveTimezone(profileQ.data.timezone);
+    if (detected === profileQ.data.timezone) {
       timezoneSyncedRef.current = userId;
-      void supabase.from("profiles").update({ timezone: detected }).eq("id", userId);
+      return;
     }
-  }, [userId, profileQ.data]);
+
+    void (async () => {
+      const [profileUpdate, reminderUpdate] = await Promise.all([
+        supabase.from("profiles").update({ timezone: detected }).eq("id", userId),
+        supabase
+          .from("reminders")
+          .update({ timezone: detected })
+          .eq("user_id", userId)
+          .eq("timezone", "UTC"),
+      ]);
+      if (profileUpdate.error) {
+        devLog("error", "[reminder.timezone.profile-update]", {
+          message: profileUpdate.error.message,
+        });
+      }
+      if (reminderUpdate.error) {
+        devLog("error", "[reminder.timezone.reminder-update]", {
+          message: reminderUpdate.error.message,
+        });
+      }
+      if (profileUpdate.error || reminderUpdate.error) return;
+
+      timezoneSyncedRef.current = userId;
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["profile", userId] }),
+        qc.invalidateQueries({ queryKey: ["reminders", userId] }),
+      ]);
+      dispatchReminderSyncRefresh();
+    })();
+  }, [userId, profileQ.data, qc]);
 
   useEffect(() => {
     if (!userId) return;
@@ -78,7 +113,7 @@ export function useReminderEngine(userId: string | undefined) {
     async function tick() {
       if (cancelled) return;
       const now = new Date();
-      const tz = profile?.timezone || detectTimezone();
+      const tz = resolveTimezone(profile?.timezone);
       const notifEnabled = profile?.notifications_enabled !== false;
 
       for (const r of reminders) {
@@ -154,6 +189,7 @@ export function useReminderEngine(userId: string | undefined) {
           .eq("user_id", activeUserId);
         qc.invalidateQueries({ queryKey: ["notifications", activeUserId] });
         qc.invalidateQueries({ queryKey: ["reminder-events", activeUserId] });
+        dispatchReminderSyncRefresh();
       }
     }
 
@@ -198,15 +234,16 @@ export function useReminderEngine(userId: string | undefined) {
     const profile = profileQ.data;
     let cancelled = false;
     let appListener: PluginListenerHandle | undefined;
+    let syncRefreshListener: (() => void) | undefined;
 
     async function syncNativeSchedule() {
       try {
         const { LocalNotifications } = await import("@capacitor/local-notifications");
-        const perm = await LocalNotifications.checkPermissions();
+        const perms = await LocalNotifications.checkPermissions();
         devLog("info", "[reminder.native.diagnostic.permissions]", {
-          notificationPermission: perm.display,
+          notificationPermission: perms.display,
         });
-        if (perm.display !== "granted" || cancelled) return;
+        if (perms.display !== "granted" || cancelled) return;
         const exact = await LocalNotifications.checkExactNotificationSetting();
         devLog("info", "[reminder.native.diagnostic.exact]", { exactAlarm: exact.exact_alarm });
         if (exact.exact_alarm !== "granted" || cancelled) {
@@ -236,7 +273,7 @@ export function useReminderEngine(userId: string | undefined) {
         const expected = buildNativeNotifications(reminders, profile);
         devLog("info", "[reminder.native.diagnostic.expected]", {
           currentTime: new Date().toISOString(),
-          timezone: profile?.timezone || detectTimezone(),
+          timezone: resolveTimezone(profile?.timezone),
           expected: expected.length,
           notifications: expected.map((notification) => ({
             reminderId: String(notification.extra?.reminderId ?? ""),
@@ -322,20 +359,32 @@ export function useReminderEngine(userId: string | undefined) {
         });
       }
     }
+
     async function startNativeSync() {
       await syncNativeSchedule();
       const { App } = await import("@capacitor/app");
       const registration = await App.addListener("appStateChange", ({ isActive }) => {
         if (isActive && !cancelled) void syncNativeSchedule();
       });
-      if (cancelled) await registration.remove();
-      else appListener = registration;
+      if (cancelled) {
+        await registration.remove();
+        return;
+      }
+      appListener = registration;
+
+      syncRefreshListener = () => {
+        if (!cancelled) void syncNativeSchedule();
+      };
+      window.addEventListener(NUTRIAI_REMINDER_SYNC_EVENT, syncRefreshListener);
     }
 
     void startNativeSync();
     return () => {
       cancelled = true;
       void appListener?.remove();
+      if (syncRefreshListener && typeof window !== "undefined") {
+        window.removeEventListener(NUTRIAI_REMINDER_SYNC_EVENT, syncRefreshListener);
+      }
     };
   }, [userId, reminders, profileQ.data]);
 }
@@ -351,7 +400,7 @@ export function buildNativeNotifications(
     | undefined,
 ): LocalNotificationSchema[] {
   if (profile?.notifications_enabled === false) return [];
-  const tz = profile?.timezone || detectTimezone();
+  const tz = resolveTimezone(profile?.timezone);
   const result: LocalNotificationSchema[] = [];
   const horizon = Date.now() + NATIVE_HORIZON_DAYS * 86_400_000;
 
