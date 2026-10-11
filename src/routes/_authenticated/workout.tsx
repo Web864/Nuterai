@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft,
   Check,
+  ChevronRight,
   Dumbbell,
   Flame,
   Leaf,
@@ -52,6 +53,7 @@ import {
 import { generateWorkoutPlan } from "@/lib/ai-workout.functions";
 import { disableWorkoutPlanReminders } from "@/features/reminders/queries";
 import { describeAiActionError } from "@/lib/utils";
+import { ExerciseDetailDialog } from "@/features/workout/ExerciseDetailDialog";
 
 export const Route = createFileRoute("/_authenticated/workout")({
   head: () => ({
@@ -437,6 +439,7 @@ function PlanCard({
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [selectedExercise, setSelectedExercise] = useState<PlanExercise | null>(null);
   const days = useQuery(planDaysQueryOptions(open ? plan.id : undefined));
 
   return (
@@ -517,13 +520,24 @@ function PlanCard({
                   <ul className="space-y-1.5 text-sm">
                     {exercises.map((ex, i) => (
                       <li
-                        key={i}
-                        className="flex min-w-0 flex-wrap justify-between gap-x-3 gap-y-1 border-b border-border/40 py-1 last:border-0"
+                        key={`${ex.name}-${i}`}
+                        className="border-b border-border/40 last:border-0"
                       >
-                        <span className="font-medium text-foreground">{ex.name}</span>
-                        <span className="text-muted-foreground">
-                          {ex.sets} × {ex.reps}
-                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-auto min-h-11 w-full min-w-0 justify-between gap-3 rounded-lg px-2 py-2 text-left hover:bg-background/70"
+                          onClick={() => setSelectedExercise(ex)}
+                          aria-label={`View details for ${ex.name}`}
+                        >
+                          <span className="min-w-0 flex-1 truncate font-medium text-foreground">
+                            {ex.name}
+                          </span>
+                          <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
+                            {ex.sets} × {ex.reps}
+                            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                          </span>
+                        </Button>
                       </li>
                     ))}
                   </ul>
@@ -533,6 +547,13 @@ function PlanCard({
           </div>
         )}
       </CardContent>
+      <ExerciseDetailDialog
+        exercise={selectedExercise}
+        open={selectedExercise !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setSelectedExercise(null);
+        }}
+      />
     </Card>
   );
 }
