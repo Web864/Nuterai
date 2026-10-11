@@ -334,7 +334,7 @@ export function nextOccurrence(r: ReminderRow, from: Date = new Date()): Date | 
   const snoozed = r.snoozed_until ?? r.snooze_until;
   if (snoozed) {
     const snz = new Date(snoozed);
-    if (snz > from) return snz;
+    if (snz >= from) return snz;
   }
 
   const rule = normalizeRule(r.recurrence_rule, r.days_of_week, r.is_recurring);
@@ -342,12 +342,12 @@ export function nextOccurrence(r: ReminderRow, from: Date = new Date()): Date | 
     const value = r.one_time_at ?? r.next_trigger_at;
     if (!value) return null;
     const t = new Date(value);
-    return t > from ? t : null;
+    return t >= from ? t : null;
   }
 
   if (rule.intervalMinutes && r.last_triggered_at) {
     const next = new Date(new Date(r.last_triggered_at).getTime() + rule.intervalMinutes * 60_000);
-    if (next > from) return next;
+    if (next >= from) return next;
   }
 
   const tz = r.timezone || "UTC";
@@ -361,7 +361,7 @@ export function nextOccurrence(r: ReminderRow, from: Date = new Date()): Date | 
     if (!days.includes(p.weekday)) continue;
     for (const t of [...times].sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m))) {
       const cand = zonedTimeToUtc(p.year, p.month, p.day, t.h, t.m, tz);
-      if (cand > from) return cand;
+      if (cand >= from) return cand;
     }
   }
   return null;

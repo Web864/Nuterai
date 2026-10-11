@@ -8,6 +8,7 @@ import {
   deriveRoutineMealTimes,
   deriveRoutineWorkoutTime,
   detectTimezone,
+  nextOccurrence,
   resolveTimezone,
 } from "@/lib/reminders";
 
@@ -34,6 +35,44 @@ describe("automatic reminder schedule", () => {
     });
 
     expect(schedule).toMatchObject({ breakfast: "07:15", dinner: "19:30", lunch: "13:45" });
+  });
+
+  it("fires reminders at the exact scheduled instant instead of skipping them", () => {
+    const scheduledAt = new Date("2024-02-08T08:00:00.000Z");
+    const reminder = {
+      id: "reminder-1",
+      user_id: "user-1",
+      title: "Water",
+      message: "Drink water",
+      type: "water",
+      scheduled_time: "08:00",
+      timezone: "UTC",
+      recurrence_rule: { frequency: "daily" },
+      enabled: true,
+      is_active: true,
+      is_recurring: true,
+      created_at: scheduledAt.toISOString(),
+      updated_at: scheduledAt.toISOString(),
+      source: "manual",
+      created_by: "user",
+      days_of_week: [0, 1, 2, 3, 4, 5, 6],
+      times: ["08:00"],
+      one_time_at: null,
+      last_triggered_at: null,
+      next_trigger_at: null,
+      snoozed_until: null,
+      snooze_until: null,
+      source_id: null,
+      linked_plan_item_id: null,
+      metadata: null,
+      user_timezone: null,
+      is_deleted: false,
+      deleted_at: null,
+      notification_channel: null,
+      reminder_group: null,
+    } as const;
+
+    expect(nextOccurrence(reminder as never, scheduledAt)?.toISOString()).toBe(scheduledAt.toISOString());
   });
 
   it("retains legacy defaults when a complete routine is unavailable", () => {
