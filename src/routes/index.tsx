@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/features/auth/use-session";
+import { useTheme } from "@/components/theme-provider";
 import heroImage from "@/assets/hero-food.jpg";
 import howItWorksCta from "@/assets/how-it-works-cta.png";
 import Image from "@/assets/image.png";
@@ -98,7 +99,9 @@ const features = [
 
 function LandingPage() {
   const session = useSession();
+  const { resolvedTheme } = useTheme();
   const navigate = useNavigate();
+  const showDarkVisuals = resolvedTheme === "dark";
 
   useEffect(() => {
     if (session.data) {
@@ -282,6 +285,7 @@ function LandingPage() {
                 title="Tell us about you"
                 description="Two minutes on your body, goals, and lifestyle. Nothing invasive."
                 backgroundPosition="-82px -86px"
+                showDarkVisuals={showDarkVisuals}
               />
               <JourneyStep
                 number="2"
@@ -289,6 +293,7 @@ function LandingPage() {
                 title="Get your plan"
                 description="NutriAI builds calorie targets and meal guidance around your goals and preferences."
                 backgroundPosition="-376px -89px"
+                showDarkVisuals={showDarkVisuals}
               />
               <JourneyStep
                 number="3"
@@ -296,6 +301,7 @@ function LandingPage() {
                 title="Live better"
                 description="Log, learn, and let NutriAI adapt your plan as your life changes."
                 backgroundPosition="-675px -86px"
+                showDarkVisuals={showDarkVisuals}
               />
             </div>
           </div>
@@ -303,22 +309,26 @@ function LandingPage() {
 
         <section className="px-5 pb-20 sm:px-8 sm:pb-24 lg:px-10">
           <div className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] border border-primary/35 bg-gradient-hero px-6 py-12 shadow-hero sm:rounded-[2.5rem] sm:px-12 md:grid-cols-[1fr_1.4fr_1fr] md:items-center md:py-14">
-            <div
-              aria-hidden="true"
-              className="reference-art absolute inset-0 opacity-95"
-              style={{
-                backgroundImage: "url(" + cta1 + ")",
-                backgroundSize: "cover",
-              }}
-            />
-            <div
-              aria-hidden="true"
-              className="reference-art absolute inset-y-0 right-0 w-1/2 opacity-90"
-              style={{
-                backgroundImage: "url(" + cta2 + ")",
-                backgroundSize: "cover",
-              }}
-            />
+            {showDarkVisuals && (
+              <>
+                <div
+                  aria-hidden="true"
+                  className="reference-art absolute inset-0 opacity-95"
+                  style={{
+                    backgroundImage: "url(" + cta1 + ")",
+                    backgroundSize: "cover",
+                  }}
+                />
+                <div
+                  aria-hidden="true"
+                  className="reference-art absolute inset-y-0 right-0 w-1/2 opacity-90"
+                  style={{
+                    backgroundImage: "url(" + cta2 + ")",
+                    backgroundSize: "cover",
+                  }}
+                />
+              </>
+            )}
             <div className="relative z-10 col-start-2 mx-auto max-w-xl text-center">
               <h2 className="text-balance font-display text-4xl text-foreground sm:text-5xl">
                 Ready to feel your best?
@@ -461,21 +471,34 @@ function JourneyStep({
   title,
   description,
   backgroundPosition,
+  showDarkVisuals,
 }: {
   number: string;
   icon: typeof Leaf;
   title: string;
   description: string;
   backgroundPosition: string;
+  showDarkVisuals: boolean;
 }) {
   return (
     <div>
-      <div
-        role="img"
-        aria-label={title + " NutriAI app screen"}
-        className="reference-art mx-auto h-[225px] w-[178px]"
-        style={{ backgroundImage: "url(" + howItWorksCta + ")", backgroundPosition }}
-      />
+      {showDarkVisuals ? (
+        <div
+          role="img"
+          aria-label={title + " NutriAI app screen"}
+          className="reference-art mx-auto h-[225px] w-[178px]"
+          style={{ backgroundImage: "url(" + howItWorksCta + ")", backgroundPosition }}
+        />
+      ) : (
+        <div
+          aria-hidden="true"
+          className="mx-auto flex h-[225px] w-[178px] items-center justify-center rounded-2xl border border-border/70 bg-card shadow-soft"
+        >
+          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Icon className="h-8 w-8" />
+          </span>
+        </div>
+      )}
       <div className="mt-3 flex items-center gap-3">
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <Icon className="h-4 w-4" />

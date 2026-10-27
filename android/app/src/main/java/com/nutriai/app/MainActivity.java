@@ -7,6 +7,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(android.os.Bundle savedInstanceState) {
         registerPlugin(ScreenBreakUsagePlugin.class);
+        registerPlugin(BackgroundReminderSettingsPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

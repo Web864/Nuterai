@@ -28,6 +28,7 @@ import {
   type ExactAlarmAccess,
 } from "@/features/reminders/useReminderEngine";
 import { isNative } from "@/lib/native";
+import { openAndroidAppDetailsSettings } from "@/lib/background-reminder-settings";
 import {
   REMINDER_TYPES,
   SNOOZE_OPTIONS,
@@ -63,6 +64,7 @@ import {
   Bell,
   BellOff,
   Check,
+  CircleAlert,
   Clock,
   Droplets,
   Moon,
@@ -164,6 +166,7 @@ function RemindersPage() {
           <ExactAlarmCard onChange={setExactAlarmAccess} />
         )}
 
+        {isNative && <ClosedAppReminderHelpCard />}
         <div className="mb-6 grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <AutoDietCard
             userId={userId}
@@ -200,7 +203,6 @@ function RemindersPage() {
             </CardContent>
           </Card>
         </div>
-
         <Tabs defaultValue="today" className="w-full">
           <TabsList className="flex h-auto w-full min-w-0 flex-wrap rounded-2xl">
             <TabsTrigger value="today" className="rounded-xl">
@@ -308,6 +310,46 @@ function ExactAlarmCard({ onChange }: { onChange: (access: ExactAlarmAccess) => 
         >
           <Clock className="mr-2 h-4 w-4" />
           Open Alarms & reminders
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+function ClosedAppReminderHelpCard() {
+  const [openingSettings, setOpeningSettings] = useState(false);
+
+  async function handleOpenSettings() {
+    setOpeningSettings(true);
+    const opened = await openAndroidAppDetailsSettings();
+    setOpeningSettings(false);
+
+    if (!opened) {
+      toast.error("Could not open Android app settings on this device.");
+    }
+  }
+
+  return (
+    <Card className="mb-6 rounded-3xl border-amber-500/40 bg-amber-500/5">
+      <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="flex items-center gap-2 font-medium">
+            <CircleAlert className="h-4 w-4 text-amber-600" />    
+            Background reminders may be restricted
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Some Android phones can block reminders after an app is removed from Recent Apps. In
+            Android settings, allow NutriAI unrestricted background or battery access and enable
+            auto-start if your phone offers it.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="rounded-full"
+          onClick={() => void handleOpenSettings()}
+          disabled={openingSettings}
+        >
+          {openingSettings ? "Opening settings..." : "Open app settings"}
         </Button>
       </CardContent>
     </Card>
