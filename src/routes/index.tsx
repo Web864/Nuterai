@@ -12,6 +12,8 @@ import {
   ChefHat,
   Dumbbell,
   Heart,
+  Github,
+  Linkedin,
   Leaf,
   MoonStar,
   ScanLine,
@@ -374,6 +376,29 @@ function SiteFooter() {
           </span>
           <span className="font-display text-foreground">NutriAI</span>
           <span>Copyright {new Date().getFullYear()}</span>
+        </div>
+        <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:gap-3">
+          <span>Built by Rabia Naz</span>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://www.linkedin.com/in/rabia-naz-01263b339"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Rabia Naz on LinkedIn (opens in a new tab)"
+              className="rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <Linkedin aria-hidden="true" className="h-4 w-4" />
+            </a>
+            <a
+              href="https://github.com/Web864"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Rabia Naz on GitHub (opens in a new tab)"
+              className="rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <Github aria-hidden="true" className="h-4 w-4" />
+            </a>
+          </div>
         </div>
         <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
           <Link to="/about" className="hover:text-foreground">
