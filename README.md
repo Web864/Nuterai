@@ -1,5 +1,7 @@
 # NutriAI
 
+![CI](https://github.com/Web864/nuterai/actions/workflows/ci.yml/badge.svg)
+
 AI-powered nutrition, fitness, and lifestyle coaching. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 for the stack and system design, and [docs/BILLING.md](docs/BILLING.md) for the subscription model.
 
