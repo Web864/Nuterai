@@ -14,7 +14,6 @@ const NETWORK_ERROR_MESSAGE =
   "Unable to analyze because your internet connection is unavailable or too slow. Please try again.";
 
 const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
-// const MODEL = "gemini-flash-latest";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
