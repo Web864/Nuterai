@@ -1,6 +1,6 @@
 # NutriAI — architecture
 
-Stack: TanStack Start (React 19 + Vite 7), Tailwind v4 design tokens, Supabase
+Stack: TanStack Start (React 19 + Vite 8), Tailwind v4 design tokens, Supabase
 (Postgres + Auth + storage) and the Gemini API directly (gemini-flash-latest).
 
 ## Layout
