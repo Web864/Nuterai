@@ -1,11 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { PhoneMockup, type PhoneMockupScreen } from "@/components/landing/PhoneMockup";
 import { useSession } from "@/features/auth/use-session";
 import { useTheme } from "@/components/theme-provider";
 import heroImage from "@/assets/hero-food.jpg";
-import howItWorksCta from "@/assets/how-it-works-cta.png";
-import Image from "@/assets/image.png";
 import cta1 from "@/assets/cta1.png";
 import cta2 from "@/assets/cta2.png";
 import {
@@ -284,24 +283,21 @@ function LandingPage() {
                 icon={Leaf}
                 title="Tell us about you"
                 description="Two minutes on your body, goals, and lifestyle. Nothing invasive."
-                backgroundPosition="-82px -86px"
-                showDarkVisuals={showDarkVisuals}
+                screen="onboarding"
               />
               <JourneyStep
                 number="2"
                 icon={ChefHat}
                 title="Get your plan"
                 description="NutriAI builds calorie targets and meal guidance around your goals and preferences."
-                backgroundPosition="-376px -89px"
-                showDarkVisuals={showDarkVisuals}
+                screen="plan"
               />
               <JourneyStep
                 number="3"
                 icon={Heart}
                 title="Live better"
                 description="Log, learn, and let NutriAI adapt your plan as your life changes."
-                backgroundPosition="-675px -86px"
-                showDarkVisuals={showDarkVisuals}
+                screen="progress"
               />
             </div>
           </div>
@@ -470,35 +466,17 @@ function JourneyStep({
   icon: Icon,
   title,
   description,
-  backgroundPosition,
-  showDarkVisuals,
+  screen,
 }: {
   number: string;
   icon: typeof Leaf;
   title: string;
   description: string;
-  backgroundPosition: string;
-  showDarkVisuals: boolean;
+  screen: PhoneMockupScreen;
 }) {
   return (
     <div>
-      {showDarkVisuals ? (
-        <div
-          role="img"
-          aria-label={title + " NutriAI app screen"}
-          className="reference-art mx-auto h-[225px] w-[178px]"
-          style={{ backgroundImage: "url(" + howItWorksCta + ")", backgroundPosition }}
-        />
-      ) : (
-        <div
-          aria-hidden="true"
-          className="mx-auto flex h-[225px] w-[178px] items-center justify-center rounded-2xl border border-border/70 bg-card shadow-soft"
-        >
-          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Icon className="h-8 w-8" />
-          </span>
-        </div>
-      )}
+      <PhoneMockup screen={screen} />
       <div className="mt-3 flex items-center gap-3">
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <Icon className="h-4 w-4" />
