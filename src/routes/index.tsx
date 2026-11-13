@@ -3,10 +3,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PhoneMockup, type PhoneMockupScreen } from "@/components/landing/PhoneMockup";
 import { useSession } from "@/features/auth/use-session";
-import { useTheme } from "@/components/theme-provider";
 import heroImage from "@/assets/hero-food.jpg";
-import cta1 from "@/assets/cta1.png";
-import cta2 from "@/assets/cta2.png";
 import {
   Activity,
   ArrowRight,
@@ -98,9 +95,7 @@ const features = [
 
 function LandingPage() {
   const session = useSession();
-  const { resolvedTheme } = useTheme();
   const navigate = useNavigate();
-  const showDarkVisuals = resolvedTheme === "dark";
 
   useEffect(() => {
     if (session.data) {
@@ -304,28 +299,18 @@ function LandingPage() {
         </section>
 
         <section className="px-5 pb-20 sm:px-8 sm:pb-24 lg:px-10">
-          <div className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] border border-primary/35 bg-gradient-hero px-6 py-12 shadow-hero sm:rounded-[2.5rem] sm:px-12 md:grid-cols-[1fr_1.4fr_1fr] md:items-center md:py-14">
-            {showDarkVisuals && (
-              <>
-                <div
-                  aria-hidden="true"
-                  className="reference-art absolute inset-0 opacity-95"
-                  style={{
-                    backgroundImage: "url(" + cta1 + ")",
-                    backgroundSize: "cover",
-                  }}
-                />
-                <div
-                  aria-hidden="true"
-                  className="reference-art absolute inset-y-0 right-0 w-1/2 opacity-90"
-                  style={{
-                    backgroundImage: "url(" + cta2 + ")",
-                    backgroundSize: "cover",
-                  }}
-                />
-              </>
-            )}
-            <div className="relative z-10 col-start-2 mx-auto max-w-xl text-center">
+          <div className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] border border-primary/35 bg-gradient-hero px-6 py-12 shadow-hero sm:rounded-[2.5rem] sm:px-12 md:grid-cols-[minmax(0,1fr)_220px] md:items-center md:py-14">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -left-12 top-0 size-64 rounded-full bg-primary/20 blur-3xl"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-12 right-10 hidden rotate-6 md:block"
+            >
+              <PhoneMockup screen="plan" />
+            </div>
+            <div className="relative z-10 mx-auto min-w-0 max-w-xl text-center md:mx-0 md:text-left">
               <h2 className="text-balance font-display text-4xl text-foreground sm:text-5xl">
                 Ready to feel your best?
               </h2>

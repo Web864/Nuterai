@@ -1280,10 +1280,6 @@
       --card-padding: 1.1rem;
     }
   }
-  .reference-art {
-    background-repeat: no-repeat;
-    background-size: 900px 629px;
-  }
   @keyframes premium-enter {
     from {
       opacity: 0;
