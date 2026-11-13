@@ -149,7 +149,7 @@ function LandingPage() {
               <div className="landing-trust-grid mt-9 grid max-w-md min-w-0 border-t border-border/60 pt-6">
                 <TrustPoint icon={Sparkles} label="Personalized" detail="Plans" />
                 <TrustPoint icon={Brain} label="AI-powered" detail="Insights" />
-                <TrustPoint icon={BarChart3} label="Real" detail="Results" />
+                <TrustPoint icon={BarChart3} label="Progress" detail="Tracking" />
               </div>
             </div>
 
