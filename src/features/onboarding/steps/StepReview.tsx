@@ -38,9 +38,11 @@ export function StepReview({
         description={`Based on your body and lifestyle, this is what NutriAI recommends to help you ${goalLabel}.`}
       />
 
-      <div className="rounded-3xl bg-gradient-hero p-8 text-primary-foreground shadow-hero">
+      <div className="rounded-3xl bg-gradient-hero p-8 text-foreground shadow-hero">
         <p className="text-xs uppercase tracking-wider opacity-70">Daily calorie target</p>
-        <p className="mt-2 font-display text-6xl">{targets.calories.toLocaleString()}</p>
+        <p className="mt-2 font-sans text-3xl font-bold tabular-nums sm:text-4xl">
+          {targets.calories.toLocaleString()}
+        </p>
         <p className="mt-1 text-sm opacity-80">
           kcal · maintenance {targets.tdee.toLocaleString()} kcal
         </p>
@@ -70,12 +72,14 @@ export function StepReview({
 
       <div className="mt-3 rounded-2xl border border-border bg-secondary/50 p-4">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/20 text-accent-foreground">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/20 text-primary">
             <Droplets className="h-5 w-5" />
           </span>
           <div>
             <p className="text-xs text-muted-foreground">Daily water goal</p>
-            <p className="font-display text-xl">{targets.waterMl.toLocaleString()} ml</p>
+            <p className="font-sans text-xl font-semibold tabular-nums">
+              {targets.waterMl.toLocaleString()} ml
+            </p>
           </div>
         </div>
       </div>
@@ -105,7 +109,7 @@ function MacroTile({
         {icon}
         <span className="text-xs uppercase tracking-wider">{label}</span>
       </div>
-      <p className="mt-1.5 font-display text-2xl">
+      <p className="mt-1.5 font-sans text-2xl font-semibold tabular-nums">
         {value}
         <span className="ml-1 text-sm font-sans font-normal text-muted-foreground">{unit}</span>
       </p>
