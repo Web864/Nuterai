@@ -13,6 +13,24 @@
   --font-sans: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
   --font-display: "Fraunces Variable", "Fraunces", Georgia, serif;
 
+  /* Shared type scale; explicit page and display sizes remain intentional. */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1rem;
+  --text-base--line-height: 1.625;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.4;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.35;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.3;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 1.2;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 1.15;
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -65,6 +83,14 @@
 
 :root {
   --radius: 1.15rem;
+  --marketing-width: 80rem;
+  --workspace-width: 100rem;
+  --page-gutter: clamp(1rem, 3vw, 2.5rem);
+  --section-space: clamp(3rem, 6vw, 5.5rem);
+  --heading-section: clamp(1.875rem, 1.25rem + 2vw, 3rem);
+  --nutrient-protein: oklch(0.72 0.15 155);
+  --nutrient-carbs: oklch(0.73 0.1 230);
+  --nutrient-fat: oklch(0.78 0.12 75);
 
   /* Core palette — Fresh & Organic */
   --background: oklch(0.118 0.025 157);
@@ -164,7 +190,7 @@
   --accent: oklch(0.56 0.16 153);
   --accent-foreground: oklch(0.985 0.01 115);
   --border: oklch(0.72 0.045 146 / 0.45);
-  --input: #2de3a1;
+  --input: oklch(0.6 0.035 148);
   --ring: oklch(0.56 0.16 153);
   --sidebar: oklch(0.955 0.028 135);
   --sidebar-foreground: oklch(0.22 0.035 151);
@@ -222,7 +248,7 @@
   --destructive-foreground: oklch(0.98 0 0);
 
   --border: oklch(1 0 0 / 10%);
-  --input: #2de3a1;
+  --input: oklch(0.56 0.035 148);
   --ring: oklch(0.72 0.15 155);
 
   --sidebar: oklch(0.19 0.02 155);
@@ -268,6 +294,8 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-size: var(--text-base);
+    line-height: 1.625;
     /* Gesture-nav / notch clearance inside the Android WebView (viewport-fit=cover
        in __root.tsx's head enables these); 0px everywhere else. */
     padding-left: env(safe-area-inset-left);
@@ -348,12 +376,15 @@
   h4 {
     font-family: var(--font-display);
     font-optical-sizing: auto;
-    letter-spacing: 0;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
     color: var(--color-foreground);
   }
   h1 {
     font-weight: 500;
-    letter-spacing: 0;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
   }
 }
 
@@ -378,14 +409,14 @@
   }
 
   .premium-card-hover:hover {
-    transform: translateY(-3px);
+    transform: none;
     border-color: color-mix(in oklch, var(--color-primary) 45%, transparent);
     box-shadow: var(--shadow-elevated);
   }
 
   .emerald-text {
     color: var(--color-primary);
-    text-shadow: 0 0 32px oklch(0.77 0.18 153 / 0.25);
+    text-shadow: none;
   }
 
   .text-balance {
@@ -472,14 +503,14 @@
 
   .dashboard-hero > div > p:first-child {
     color: var(--color-primary);
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
   .dashboard-hero h1 {
-    line-height: 1.04;
+    line-height: 1.15;
   }
 
   .dashboard-hero > a,
@@ -569,7 +600,7 @@
     font-size: clamp(2.6rem, 4.4vw, 4.25rem);
   }
   .dashboard-reference-hero > div > p:first-child {
-    font-size: 0.72rem;
+    font-size: 0.75rem;
   }
   .dashboard-log-button {
     min-width: 160px;
@@ -714,7 +745,7 @@
     font-size: 0.9rem;
   }
   .dashboard-action-card p:last-child {
-    font-size: 0.72rem;
+    font-size: 0.75rem;
   }
   .dashboard-action-card:hover {
     transform: translateX(3px);
@@ -946,42 +977,50 @@
     }
   }
 
-  /* Landing-page responsive composition. */
+  /* Marketing composition: one shared spacing/type system at every width. */
   .landing-page {
     overflow-x: clip;
   }
   .landing-header-inner {
-    min-height: 64px;
-    padding: 0.7rem max(1rem, env(safe-area-inset-left)) 0.7rem
-      max(1rem, env(safe-area-inset-right));
-    gap: 0.65rem;
+    min-height: 4.5rem;
+    padding: 0.75rem var(--page-gutter);
+    gap: 1rem;
   }
   .landing-header-actions {
-    gap: 0.15rem;
-    flex-shrink: 0;
+    min-width: 0;
+    gap: 0.5rem;
+    justify-self: end;
+  }
+  .landing-header-actions > a,
+  .landing-header-actions > button {
+    min-height: 2.75rem;
   }
   .landing-hero-grid {
-    gap: clamp(2.25rem, 6vw, 4rem);
-    padding: clamp(2.5rem, 7vw, 4.75rem) max(1rem, env(safe-area-inset-left))
-      clamp(3.5rem, 8vw, 6rem) max(1rem, env(safe-area-inset-right));
+    gap: clamp(2rem, 4vw, 4rem);
+    padding: clamp(2.5rem, 5vw, 5rem) var(--page-gutter) var(--section-space);
   }
   .landing-hero-title {
-    font-size: clamp(2.75rem, 11vw, 4.6rem);
-    line-height: 0.96;
+    max-width: 13ch;
+    font-size: clamp(2.375rem, 1.375rem + 3.5vw, 4.75rem);
+    font-weight: 500;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
   }
   .landing-hero-description {
-    font-size: clamp(0.95rem, 3.9vw, 1.1rem);
+    max-width: 48ch;
+    font-size: clamp(0.9375rem, 0.875rem + 0.25vw, 1.125rem);
     line-height: 1.65;
   }
   .landing-hero-actions {
-    gap: 0.65rem;
+    gap: 0.75rem;
   }
   .landing-hero-actions > * {
-    min-height: 48px;
+    min-height: 3rem;
+    font-size: 0.9375rem;
   }
   .landing-trust-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.6rem;
+    gap: 0.75rem;
   }
   .landing-trust-item {
     min-width: 0;
@@ -989,177 +1028,180 @@
   }
   .landing-trust-item > p {
     min-width: 0;
-    overflow-wrap: normal;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
   }
   .landing-preview {
-    aspect-ratio: 1.16 / 1;
+    container-type: inline-size;
+    aspect-ratio: 1.16;
   }
   .landing-preview > .absolute.-inset-8 {
-    inset: -8%;
+    inset: -5%;
   }
   .landing-preview-frame {
     height: 100%;
-    border-radius: clamp(1.25rem, 5vw, 2.5rem);
+    border-radius: clamp(1.25rem, 3vw, 2rem);
   }
   .landing-preview-image {
     display: block;
     height: 100%;
-    aspect-ratio: 1.16 / 1;
+    aspect-ratio: 1.16;
   }
   .landing-overlay {
     z-index: 2;
-    border-color: color-mix(in oklch, var(--color-border) 90%, white 10%);
-    box-shadow: 0 10px 24px color-mix(in oklch, black 24%, transparent);
+    border-color: var(--color-border);
+    background: color-mix(in oklch, var(--color-card) 94%, transparent);
+    box-shadow: var(--shadow-soft);
   }
   .landing-analysis {
-    top: 23%;
-    left: clamp(0.6rem, 2.7vw, 1.75rem);
-    width: clamp(9.3rem, 35%, 12.5rem);
-    padding: clamp(0.65rem, 2vw, 1.25rem);
+    top: 26%;
+    left: 1rem;
+    width: min(45%, 12rem);
+    padding: clamp(0.75rem, 2cqi, 1.125rem);
   }
   .landing-calories {
-    top: clamp(0.65rem, 2vw, 1.25rem);
-    right: clamp(0.65rem, 2vw, 1.25rem);
-    padding: clamp(0.55rem, 1.5vw, 0.85rem) clamp(0.7rem, 2vw, 1rem);
+    top: 1rem;
+    right: 1rem;
+    padding: 0.75rem;
+    font-variant-numeric: tabular-nums;
   }
   .landing-message {
-    right: clamp(0.65rem, 2vw, 1.25rem);
-    bottom: clamp(0.65rem, 2vw, 1.25rem);
-    width: min(44%, 14rem);
-    padding: clamp(0.55rem, 1.5vw, 0.85rem) clamp(0.65rem, 2vw, 1rem);
+    right: 1rem;
+    bottom: 2.75rem;
+    width: min(46%, 13rem);
+    padding: 0.75rem;
   }
-
-  @media (max-width: 639px) {
-    .landing-header-inner {
-      min-height: 60px;
-    }
-    .landing-header-inner > a {
-      gap: 0.4rem;
-      min-width: 0;
-    }
-    .landing-header-inner > a > span:last-child {
-      font-size: 1rem;
-    }
-    .landing-header nav {
-      display: none;
-    }
-    .landing-header-actions > * {
-      min-height: 40px;
-      padding-inline: 0.55rem;
-      font-size: 0.78rem;
-    }
-    .landing-header-actions > *:last-child {
-      padding-inline: 0.8rem;
-    }
-    .landing-hero-grid {
-      padding-top: 2.1rem;
-      padding-bottom: 3.25rem;
-    }
-    .landing-hero-copy {
-      max-width: none;
-    }
-    .landing-hero-title {
-      font-size: clamp(2.65rem, 13.1vw, 3.45rem);
-    }
-    .landing-hero-description {
-      margin-top: 1.15rem;
-    }
-    .landing-hero-actions {
-      flex-direction: column;
-      margin-top: 1.65rem;
-    }
-    .landing-hero-actions > * {
-      width: 100%;
-    }
-    .landing-trust-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.35rem;
-      margin-top: 2rem;
-      padding-top: 1rem;
-    }
-    .landing-trust-item {
-      gap: 0.35rem;
-    }
-    .landing-trust-item > span {
-      width: 1.75rem;
-      height: 1.75rem;
-      border-radius: 0.5rem;
-    }
-    .landing-trust-item > p {
-      font-size: 0.66rem;
-      line-height: 1.25;
-    }
-    .landing-trust-item > p > span {
-      font-size: 0.68rem;
-      overflow-wrap: normal;
-    }
-    .landing-preview {
-      width: min(100%, 34rem);
-    }
-    .landing-analysis {
-      top: 18%;
-      left: 0.6rem;
-      width: min(43%, 10rem);
-    }
+  .landing-example-label {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 1rem;
+    z-index: 2;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    background: var(--color-background);
+    color: var(--color-muted-foreground);
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+  .landing-section {
+    padding-block: var(--section-space);
+  }
+  .landing-section-heading,
+  .landing-final-cta h2 {
+    font-size: var(--heading-section);
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+  }
+  .landing-safety-section {
+    padding-block: clamp(2.5rem, 4vw, 3.5rem);
+    background: color-mix(in oklch, var(--color-secondary) 28%, transparent);
+  }
+  .landing-feature-card {
+    container-type: inline-size;
+    padding: clamp(1.25rem, 2.5vw, 1.75rem);
+  }
+  .landing-feature-card h3 {
+    font-size: clamp(1.25rem, 1.1rem + 0.4vw, 1.5rem);
+    line-height: 1.3;
+  }
+  .landing-feature-card > p {
+    max-width: 38ch;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+  }
+  .landing-food-grid {
+    align-content: center;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  }
+  #how-it-works {
+    scroll-margin-top: 5rem;
+  }
+  .landing-footer a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+  }
+  .landing-footer a[aria-label] {
+    min-width: 2.75rem;
+    justify-content: center;
+  }
+  @container (max-width: 22rem) {
     .landing-analysis > .flex {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.45rem;
+      gap: 0.5rem;
     }
     .landing-analysis .h-9,
     .landing-calories .h-9 {
       width: 1.75rem;
       height: 1.75rem;
-      border-radius: 0.55rem;
-    }
-    .landing-analysis .text-sm {
-      font-size: 0.7rem;
-    }
-    .landing-analysis .text-xs,
-    .landing-message .text-xs,
-    .landing-calories .text-xs {
-      font-size: 0.61rem;
-      line-height: 1.35;
     }
     .landing-analysis .mt-4 {
-      margin-top: 0.55rem;
+      margin-top: 0.75rem;
     }
-    .landing-analysis .space-y-2 > :not([hidden]) ~ :not([hidden]) {
-      margin-top: 0.25rem;
-    }
-    .landing-calories {
-      gap: 0.4rem;
-    }
-    .landing-calories .text-lg {
-      font-size: 0.85rem;
+    .landing-analysis .text-sm {
+      font-size: 0.75rem;
     }
     .landing-message {
-      width: min(48%, 10.75rem);
-    }
-    .landing-message .gap-2 {
-      gap: 0.3rem;
-    }
-    .landing-message .h-4 {
-      width: 0.75rem;
-      height: 0.75rem;
+      display: none;
     }
   }
-
-  @media (min-width: 640px) and (max-width: 1023px) {
-    .landing-hero-grid {
-      padding-inline: clamp(2rem, 7vw, 4rem);
-    }
-    .landing-preview {
-      width: min(100%, 42rem);
-    }
-  }
-
-  @media (min-width: 1024px) {
+  @media (max-width: 639px) {
     .landing-header-inner {
-      padding-inline: clamp(2rem, 5vw, 3.5rem);
+      gap: 0.5rem;
     }
-    .landing-hero-grid {
-      padding-inline: clamp(2rem, 5vw, 3.5rem);
+    .landing-header-inner > a {
+      gap: 0.5rem;
+      min-width: 0;
+    }
+    .landing-header-inner > a > span:last-child {
+      font-size: 1.125rem;
+    }
+    .landing-hero-title {
+      max-width: 14ch;
+      font-size: clamp(2.375rem, 1rem + 6vw, 3rem);
+    }
+    .landing-hero-actions {
+      flex-direction: column;
+    }
+    .landing-hero-actions > * {
+      width: 100%;
+      white-space: normal;
+      text-align: center;
+    }
+    .landing-trust-grid {
+      gap: 0.5rem;
+      margin-top: 1.75rem;
+      padding-top: 1.25rem;
+    }
+    .landing-trust-item {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .landing-analysis {
+      top: 30%;
+      left: 0.75rem;
+      width: 48%;
+    }
+    .landing-calories {
+      top: 0.75rem;
+      right: 0.75rem;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+    }
+    .landing-calories .text-lg {
+      font-size: 1rem;
+    }
+    .landing-message {
+      display: none;
+    }
+  }
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .landing-preview {
+      width: min(100%, 40rem);
+    }
+  }
+  @media (max-width: 47.99rem) {
+    .landing-footer > div {
+      flex-direction: column;
     }
   }
 
@@ -1171,9 +1213,9 @@
       var(--color-surface-elevated) 92%,
       var(--color-card)
     );
-    --card-border: #2de3a1;
-    --card-border-accent: #2de3a1;
-    --card-radius: 1.75rem;
+    --card-border: var(--color-border);
+    --card-border-accent: color-mix(in oklch, var(--color-primary) 45%, var(--color-border));
+    --card-radius: 1.25rem;
     --card-padding: 1.5rem;
     --card-shadow: var(--shadow-soft);
   }
@@ -1181,8 +1223,8 @@
   .dark {
     --surface-card: #0b2115;
     --surface-elevated-card: #10291b;
-    --card-border: #2de3a1;
-    --card-border-accent: #2de3a1;
+    --card-border: var(--color-border);
+    --card-border-accent: color-mix(in oklch, var(--color-primary) 45%, var(--color-border));
     --card-shadow: 0 18px 50px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(255 255 255 / 3%);
   }
 
@@ -1213,7 +1255,7 @@
   }
   .nutriai-card [data-slot="card-title"] {
     font-weight: 600;
-    line-height: 1.2;
+    line-height: 1.4;
   }
 
   .nutriai-card-stat {
@@ -1279,10 +1321,6 @@
       --card-radius: 1.25rem;
       --card-padding: 1.1rem;
     }
-  }
-  .reference-art {
-    background-repeat: no-repeat;
-    background-size: 900px 629px;
   }
   @keyframes premium-enter {
     from {
@@ -1353,8 +1391,6 @@
 }
 @utility transition-organic {
   transition: all var(--transition-base);
-  max-width:230px ;
-  padding: 17px;
 }
 
 @layer base {
@@ -1425,30 +1461,6 @@
   .landing-preview {
     min-width: 0;
   }
-
-  .landing-header-actions {
-    min-width: 0;
-    flex-shrink: 1;
-    gap: 0.25rem;
-  }
-
-  @media (max-width: 420px) {
-    .landing-header-actions .landing-secondary-action,
-    .landing-hero-actions .landing-secondary-action {
-      width: 100%;
-    }
-
-    .landing-hero-actions {
-      width: 100%;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .landing-hero-actions > * {
-      min-width: 0;
-      flex: 1 1 100%;
-    }
-  }
 }
 
 /* =========================================================
@@ -1490,15 +1502,18 @@
   }
 
   .dashboard-nav {
-    min-height: 50px;
-    height: 50px;
+    min-height: 4rem;
+    height: auto;
     border-color: rgba(43, 227, 161, 0.18) !important;
     background: rgba(2, 15, 10, 0.84);
-    box-shadow: 0 1px 0 rgba(43, 227, 161, 0.05), 0 14px 35px rgba(0, 0, 0, 0.16);
+    box-shadow:
+      0 1px 0 rgba(43, 227, 161, 0.05),
+      0 14px 35px rgba(0, 0, 0, 0.16);
   }
 
   .dashboard-nav > div {
-    height: 50px;
+    min-height: 4rem;
+    height: auto;
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
   }
@@ -1520,7 +1535,7 @@
 
   .dashboard-nav .flex.items-center.gap-2 > a,
   .dashboard-nav .flex.items-center.gap-2 > button {
-    min-height: 32px;
+    min-height: 2.75rem;
     color: rgba(242, 247, 243, 0.9);
     border-radius: 0.5rem;
   }
@@ -1532,7 +1547,9 @@
   }
 
   .dashboard-main {
-    max-width: 960px !important;
+    max-width: var(--workspace-width);
+    width: 100%;
+    padding-inline: var(--page-gutter);
     padding-top: 1.55rem;
   }
 
@@ -1571,14 +1588,14 @@
   .dashboard-reference-hero h1 {
     margin-top: 0.35rem;
     font-size: clamp(2.4rem, 4.2vw, 3.55rem);
-    line-height: 0.98;
-    letter-spacing: -0.045em;
-    text-shadow: 0 7px 28px rgba(0, 0, 0, 0.28);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    text-shadow: none;
   }
 
   .dashboard-reference-hero > div > p:first-child {
     color: #a8c8bc;
-    font-size: 0.66rem;
+    font-size: 0.75rem;
     letter-spacing: 0.08em;
   }
 
@@ -1614,7 +1631,7 @@
     font-family: var(--font-display);
     font-size: 1.2rem;
     font-style: italic;
-    line-height: 0.96;
+    line-height: 1.1;
     transform: rotate(-7deg);
     text-align: center;
   }
@@ -1674,7 +1691,7 @@
   .dashboard-reference-metrics .dashboard-action-card p:first-of-type {
     margin-top: 0.75rem;
     color: #b2c2bd;
-    font-size: 0.68rem;
+    font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.09em;
   }
@@ -1682,13 +1699,14 @@
   .dashboard-reference-metrics .dashboard-action-card .font-display {
     margin-top: 0.1rem;
     font-size: 1.9rem;
-    font-family: var(--font-display);
-    font-weight: 500;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
     letter-spacing: -0.025em;
   }
 
   .dashboard-reference-metrics .dashboard-action-card .font-display span {
-    font-size: 0.84rem;
+    font-size: 0.875rem;
     letter-spacing: 0;
   }
 
@@ -1719,8 +1737,7 @@
   .dashboard-panel,
   .dashboard-action-card {
     border-color: var(--dashboard-line) !important;
-    background:
-      linear-gradient(145deg, rgba(10, 54, 36, 0.86), rgba(3, 27, 18, 0.94)) !important;
+    background: linear-gradient(145deg, rgba(10, 54, 36, 0.86), rgba(3, 27, 18, 0.94)) !important;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.055),
       0 16px 38px rgba(0, 0, 0, 0.27),
@@ -1872,7 +1889,7 @@
 
   .dashboard-action-rail {
     padding-top: 0 !important;
-    gap: 0.35rem !important;
+    gap: 0.75rem;
   }
 
   .dashboard-action-rail > a {
@@ -1900,19 +1917,19 @@
   }
 
   .dashboard-action-rail .dashboard-action-card > div > div:first-child svg {
-    display: none;
+    display: block;
   }
 
   .dashboard-action-rail .dashboard-action-card p:first-child {
     color: #edf5f0;
-    font-size: 0.84rem;
+    font-size: 0.875rem;
     font-weight: 600;
   }
 
   .dashboard-action-rail .dashboard-action-card p:last-child {
     margin-top: 0.05rem;
     color: #829b91;
-    font-size: 0.67rem;
+    font-size: 0.75rem;
   }
 
   .dashboard-action-rail .dashboard-action-card > div > svg:last-child {
@@ -1969,7 +1986,7 @@
   .dashboard-weekly-panel .dashboard-eyebrow {
     max-width: 26rem;
     color: #9aafa6;
-    font-size: 0.78rem;
+    font-size: 0.875rem;
     line-height: 1.45;
     text-transform: none;
     letter-spacing: 0;
@@ -2078,7 +2095,9 @@
   :root:not(.dark) .dashboard-nav {
     border-color: oklch(0.56 0.16 153 / 0.18) !important;
     background: rgba(250, 255, 252, 0.92);
-    box-shadow: 0 1px 0 oklch(0.56 0.16 153 / 0.08), 0 14px 35px oklch(0.22 0.05 151 / 0.07);
+    box-shadow:
+      0 1px 0 oklch(0.56 0.16 153 / 0.08),
+      0 14px 35px oklch(0.22 0.05 151 / 0.07);
   }
 
   :root:not(.dark) .dashboard-brand > span:first-child {
@@ -2121,14 +2140,22 @@
   :root:not(.dark) .dashboard-log-button {
     border-color: oklch(1 0 0 / 0.55);
     color: oklch(0.985 0.01 115) !important;
-    background: linear-gradient(180deg, oklch(0.64 0.16 153) 0%, oklch(0.56 0.16 153) 100%) !important;
+    background: linear-gradient(
+      180deg,
+      oklch(0.64 0.16 153) 0%,
+      oklch(0.56 0.16 153) 100%
+    ) !important;
     box-shadow:
       0 10px 30px oklch(0.56 0.16 153 / 0.2),
       inset 0 1px 0 oklch(1 0 0 / 0.45);
   }
 
   :root:not(.dark) .dashboard-log-button:hover {
-    background: linear-gradient(180deg, oklch(0.68 0.16 153) 0%, oklch(0.59 0.16 153) 100%) !important;
+    background: linear-gradient(
+      180deg,
+      oklch(0.68 0.16 153) 0%,
+      oklch(0.59 0.16 153) 100%
+    ) !important;
     box-shadow:
       0 14px 36px oklch(0.56 0.16 153 / 0.24),
       inset 0 1px 0 oklch(1 0 0 / 0.5);
@@ -2156,7 +2183,10 @@
     background: oklch(0.56 0.16 153 / 0.12);
   }
 
-  :root:not(.dark) .dashboard-reference-metrics .dashboard-action-card [data-slot="progress-indicator"] {
+  :root:not(.dark)
+    .dashboard-reference-metrics
+    .dashboard-action-card
+    [data-slot="progress-indicator"] {
     background: oklch(0.56 0.16 153);
   }
 
@@ -2165,7 +2195,11 @@
   :root:not(.dark) .dashboard-panel,
   :root:not(.dark) .dashboard-action-card {
     border-color: var(--dashboard-line) !important;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(235, 247, 239, 0.9)) !important;
+    background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.96),
+      rgba(235, 247, 239, 0.9)
+    ) !important;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.92),
       0 16px 38px oklch(0.22 0.05 151 / 0.1),
@@ -2200,7 +2234,11 @@
 
   :root:not(.dark) .dashboard-info {
     border-color: oklch(0.56 0.16 153 / 0.2) !important;
-    background: linear-gradient(135deg, rgba(239, 250, 242, 0.94), rgba(224, 244, 231, 0.82)) !important;
+    background: linear-gradient(
+      135deg,
+      rgba(239, 250, 242, 0.94),
+      rgba(224, 244, 231, 0.82)
+    ) !important;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
   }
 
@@ -2246,5 +2284,132 @@
     border-color: oklch(0.56 0.16 153 / 0.28);
     color: oklch(0.22 0.035 151);
     background: rgba(245, 251, 246, 0.72);
+  }
+}
+
+/* Product typography stays separate from the editorial marketing scale.
+   Utilities layer intentionally scopes existing size/font utilities without
+   modifying route logic, component data, or portal/focus behavior. */
+@layer utilities {
+  body:has(.app-workspace) {
+    --font-display: var(--font-sans);
+  }
+  .app-workspace {
+    min-height: 100dvh;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    font-variant-numeric: tabular-nums;
+  }
+  .app-workspace .font-display,
+  .app-workspace :is(h1, h2, h3, h4) {
+    font-family: var(--font-sans);
+    font-style: normal;
+  }
+  .app-workspace h1,
+  .app-workspace .dashboard-reference-hero h1 {
+    max-width: 32ch;
+    font-size: clamp(1.5rem, 1.25rem + 0.65vw, 1.75rem);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.025em;
+    text-shadow: none;
+  }
+  .app-workspace :is(h2, h3, h4),
+  .app-workspace [data-slot="card-title"] {
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .app-workspace .dashboard-mantra {
+    display: none;
+  }
+  .app-workspace .dashboard-hero-art {
+    opacity: 0.3;
+  }
+  .app-workspace .dashboard-reference-hero {
+    min-height: auto;
+    padding: 0.5rem 0 1.25rem;
+    overflow: visible;
+  }
+  .app-workspace .dashboard-reference-metrics .dashboard-action-card {
+    container-type: inline-size;
+    min-height: 10rem;
+  }
+  .app-workspace .dashboard-metric-value {
+    font-family: var(--font-sans);
+    font-size: clamp(1.75rem, 1.5rem + 1cqi, 2.25rem);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.025em;
+    overflow-wrap: anywhere;
+  }
+  .app-workspace .dashboard-metric-value > span {
+    display: inline-block;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0;
+  }
+  .app-workspace .dashboard-reference-metrics .dashboard-action-card p:first-of-type {
+    font-size: 0.8125rem;
+    letter-spacing: 0.025em;
+    text-transform: none;
+  }
+  .app-workspace .dashboard-action-rail {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    align-content: start;
+    gap: 0.75rem;
+  }
+  .app-workspace .dashboard-action-rail > * {
+    margin-block: 0;
+    min-width: 0;
+  }
+  .app-workspace .dashboard-action-rail .dashboard-action-card {
+    height: 100%;
+    min-height: 5rem;
+  }
+  .app-workspace .dashboard-action-rail .dashboard-action-card > div {
+    padding: 0.875rem;
+  }
+  .app-workspace .dashboard-action-rail .dashboard-action-card p:last-child {
+    line-height: 1.5;
+  }
+  .app-workspace .dashboard-level-card .font-display,
+  .app-workspace .dashboard-badge-card .font-display {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  .app-workspace :is(.recharts-responsive-container, .recharts-wrapper) {
+    min-width: 0;
+    max-width: 100%;
+  }
+  /* These rows are the existing Protein, Carbohydrates, and Fat rows. */
+  .dashboard-macros-panel .space-y-5 > div:nth-child(1) [role="progressbar"] > div {
+    background: var(--nutrient-protein);
+  }
+  .dashboard-macros-panel .space-y-5 > div:nth-child(2) [role="progressbar"] > div {
+    background: var(--nutrient-carbs);
+  }
+  .dashboard-macros-panel .space-y-5 > div:nth-child(3) [role="progressbar"] > div {
+    background: var(--nutrient-fat);
+  }
+  @media (pointer: coarse) {
+    .app-workspace :is(button, [role="tab"], input, select) {
+      min-height: 2.75rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .premium-card-hover:hover,
+    .dashboard-action-card:hover {
+      transform: none;
+    }
+  }
+}
+@layer base {
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 3px;
   }
 }

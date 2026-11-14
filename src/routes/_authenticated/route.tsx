@@ -22,5 +22,9 @@ function AuthedLayout() {
   useReminderEngine(userId);
   useDailyCheckIn(userId);
   useScreenBreakSystem(userId);
-  return <Outlet />;
+  return (
+    <div className="app-workspace">
+      <Outlet />
+    </div>
+  );
 }

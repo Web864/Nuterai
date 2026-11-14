@@ -15,7 +15,9 @@ export function StepHeader({
       {eyebrow && (
         <p className="mb-2 text-xs font-medium uppercase tracking-wider text-accent">{eyebrow}</p>
       )}
-      <h2 className="font-display text-3xl text-foreground sm:text-4xl">{title}</h2>
+      <h2 className="font-sans text-2xl font-semibold text-foreground sm:text-[1.75rem]">
+        {title}
+      </h2>
       {description && <p className="mt-2 text-muted-foreground">{description}</p>}
     </div>
   );

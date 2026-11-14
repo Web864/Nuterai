@@ -1102,16 +1102,16 @@ export function SearchTab({ userId }: { userId: string }) {
                   <p className="truncate font-medium text-sm">{r.name}</p>
                   {r.brand && <p className="truncate text-xs text-muted-foreground">{r.brand}</p>}
                   <div className="mt-1 flex flex-wrap gap-1">
-                    <Badge variant="secondary" className="rounded-full text-[10px]">
+                    <Badge variant="secondary" className="rounded-full text-xs">
                       {r.calories_kcal} kcal
                     </Badge>
-                    <Badge variant="outline" className="rounded-full text-[10px]">
+                    <Badge variant="outline" className="rounded-full text-xs">
                       P {r.protein_g}g
                     </Badge>
-                    <Badge variant="outline" className="rounded-full text-[10px]">
+                    <Badge variant="outline" className="rounded-full text-xs">
                       C {r.carbs_g}g
                     </Badge>
-                    <Badge variant="outline" className="rounded-full text-[10px]">
+                    <Badge variant="outline" className="rounded-full text-xs">
                       F {r.fat_g}g
                     </Badge>
                   </div>

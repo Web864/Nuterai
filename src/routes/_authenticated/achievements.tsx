@@ -272,10 +272,7 @@ function AchievementCard({ achievement: a }: { achievement: AchievementWithProgr
             >
               {a.title}
             </p>
-            <Badge
-              variant="outline"
-              className={`shrink-0 rounded-full text-[10px] ${style.className}`}
-            >
+            <Badge variant="outline" className={`shrink-0 rounded-full text-xs ${style.className}`}>
               {style.label}
             </Badge>
           </div>
@@ -286,7 +283,7 @@ function AchievementCard({ achievement: a }: { achievement: AchievementWithProgr
             </p>
           ) : (
             <div className="mt-2 min-w-0">
-              <div className="mb-1 flex flex-wrap justify-between gap-x-2 text-[11px] text-muted-foreground">
+              <div className="mb-1 flex flex-wrap justify-between gap-x-2 text-xs text-muted-foreground">
                 <span>
                   {Math.round(a.progress)} / {target}
                 </span>
@@ -533,4 +530,3 @@ function XpTab({ userId }: { userId: string }) {
     </Card>
   );
 }
-

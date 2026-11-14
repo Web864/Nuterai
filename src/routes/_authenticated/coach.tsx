@@ -462,7 +462,7 @@ function ChatPanel({
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </form>
-        <p className="mt-2 text-[10px] text-muted-foreground">
+        <p className="mt-2 text-xs text-muted-foreground">
           AI can be inaccurate. Not medical advice.
         </p>
       </div>

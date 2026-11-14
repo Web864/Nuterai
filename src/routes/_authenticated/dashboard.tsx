@@ -125,7 +125,7 @@ function Dashboard() {
     <div className="dashboard-shell min-h-screen">
       <TopBar onSignOut={handleSignOut} name={firstName} />
 
-      <main className="dashboard-main mx-auto max-w-[960px] px-4 pb-16 pt-6 sm:px-0">
+      <main className="dashboard-main mx-auto w-full max-w-[var(--workspace-width)] px-4 pb-16 pt-6 sm:px-6 lg:px-10">
         <header className="dashboard-hero dashboard-reference-hero mb-7 flex min-w-0 flex-wrap items-end justify-between gap-5">
           <div className="dashboard-hero-copy">
             <p className="dashboard-eyebrow">
@@ -223,7 +223,7 @@ function Dashboard() {
               <BadgeShelf userId={userId} />
             </section>
 
-            <section className="dashboard-workspace mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.72fr)_minmax(0,1fr)]">
+            <section className="dashboard-workspace mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
               <Card className="dashboard-panel dashboard-macros-panel lg:col-span-1">
                 <CardHeader className="pb-3 sm:p-7 sm:pb-3">
                   <CardTitle className="flex items-center gap-2 font-display text-xl">
@@ -486,7 +486,7 @@ function StatCard({
         <p className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           {label}
         </p>
-        <p className="mt-1 font-display text-3xl text-foreground">
+        <p className="dashboard-metric-value mt-1 font-display text-3xl text-foreground">
           {value.toLocaleString()}
           {target ? (
             <span className="ml-1 text-sm font-sans font-normal text-muted-foreground">

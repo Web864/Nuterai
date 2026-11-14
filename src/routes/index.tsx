@@ -1,13 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { PhoneMockup, type PhoneMockupScreen } from "@/components/landing/PhoneMockup";
 import { useSession } from "@/features/auth/use-session";
-import { useTheme } from "@/components/theme-provider";
 import heroImage from "@/assets/hero-food.jpg";
-import howItWorksCta from "@/assets/how-it-works-cta.png";
-import Image from "@/assets/image.png";
-import cta1 from "@/assets/cta1.png";
-import cta2 from "@/assets/cta2.png";
 import {
   Activity,
   ArrowRight,
@@ -16,8 +18,11 @@ import {
   ChefHat,
   Dumbbell,
   Heart,
+  Github,
+  Linkedin,
   Leaf,
   MoonStar,
+  Menu,
   ScanLine,
   Sparkles,
   Utensils,
@@ -99,9 +104,7 @@ const features = [
 
 function LandingPage() {
   const session = useSession();
-  const { resolvedTheme } = useTheme();
   const navigate = useNavigate();
-  const showDarkVisuals = resolvedTheme === "dark";
 
   useEffect(() => {
     if (session.data) {
@@ -115,8 +118,14 @@ function LandingPage() {
 
   return (
     <div className="landing-page premium-shell min-h-screen">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-background focus:px-4 focus:py-3 focus:text-foreground focus:outline-2 focus:outline-ring"
+      >
+        Skip to content
+      </a>
       <SiteHeader />
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <section className="landing-hero relative isolate overflow-hidden border-b border-border/60">
           <div className="absolute inset-0 -z-10 bg-gradient-glow" />
           <div className="landing-hero-grid mx-auto grid max-w-7xl lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
@@ -126,9 +135,8 @@ function LandingPage() {
                 Nutrition for the food you actually eat
               </span>
               <h1 className="landing-hero-title mt-6 text-balance font-display">
-                Eat better without giving up
-                <br />
-                the food you <span className="emerald-text">love.</span>
+                Eat better without giving up the food you{" "}
+                <span className="emerald-text">love.</span>
               </h1>
               <p className="landing-hero-description mt-6 max-w-lg text-muted-foreground">
                 NutriAI creates personalized meal plans around your goals, budget, allergies,
@@ -155,11 +163,11 @@ function LandingPage() {
               <div className="landing-trust-grid mt-9 grid max-w-md min-w-0 border-t border-border/60 pt-6">
                 <TrustPoint icon={Sparkles} label="Personalized" detail="Plans" />
                 <TrustPoint icon={Brain} label="AI-powered" detail="Insights" />
-                <TrustPoint icon={BarChart3} label="Real" detail="Results" />
+                <TrustPoint icon={BarChart3} label="Progress" detail="Tracking" />
               </div>
             </div>
 
-            <div className="landing-preview premium-float relative mx-auto w-full max-w-2xl lg:max-w-none">
+            <div className="landing-preview relative mx-auto w-full max-w-2xl lg:max-w-none">
               <div className="absolute -inset-8 -z-10 rounded-[3rem] bg-primary/20 blur-3xl" />
               <div className="landing-preview-frame relative overflow-hidden border border-white/15 shadow-hero">
                 <img
@@ -179,14 +187,14 @@ function LandingPage() {
                     <Activity className="h-4 w-4" />
                   </span>
                   <div>
-                    <p className="text-sm font-semibold">AI analysis</p>
+                    <p className="text-sm font-semibold">Example analysis</p>
                     <p className="text-xs text-muted-foreground">Balanced meal</p>
                   </div>
                 </div>
                 <div className="mt-4 space-y-2 text-xs">
-                  <Metric label="Protein" value="32g" tone="bg-primary" />
-                  <Metric label="Carbs" value="48g" tone="bg-sky-400" />
-                  <Metric label="Fats" value="18g" tone="bg-amber-400" />
+                  <Metric label="Protein" value="32g" tone="bg-[var(--nutrient-protein)]" />
+                  <Metric label="Carbs" value="48g" tone="bg-[var(--nutrient-carbs)]" />
+                  <Metric label="Fats" value="18g" tone="bg-[var(--nutrient-fat)]" />
                 </div>
               </div>
               <div className="landing-overlay landing-calories premium-glass absolute flex items-center gap-3 rounded-2xl">
@@ -206,11 +214,12 @@ function LandingPage() {
                   </p>
                 </div>
               </div>
+              <p className="landing-example-label">Illustrative meal. Example estimates.</p>
             </div>
           </div>
         </section>
 
-        <section className="border-b border-border/60 bg-background/25 py-20 sm:py-24">
+        <section className="landing-section border-b border-border/60 bg-background/25">
           <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
             <SectionHeading
               eyebrow="A simpler nutrition routine"
@@ -229,7 +238,7 @@ function LandingPage() {
           </div>
         </section>
 
-        <section className="border-b border-border/60 bg-background/20 py-20 sm:py-24">
+        <section className="landing-section border-b border-border/60 bg-background/20">
           <div className="mx-auto grid max-w-7xl gap-10 px-5 sm:px-8 lg:grid-cols-2 lg:px-10">
             <div>
               <SectionHeading
@@ -239,10 +248,10 @@ function LandingPage() {
                     Plan around <span className="emerald-text">your table.</span>
                   </>
                 }
-                description="Log meals in familiar portions where available, then review the nutrition estimate before saving. NutriAI makes everyday choices easier without forcing every meal into a generic template."
+                description="Plan around your preferences, budget, allergies, and familiar foods. Log meals in everyday portions where available, then review the nutrition estimate before saving."
               />
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="landing-food-grid grid gap-3">
               {[
                 "Roti",
                 "Paratha",
@@ -265,17 +274,17 @@ function LandingPage() {
           </div>
         </section>
 
-        <section className="border-b border-border/60 py-20 sm:py-24">
+        <section className="landing-safety-section border-b border-border/60">
           <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
             <SectionHeading
               eyebrow="Built for responsible guidance"
               title="Useful nutrition support, with you in control."
-              description="Targets and estimates support general wellness. Plans are editable, food entries are reviewable, and NutriAI does not diagnose or treat medical conditions."
+              description="Nutrition targets support general wellness. AI estimates are not exact measurements: review and edit your plans and food records. NutriAI does not diagnose or treat medical conditions."
             />
           </div>
         </section>
 
-        <section id="how-it-works" className="border-t border-border/60 py-20 sm:py-24">
+        <section id="how-it-works" className="landing-section border-t border-border/60">
           <div className="mx-auto max-w-6xl px-5 sm:px-8">
             <SectionHeading eyebrow="How it works" title="A better next meal, in three steps." />
             <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-8">
@@ -284,59 +293,46 @@ function LandingPage() {
                 icon={Leaf}
                 title="Tell us about you"
                 description="Two minutes on your body, goals, and lifestyle. Nothing invasive."
-                backgroundPosition="-82px -86px"
-                showDarkVisuals={showDarkVisuals}
+                screen="onboarding"
               />
               <JourneyStep
                 number="2"
                 icon={ChefHat}
                 title="Get your plan"
                 description="NutriAI builds calorie targets and meal guidance around your goals and preferences."
-                backgroundPosition="-376px -89px"
-                showDarkVisuals={showDarkVisuals}
+                screen="plan"
               />
               <JourneyStep
                 number="3"
                 icon={Heart}
                 title="Live better"
                 description="Log, learn, and let NutriAI adapt your plan as your life changes."
-                backgroundPosition="-675px -86px"
-                showDarkVisuals={showDarkVisuals}
+                screen="progress"
               />
             </div>
           </div>
         </section>
 
-        <section className="px-5 pb-20 sm:px-8 sm:pb-24 lg:px-10">
-          <div className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] border border-primary/35 bg-gradient-hero px-6 py-12 shadow-hero sm:rounded-[2.5rem] sm:px-12 md:grid-cols-[1fr_1.4fr_1fr] md:items-center md:py-14">
-            {showDarkVisuals && (
-              <>
-                <div
-                  aria-hidden="true"
-                  className="reference-art absolute inset-0 opacity-95"
-                  style={{
-                    backgroundImage: "url(" + cta1 + ")",
-                    backgroundSize: "cover",
-                  }}
-                />
-                <div
-                  aria-hidden="true"
-                  className="reference-art absolute inset-y-0 right-0 w-1/2 opacity-90"
-                  style={{
-                    backgroundImage: "url(" + cta2 + ")",
-                    backgroundSize: "cover",
-                  }}
-                />
-              </>
-            )}
-            <div className="relative z-10 col-start-2 mx-auto max-w-xl text-center">
+        <section className="landing-final-cta px-5 pb-12 sm:px-8 sm:pb-20 lg:px-10">
+          <div className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] border border-primary/35 bg-gradient-hero px-6 py-12 shadow-hero sm:rounded-[2.5rem] sm:px-12 md:grid-cols-[minmax(0,1fr)_220px] md:items-center md:py-14">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -left-12 top-0 size-64 rounded-full bg-primary/20 blur-3xl"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-12 right-10 hidden rotate-6 md:block"
+            >
+              <PhoneMockup screen="plan" />
+            </div>
+            <div className="relative z-10 mx-auto min-w-0 max-w-xl text-center md:mx-0 md:text-left">
               <h2 className="text-balance font-display text-4xl text-foreground sm:text-5xl">
                 Ready to feel your best?
               </h2>
               <p className="mt-3 text-sm text-primary sm:text-base">
                 Start your personalized plan in under two minutes. Free forever.
               </p>
-              <Button asChild size="lg" className="premium-shimmer mt-7 rounded-full px-8">
+              <Button asChild size="lg" className="mt-7 rounded-full px-8">
                 <Link to="/auth" search={{ mode: "signup" }}>
                   Create my plan <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -353,14 +349,17 @@ function LandingPage() {
 function SiteHeader() {
   return (
     <header className="landing-header sticky top-0 z-40 border-b border-border/60 bg-background/75 backdrop-blur-xl">
-      <div className="landing-header-inner mx-auto flex max-w-7xl items-center justify-between">
+      <div className="landing-header-inner mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
         <Link to="/" className="flex items-center gap-2.5 text-foreground">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_22px_oklch(0.77_0.18_153_/_0.3)]">
             <Leaf className="h-4 w-4" />
           </span>
           <span className="font-display text-lg">NutriAI</span>
         </Link>
-        <nav className="hidden items-center gap-7 text-sm text-muted-foreground sm:flex">
+        <nav
+          aria-label="Main navigation"
+          className="hidden items-center gap-7 text-sm font-medium text-muted-foreground sm:flex"
+        >
           <Link to="/about" className="hover:text-foreground">
             About
           </Link>
@@ -369,7 +368,7 @@ function SiteHeader() {
           </Link>
         </nav>
         <div className="landing-header-actions flex min-w-0 shrink items-center justify-end">
-          <Button asChild variant="ghost" size="sm" className="rounded-full">
+          <Button asChild variant="ghost" size="sm" className="hidden rounded-full sm:inline-flex">
             <Link to="/auth">Sign in</Link>
           </Button>
           <Button asChild size="sm" className="rounded-full px-4">
@@ -377,6 +376,31 @@ function SiteHeader() {
               Start free
             </Link>
           </Button>
+          <div className="sm:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Open navigation menu"
+                  className="rounded-full"
+                >
+                  <Menu aria-hidden="true" className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-44 rounded-xl p-2">
+                <DropdownMenuItem asChild className="min-h-11 rounded-lg">
+                  <Link to="/about">About</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="min-h-11 rounded-lg">
+                  <Link to="/pricing">Pricing</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="min-h-11 rounded-lg">
+                  <Link to="/auth">Sign in</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </header>
@@ -385,7 +409,7 @@ function SiteHeader() {
 
 function SiteFooter() {
   return (
-    <footer className="border-t border-border/60 bg-background/50">
+    <footer className="landing-footer border-t border-border/60 bg-background/50">
       <div className="mx-auto flex max-w-7xl min-w-0 flex-col items-center justify-between gap-5 px-5 py-9 text-sm text-muted-foreground sm:flex-row sm:px-8 lg:px-10">
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -393,6 +417,29 @@ function SiteFooter() {
           </span>
           <span className="font-display text-foreground">NutriAI</span>
           <span>Copyright {new Date().getFullYear()}</span>
+        </div>
+        <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:gap-3">
+          <span>Built by Rabia Naz</span>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://www.linkedin.com/in/rabia-naz-01263b339"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Rabia Naz on LinkedIn (opens in a new tab)"
+              className="rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <Linkedin aria-hidden="true" className="h-4 w-4" />
+            </a>
+            <a
+              href="https://github.com/Web864"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Rabia Naz on GitHub (opens in a new tab)"
+              className="rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <Github aria-hidden="true" className="h-4 w-4" />
+            </a>
+          </div>
         </div>
         <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
           <Link to="/about" className="hover:text-foreground">
@@ -424,9 +471,11 @@ function SectionHeading({
 }) {
   return (
     <div className="mx-auto max-w-2xl text-center">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{eyebrow}</p>
-      <h2 className="mt-3 text-balance font-display text-4xl leading-tight sm:text-5xl">{title}</h2>
-      {description && <p className="mt-4 leading-7 text-muted-foreground">{description}</p>}
+      <p className="text-xs font-semibold uppercase tracking-wider text-primary">{eyebrow}</p>
+      <h2 className="landing-section-heading mt-3 text-balance font-display">{title}</h2>
+      {description && (
+        <p className="mt-4 text-base leading-relaxed text-muted-foreground">{description}</p>
+      )}
     </div>
   );
 }
@@ -470,42 +519,25 @@ function JourneyStep({
   icon: Icon,
   title,
   description,
-  backgroundPosition,
-  showDarkVisuals,
+  screen,
 }: {
   number: string;
   icon: typeof Leaf;
   title: string;
   description: string;
-  backgroundPosition: string;
-  showDarkVisuals: boolean;
+  screen: PhoneMockupScreen;
 }) {
   return (
-    <div>
-      {showDarkVisuals ? (
-        <div
-          role="img"
-          aria-label={title + " NutriAI app screen"}
-          className="reference-art mx-auto h-[225px] w-[178px]"
-          style={{ backgroundImage: "url(" + howItWorksCta + ")", backgroundPosition }}
-        />
-      ) : (
-        <div
-          aria-hidden="true"
-          className="mx-auto flex h-[225px] w-[178px] items-center justify-center rounded-2xl border border-border/70 bg-card shadow-soft"
-        >
-          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Icon className="h-8 w-8" />
-          </span>
-        </div>
-      )}
+    <div className="min-w-0">
+      <PhoneMockup screen={screen} />
+      <p className="mt-3 text-center text-xs text-muted-foreground">Illustrative product preview</p>
       <div className="mt-3 flex items-center gap-3">
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <Icon className="h-4 w-4" />
         </span>
         <span className="text-sm font-medium text-muted-foreground">Step {number}</span>
       </div>
-      <h3 className="mt-3 font-display text-2xl">{title}</h3>
+      <h3 className="mt-3 font-display text-xl sm:text-2xl">{title}</h3>
       <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">{description}</p>
     </div>
   );
@@ -528,11 +560,14 @@ function FeatureCard({
       <Icon className="h-9 w-9 text-primary" />
     );
   return (
-    <div className="premium-card-hover relative min-h-[176px] overflow-hidden rounded-2xl border border-border/70 bg-gradient-card p-5 sm:p-6">
+    <div className="landing-feature-card premium-card-hover relative min-h-[176px] overflow-hidden rounded-2xl border border-border/70 bg-gradient-card p-5 sm:p-6">
       <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-[0_0_26px_oklch(0.77_0.18_153_/_0.22)]">
         <Icon className="h-5 w-5" />
       </span>
-      <span className="absolute right-5 top-5 flex h-16 w-16 items-center justify-center">
+      <span
+        aria-hidden="true"
+        className="absolute right-5 top-5 flex h-16 w-16 items-center justify-center opacity-40"
+      >
         {visualContent}
       </span>
       <h3 className="mt-5 font-display text-2xl">{title}</h3>
