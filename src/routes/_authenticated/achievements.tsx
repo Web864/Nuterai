@@ -65,7 +65,7 @@ function AchievementsPage() {
   const { userId } = AuthedRoute.useRouteContext();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-4 sm:px-6">
           <Button asChild variant="ghost" size="icon" className="rounded-full">
@@ -468,10 +468,10 @@ function StreaksTab({ userId }: { userId: string }) {
             history.data.slice(0, 30).map((r) => (
               <div
                 key={r.id}
-                className="flex items-center justify-between border-b border-border/40 pb-2 text-sm last:border-0 last:pb-0"
+                className="flex items-center justify-between gap-3 border-b border-border/40 pb-2 text-sm last:border-0 last:pb-0"
               >
                 <span className="text-foreground">{STREAK_LABELS[r.kind as StreakKind]}</span>
-                <span className="text-muted-foreground">
+                <span className="text-right text-muted-foreground">
                   {new Date(r.day).toLocaleDateString(undefined, {
                     month: "short",
                     day: "numeric",

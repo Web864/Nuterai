@@ -72,7 +72,7 @@ function WorkoutPage() {
   const activePlan = useMemo(() => (plans.data ?? []).find((plan) => plan.is_active), [plans.data]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <div className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6">
           <Button

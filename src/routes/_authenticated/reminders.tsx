@@ -137,7 +137,7 @@ function RemindersPage() {
   const timezone = resolveTimezone(profile.data?.timezone);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <Link
@@ -949,8 +949,8 @@ function PreferencesCard({ userId }: { userId: string }) {
         <CardTitle className="font-display text-lg">Notification preferences</CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <p className="font-medium">Enable notifications</p>
             <p className="text-sm text-muted-foreground">Master switch for all reminders</p>
           </div>
@@ -959,8 +959,8 @@ function PreferencesCard({ userId }: { userId: string }) {
             onCheckedChange={(v) => update.mutate({ notifications_enabled: v })}
           />
         </div>
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <p className="font-medium">Notification sound</p>
             <p className="text-sm text-muted-foreground">Play a sound when supported</p>
           </div>

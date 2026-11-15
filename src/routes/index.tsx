@@ -113,11 +113,11 @@ function LandingPage() {
   }, [navigate, session.data]);
 
   if (session.isPending || session.data) {
-    return <div className="min-h-screen bg-background" aria-busy="true" />;
+    return <div className="min-h-dvh bg-background" aria-busy="true" />;
   }
 
   return (
-    <div className="landing-page premium-shell min-h-screen">
+    <div className="landing-page premium-shell min-h-dvh">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-background focus:px-4 focus:py-3 focus:text-foreground focus:outline-2 focus:outline-ring"

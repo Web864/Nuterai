@@ -78,7 +78,7 @@ function CoachPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <div className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <Link to="/dashboard" className="flex items-center gap-2 text-foreground">
@@ -142,7 +142,7 @@ function CoachPage() {
                       </button>
                       <button
                         onClick={() => setConfirmDelete(t)}
-                        className="opacity-0 group-hover:opacity-100 rounded-lg p-1 hover:bg-destructive/10 hover:text-destructive"
+                        className="opacity-100 rounded-lg p-1 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
                         aria-label="Delete conversation"
                       >
                         <Trash2 className="h-3.5 w-3.5" />

@@ -1479,6 +1479,7 @@
     --dashboard-text: #f2f7f3;
     --dashboard-muted: #9aafa6;
     min-height: 100vh;
+    min-height: 100dvh;
     color: var(--dashboard-text);
     background:
       radial-gradient(700px 360px at 9% 8%, rgba(25, 148, 101, 0.16), transparent 65%),
