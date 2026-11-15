@@ -22,7 +22,7 @@ export const Route = createFileRoute("/about")({
 
 function AboutPage() {
   return (
-    <div className="premium-shell min-h-screen">
+    <div className="premium-shell min-h-dvh">
       <div className="mx-auto max-w-4xl px-5 py-14 sm:px-8 sm:py-20">
         <Link to="/" className="mb-12 inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/60 px-3 py-2 text-sm text-muted-foreground">
           <Leaf className="h-4 w-4 text-primary" /> NutriAI

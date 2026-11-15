@@ -24,8 +24,8 @@ export function ScreenBreakSettingsCard({ userId }: { userId: string }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
-        <div className="flex items-center justify-between">
-          <div><p className="font-medium">Enable screen breaks</p><p className="text-sm text-muted-foreground">Remind yourself to look away after active phone use.</p></div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0"><p className="font-medium">Enable screen breaks</p><p className="text-sm text-muted-foreground">Remind yourself to look away after active phone use.</p></div>
           <Switch checked={value.enabled} onCheckedChange={(enabled) => update.mutate({ enabled })} />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -34,9 +34,9 @@ export function ScreenBreakSettingsCard({ userId }: { userId: string }) {
         </div>
         <div>
           <Label className="flex items-center gap-2"><Clock className="h-4 w-4" /> Active hours</Label>
-          <div className="mt-2 flex gap-2"><Input type="time" value={value.activeStartTime} onChange={(e) => update.mutate({ activeStartTime: e.target.value })} /><Input type="time" value={value.activeEndTime} onChange={(e) => update.mutate({ activeEndTime: e.target.value })} /></div>
+          <div className="mt-2 flex gap-2"><Input className="min-w-0" type="time" value={value.activeStartTime} onChange={(e) => update.mutate({ activeStartTime: e.target.value })} /><Input className="min-w-0" type="time" value={value.activeEndTime} onChange={(e) => update.mutate({ activeEndTime: e.target.value })} /></div>
         </div>
-        <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">System-wide tracking</span><Button variant="outline" className="rounded-xl" disabled><Bell className="mr-2 h-4 w-4" /> Permission status</Button></div>
+        <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-sm text-muted-foreground">System-wide tracking</span><Button variant="outline" className="rounded-xl" disabled><Bell className="mr-2 h-4 w-4" /> Permission status</Button></div>
       </CardContent>
     </Card>
   );

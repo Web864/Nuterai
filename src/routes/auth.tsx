@@ -235,9 +235,9 @@ function AuthPage() {
   }
 
   return (
-    <div className="premium-shell relative min-h-screen overflow-hidden">
+    <div className="premium-shell relative min-h-dvh overflow-hidden">
       <div className="absolute inset-0 bg-gradient-hero opacity-75" />
-      <div className="relative mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 py-16">
+      <div className="relative mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-6 py-16">
         <Link to="/" className="mb-10 flex items-center gap-2 text-foreground">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-primary/30 bg-primary/15 text-primary backdrop-blur">
             <Leaf className="h-5 w-5" />
@@ -456,7 +456,7 @@ function AuthPage() {
 
 function AuthSessionLoading() {
   return (
-    <div className="premium-shell relative flex min-h-screen items-center justify-center overflow-hidden px-6">
+    <div className="premium-shell relative flex min-h-dvh items-center justify-center overflow-hidden px-6">
       <div className="absolute inset-0 bg-gradient-hero opacity-75" />
       <div className="relative flex flex-col items-center gap-4 text-foreground" role="status">
         <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-primary/30 bg-primary/15 text-primary backdrop-blur">

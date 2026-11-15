@@ -122,7 +122,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="dashboard-shell min-h-screen">
+    <div className="dashboard-shell min-h-dvh">
       <TopBar onSignOut={handleSignOut} name={firstName} />
 
       <main className="dashboard-main mx-auto w-full max-w-[var(--workspace-width)] px-4 pb-16 pt-6 sm:px-6 lg:px-10">

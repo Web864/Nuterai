@@ -156,8 +156,8 @@ function ToggleRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-border bg-card p-4">
-      <span className="text-sm font-medium text-foreground">{label}</span>
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
+      <span className="min-w-0 text-sm font-medium text-foreground">{label}</span>
       <Switch checked={value} onCheckedChange={onChange} />
     </div>
   );

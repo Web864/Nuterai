@@ -61,7 +61,7 @@ function AdminPage() {
 
   if (who.isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-dvh items-center justify-center bg-background">
         <Loader2 className="h-5 w-5 animate-spin text-primary" aria-label="Checking access" />
       </div>
     );
@@ -69,7 +69,7 @@ function AdminPage() {
 
   if (!who.data?.isAdmin) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="flex min-h-dvh items-center justify-center bg-background px-4">
         <Card className="max-w-md rounded-3xl border-border/60 text-center">
           <CardContent className="p-8">
             <ShieldCheck className="mx-auto h-8 w-8 text-primary" />
@@ -87,7 +87,7 @@ function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-4 sm:px-6">
           <Button asChild variant="ghost" size="icon" className="rounded-full">

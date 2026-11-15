@@ -13,7 +13,7 @@ export const Route = createFileRoute("/terms")({
 
 function TermsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <Link to="/" className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground">
           <Leaf className="h-4 w-4 text-primary" /> NutriAI

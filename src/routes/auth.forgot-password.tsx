@@ -61,9 +61,9 @@ function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
+    <div className="min-h-dvh bg-gradient-hero relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-glow opacity-70" />
-      <div className="relative mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 py-16">
+      <div className="relative mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-6 py-16">
         <Link to="/" className="mb-10 flex items-center gap-2 text-primary-foreground">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-foreground/10 backdrop-blur">
             <Leaf className="h-5 w-5" />

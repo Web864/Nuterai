@@ -24,7 +24,7 @@ import { MotionProvider } from "@/components/motion/MotionProvider";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-dvh items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <p className="font-display text-8xl text-primary/20">404</p>
         <h1 className="mt-4 font-display text-3xl text-foreground">Page not found</h1>
@@ -47,7 +47,7 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
   const router = useRouter();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-dvh items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="font-display text-2xl text-foreground">Something went wrong</h1>
         <p className="mt-3 text-sm text-muted-foreground">
