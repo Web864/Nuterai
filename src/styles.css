@@ -2009,6 +2009,11 @@
     .dashboard-main {
       padding-right: 1rem;
       padding-left: 1rem;
+      /* The decorative hero art bleeds past the right edge on phones and, because
+         .app-workspace sets the hero to overflow: visible, it widened the page by
+         ~112px. clip (unlike hidden) creates no scroll container, so sticky and
+         focus rings are unaffected. */
+      overflow-x: clip;
     }
 
     .dashboard-reference-hero {
