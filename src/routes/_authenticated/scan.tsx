@@ -64,4 +64,3 @@ function ScanPage() {
     </div>
   );
 }
-

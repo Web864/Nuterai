@@ -333,7 +333,7 @@ function ClosedAppReminderHelpCard() {
       <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="flex items-center gap-2 font-medium">
-            <CircleAlert className="h-4 w-4 text-amber-600" />    
+            <CircleAlert className="h-4 w-4 text-amber-600" />
             Background reminders may be restricted
           </p>
           <p className="mt-1 text-sm text-muted-foreground">

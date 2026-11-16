@@ -104,7 +104,11 @@ export default defineConfig(async ({ command, mode }): Promise<UserConfig> => {
   return {
     define: envDefine,
     ...(command === "build" && mode === "development"
-      ? { environments: { client: { define: { "process.env.NODE_ENV": JSON.stringify("development") } } } }
+      ? {
+          environments: {
+            client: { define: { "process.env.NODE_ENV": JSON.stringify("development") } },
+          },
+        }
       : {}),
     css: { transformer: "lightningcss" as const },
     resolve: {
@@ -119,7 +123,13 @@ export default defineConfig(async ({ command, mode }): Promise<UserConfig> => {
       ],
     },
     optimizeDeps: {
-      include: ["react", "react-dom", "react-dom/client", "react/jsx-runtime", "react/jsx-dev-runtime"],
+      include: [
+        "react",
+        "react-dom",
+        "react-dom/client",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+      ],
       ignoreOutdatedRequests: true,
     },
     server: { host: "::", port: 8080 },

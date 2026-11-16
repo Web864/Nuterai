@@ -30,9 +30,11 @@ export type ReminderType =
   | "weight"
   | "medication";
 
-export type ReminderSource = "manual" | "diet_plan" | "water_plan" | "workout_plan" | "ai_coach" | "system";
+export type ReminderSource =
+  "manual" | "diet_plan" | "water_plan" | "workout_plan" | "ai_coach" | "system";
 export type ReminderCreator = "user" | "system" | "ai_coach";
-export type RecurrenceFrequency = "once" | "daily" | "weekdays" | "weekends" | "specific_days" | "custom";
+export type RecurrenceFrequency =
+  "once" | "daily" | "weekdays" | "weekends" | "specific_days" | "custom";
 
 export type RecurrenceRule = {
   frequency: RecurrenceFrequency;
@@ -97,7 +99,10 @@ function formatMinuteOfDay(minutes: number): string {
   return `${String(Math.floor(normalized / 60)).padStart(2, "0")}:${String(normalized % 60).padStart(2, "0")}`;
 }
 
-function routineWindowMinutes(wakeTime?: string | null, sleepTime?: string | null): { wake: number; duration: number } | null {
+function routineWindowMinutes(
+  wakeTime?: string | null,
+  sleepTime?: string | null,
+): { wake: number; duration: number } | null {
   const wake = toMinuteOfDay(wakeTime);
   const sleep = toMinuteOfDay(sleepTime);
   if (wake === null || sleep === null) return null;
@@ -142,7 +147,9 @@ export function deriveRoutineWorkoutTime(options: {
   if (!routine) return DEFAULT_WORKOUT_REMINDER_TIME;
 
   const latestSafeStart = routine.wake + routine.duration - 120;
-  return formatMinuteOfDay(Math.min(routine.wake + Math.round(routine.duration * 0.75), latestSafeStart));
+  return formatMinuteOfDay(
+    Math.min(routine.wake + Math.round(routine.duration * 0.75), latestSafeStart),
+  );
 }
 export const REMINDER_TYPES: Array<{ value: ReminderType; label: string }> = [
   { value: "breakfast", label: "Breakfast" },
@@ -215,9 +222,7 @@ const COPY: Record<string, string[]> = {
     "Recovery check-in. Easy movement and rest both count.",
     "Recovery time. Let your body absorb the work you have done.",
   ],
-  custom_exercise: [
-    "Movement reminder. A focused few minutes still counts.",
-  ],
+  custom_exercise: ["Movement reminder. A focused few minutes still counts."],
   screen_break: [
     "Screen break. Time to look away for 20 seconds.",
     "Quick visual reset. Focus on something in the distance for a moment.",
@@ -228,9 +233,7 @@ const COPY: Record<string, string[]> = {
     "Wind-down time. Give tomorrow a calmer start.",
     "Sleep prep. A gentle routine helps your recovery do its work.",
   ],
-  supplement: [
-    "Supplement reminder. Take only what you already planned.",
-  ],
+  supplement: ["Supplement reminder. Take only what you already planned."],
   "weigh-in": ["Weigh-in reminder. Capture the trend, not the mood of the day."],
   custom: ["Reminder time. One small follow-through keeps momentum alive."],
   "ai-created": ["Coach reminder. This is the nudge you asked NutriAI to keep for you."],
@@ -268,7 +271,10 @@ function partsInTz(date: Date, tz: string) {
     hour12: false,
     weekday: "short",
   });
-  const parts = Object.fromEntries(fmt.formatToParts(date).map((p) => [p.type, p.value])) as Record<string, string>;
+  const parts = Object.fromEntries(fmt.formatToParts(date).map((p) => [p.type, p.value])) as Record<
+    string,
+    string
+  >;
   const wdMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
   return {
     year: Number(parts.year),
@@ -285,7 +291,11 @@ function zonedTimeToUtc(y: number, mo: number, d: number, h: number, mi: number,
   for (let i = 0; i < 3; i++) {
     const p = partsInTz(guess, tz);
     const diffMin =
-      (p.year - y) * 525600 + (p.month - mo) * 43800 + (p.day - d) * 1440 + (p.hour - h) * 60 + (p.minute - mi);
+      (p.year - y) * 525600 +
+      (p.month - mo) * 43800 +
+      (p.day - d) * 1440 +
+      (p.hour - h) * 60 +
+      (p.minute - mi);
     if (diffMin === 0) break;
     guess = new Date(guess.getTime() - diffMin * 60_000);
   }
@@ -299,7 +309,11 @@ export function normalizeType(type: string | null | undefined): ReminderType {
   return (type || "custom") as ReminderType;
 }
 
-export function normalizeRule(input: unknown, fallbackDays?: number[], recurring = true): RecurrenceRule {
+export function normalizeRule(
+  input: unknown,
+  fallbackDays?: number[],
+  recurring = true,
+): RecurrenceRule {
   if (!recurring) return { frequency: "once" };
   const candidate = input && typeof input === "object" ? (input as Partial<RecurrenceRule>) : null;
   if (candidate?.frequency) return candidate as RecurrenceRule;
@@ -313,7 +327,8 @@ export function normalizeRule(input: unknown, fallbackDays?: number[], recurring
 export function ruleToDays(rule: RecurrenceRule): number[] {
   if (rule.frequency === "weekdays") return [1, 2, 3, 4, 5];
   if (rule.frequency === "weekends") return [0, 6];
-  if (rule.frequency === "specific_days" || rule.frequency === "custom") return sanitizeDays(rule.days ?? [0, 1, 2, 3, 4, 5, 6]);
+  if (rule.frequency === "specific_days" || rule.frequency === "custom")
+    return sanitizeDays(rule.days ?? [0, 1, 2, 3, 4, 5, 6]);
   return [0, 1, 2, 3, 4, 5, 6];
 }
 
@@ -324,7 +339,9 @@ export function recurrenceLabel(rule: RecurrenceRule): string {
   if (rule.frequency === "weekends") return "Weekends";
   if (rule.intervalMinutes) return `Every ${rule.intervalMinutes} min`;
   if (rule.label) return rule.label;
-  return ruleToDays(rule).map((d) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d]).join(", ");
+  return ruleToDays(rule)
+    .map((d) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d])
+    .join(", ");
 }
 
 export function nextOccurrence(r: ReminderRow, from: Date = new Date()): Date | null {
@@ -351,7 +368,9 @@ export function nextOccurrence(r: ReminderRow, from: Date = new Date()): Date | 
   }
 
   const tz = r.timezone || "UTC";
-  const times = (r.scheduled_time ? [r.scheduled_time] : r.times).map(parseHHMM).filter((x): x is { h: number; m: number } => !!x);
+  const times = (r.scheduled_time ? [r.scheduled_time] : r.times)
+    .map(parseHHMM)
+    .filter((x): x is { h: number; m: number } => !!x);
   if (times.length === 0) return null;
   const days = ruleToDays(rule);
 
@@ -367,7 +386,12 @@ export function nextOccurrence(r: ReminderRow, from: Date = new Date()): Date | 
   return null;
 }
 
-export function inQuietHours(date: Date, tz: string, start: string | null | undefined, end: string | null | undefined): boolean {
+export function inQuietHours(
+  date: Date,
+  tz: string,
+  start: string | null | undefined,
+  end: string | null | undefined,
+): boolean {
   if (!start || !end) return false;
   const s = parseHHMM(start);
   const e = parseHHMM(end);
@@ -404,12 +428,16 @@ export function notificationCopy(type: string, title: string, seed = 0): string 
   return options[Math.abs(seed) % options.length] ?? title;
 }
 
-export function validateReminderDraft(draft: Partial<ReminderDraft>): asserts draft is ReminderDraft {
+export function validateReminderDraft(
+  draft: Partial<ReminderDraft>,
+): asserts draft is ReminderDraft {
   const title = draft.title?.trim();
   if (!title) throw new Error("Reminder title is required.");
 
   if (!draft.scheduled_time || !parseHHMM(draft.scheduled_time)) {
-    throw new Error(`Reminder scheduled_time must be a valid HH:MM value. Received: ${String(draft.scheduled_time ?? "missing")}`);
+    throw new Error(
+      `Reminder scheduled_time must be a valid HH:MM value. Received: ${String(draft.scheduled_time ?? "missing")}`,
+    );
   }
 
   if (!draft.timezone || !draft.timezone.trim()) {
@@ -446,7 +474,9 @@ export function toInsertPayload(draft: ReminderDraft) {
     is_recurring: recurring,
     times: recurring ? [draft.scheduled_time] : [],
     days_of_week: ruleToDays(recurrence),
-    one_time_at: recurring ? null : wallTimeTodayOrFuture(draft.scheduled_time, draft.timezone).toISOString(),
+    one_time_at: recurring
+      ? null
+      : wallTimeTodayOrFuture(draft.scheduled_time, draft.timezone).toISOString(),
     source: draft.source as never,
     source_id: draft.source_id ?? null,
     linked_plan_item_id: draft.linked_plan_item_id ?? null,
@@ -458,7 +488,10 @@ export function toInsertPayload(draft: ReminderDraft) {
   };
 }
 
-export function buildDietReminderDrafts(timezone: string, mealTimes?: MealReminderTimes): ReminderDraft[] {
+export function buildDietReminderDrafts(
+  timezone: string,
+  mealTimes?: MealReminderTimes,
+): ReminderDraft[] {
   return (["breakfast", "lunch", "dinner"] as const).map((meal) => ({
     title: `${typeLabel(meal)} reminder`,
     message: notificationCopy(meal, meal),
@@ -506,7 +539,12 @@ export function buildHydrationReminderDrafts(options: {
       source_id: `water-plan:${time}`,
       linked_plan_item_id: "water-target",
       created_by: "system",
-      metadata: { target_ml: options.targetMl, suggested_amount_ml: amount, wake_time: options.wakeTime, sleep_time: options.sleepTime },
+      metadata: {
+        target_ml: options.targetMl,
+        suggested_amount_ml: amount,
+        wake_time: options.wakeTime,
+        sleep_time: options.sleepTime,
+      },
     });
   }
   return drafts;
@@ -556,7 +594,11 @@ export function buildWorkoutPlanReminderDrafts(options: {
       type,
       scheduled_time: scheduledTime,
       timezone: options.timezone,
-      recurrence_rule: { frequency: "specific_days", days: [dayOfWeek], label: DAYS_LABELS[dayOfWeek] },
+      recurrence_rule: {
+        frequency: "specific_days",
+        days: [dayOfWeek],
+        label: DAYS_LABELS[dayOfWeek],
+      },
       enabled: options.planActive !== false,
       source: "workout_plan",
       source_id: `workout-plan:${options.planId}:${day.id}`,
@@ -599,7 +641,9 @@ export function wallTimeTodayOrFuture(time: string, timezone: string, from = new
 }
 
 export function sanitizeDays(days: number[]): number[] {
-  return [...new Set(days.map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort((a, b) => a - b);
+  return [...new Set(days.map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort(
+    (a, b) => a - b,
+  );
 }
 
 function legacyCompatibleType(type: ReminderType): ReminderType {
@@ -608,7 +652,3 @@ function legacyCompatibleType(type: ReminderType): ReminderType {
   if (type === "ai-created") return "custom";
   return type;
 }
-
-
-
-

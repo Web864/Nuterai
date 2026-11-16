@@ -288,4 +288,3 @@ function Field({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-

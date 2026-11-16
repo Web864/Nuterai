@@ -4,9 +4,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ENABLE_SCREEN_BREAK_REMINDERS } from "./screen-break.config";
 
-export function ScreenBreakTimer({ durationSeconds = 20, onComplete, onCancel }: { durationSeconds?: number; onComplete?: () => void; onCancel?: () => void }) {
+export function ScreenBreakTimer({
+  durationSeconds = 20,
+  onComplete,
+  onCancel,
+}: {
+  durationSeconds?: number;
+  onComplete?: () => void;
+  onCancel?: () => void;
+}) {
   const [remaining, setRemaining] = useState(durationSeconds);
-  const progress = useMemo(() => Math.max(0, Math.min(100, ((durationSeconds - remaining) / durationSeconds) * 100)), [durationSeconds, remaining]);
+  const progress = useMemo(
+    () => Math.max(0, Math.min(100, ((durationSeconds - remaining) / durationSeconds) * 100)),
+    [durationSeconds, remaining],
+  );
 
   useEffect(() => {
     if (!ENABLE_SCREEN_BREAK_REMINDERS) return;
@@ -30,9 +41,13 @@ export function ScreenBreakTimer({ durationSeconds = 20, onComplete, onCancel }:
         </p>
         <Progress value={progress} className="mt-5 h-2" />
         {remaining <= 0 ? (
-          <p className="mt-4 text-sm font-medium text-foreground">Break complete. You can continue.</p>
+          <p className="mt-4 text-sm font-medium text-foreground">
+            Break complete. You can continue.
+          </p>
         ) : (
-          <Button variant="ghost" className="mt-4 rounded-xl" onClick={onCancel}>Close</Button>
+          <Button variant="ghost" className="mt-4 rounded-xl" onClick={onCancel}>
+            Close
+          </Button>
         )}
       </CardContent>
     </Card>

@@ -1,9 +1,19 @@
-﻿import { SCREEN_BREAK_DEFAULTS, SCREEN_BREAK_LIMITS, SCREEN_BREAK_MESSAGES } from "./screen-break.config";
-import type { ScreenBreakSessionState, ScreenBreakSettings, ScreenBreakSettingsPatch } from "./screen-break.types";
+﻿import {
+  SCREEN_BREAK_DEFAULTS,
+  SCREEN_BREAK_LIMITS,
+  SCREEN_BREAK_MESSAGES,
+} from "./screen-break.config";
+import type {
+  ScreenBreakSessionState,
+  ScreenBreakSettings,
+  ScreenBreakSettingsPatch,
+} from "./screen-break.types";
 
 const HHMM = /^(\d{1,2}):(\d{2})$/;
 
-export function validateScreenBreakSettings(patch: ScreenBreakSettingsPatch): ScreenBreakSettingsPatch {
+export function validateScreenBreakSettings(
+  patch: ScreenBreakSettingsPatch,
+): ScreenBreakSettingsPatch {
   const next: ScreenBreakSettingsPatch = {};
   if (patch.enabled !== undefined) next.enabled = Boolean(patch.enabled);
   if (patch.intervalMinutes !== undefined) {
@@ -20,9 +30,15 @@ export function validateScreenBreakSettings(patch: ScreenBreakSettingsPatch): Sc
       SCREEN_BREAK_LIMITS.maxBreakDurationSeconds,
     );
   }
-  if (patch.activeStartTime !== undefined) next.activeStartTime = normalizeTime(patch.activeStartTime, SCREEN_BREAK_DEFAULTS.activeStartTime);
-  if (patch.activeEndTime !== undefined) next.activeEndTime = normalizeTime(patch.activeEndTime, SCREEN_BREAK_DEFAULTS.activeEndTime);
-  if (patch.respectQuietHours !== undefined) next.respectQuietHours = Boolean(patch.respectQuietHours);
+  if (patch.activeStartTime !== undefined)
+    next.activeStartTime = normalizeTime(
+      patch.activeStartTime,
+      SCREEN_BREAK_DEFAULTS.activeStartTime,
+    );
+  if (patch.activeEndTime !== undefined)
+    next.activeEndTime = normalizeTime(patch.activeEndTime, SCREEN_BREAK_DEFAULTS.activeEndTime);
+  if (patch.respectQuietHours !== undefined)
+    next.respectQuietHours = Boolean(patch.respectQuietHours);
   if (patch.vibrationEnabled !== undefined) next.vibrationEnabled = Boolean(patch.vibrationEnabled);
   if (patch.soundEnabled !== undefined) next.soundEnabled = Boolean(patch.soundEnabled);
   if (patch.snoozeEnabled !== undefined) next.snoozeEnabled = Boolean(patch.snoozeEnabled);
@@ -33,13 +49,20 @@ export function defaultScreenBreakSettings(): ScreenBreakSettings {
   return { ...SCREEN_BREAK_DEFAULTS };
 }
 
-export function shouldTriggerScreenBreak(state: ScreenBreakSessionState, now = Date.now()): boolean {
+export function shouldTriggerScreenBreak(
+  state: ScreenBreakSessionState,
+  now = Date.now(),
+): boolean {
   if (state.reminderActive) return false;
   if (state.snoozedUntil && state.snoozedUntil > now) return false;
   return state.accumulatedActiveMs >= state.thresholdMs;
 }
 
-export function applyScreenBreakSnooze(state: ScreenBreakSessionState, minutes: number, now = Date.now()): ScreenBreakSessionState {
+export function applyScreenBreakSnooze(
+  state: ScreenBreakSessionState,
+  minutes: number,
+  now = Date.now(),
+): ScreenBreakSessionState {
   return {
     ...state,
     reminderActive: false,
