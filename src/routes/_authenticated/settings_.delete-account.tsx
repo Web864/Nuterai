@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export const Route = createFileRoute("/_authenticated/settings/delete-account")({
+export const Route = createFileRoute("/_authenticated/settings_/delete-account")({
   head: () => ({
     meta: [{ title: "Delete account — NutriAI" }, { name: "robots", content: "noindex" }],
   }),
