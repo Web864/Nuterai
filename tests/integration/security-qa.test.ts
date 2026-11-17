@@ -47,7 +47,11 @@ describe("security QA: unauthorized API access", () => {
     expect(error).toBeNull();
     expect(data).toEqual([]);
 
-    const { data: check } = await admin.from("profiles").select("full_name").eq("id", userB.id).single();
+    const { data: check } = await admin
+      .from("profiles")
+      .select("full_name")
+      .eq("id", userB.id)
+      .single();
     expect(check?.full_name).not.toBe("Hijacked");
   });
 

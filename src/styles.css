@@ -1365,6 +1365,19 @@
     animation: premium-shimmer 2.8s linear infinite;
   }
 }
+/* Status-bar / notch clearance for the top of the screen.
+   With targetSdk 36 (Android 15+) the WebView is drawn edge-to-edge under the status bar, so
+   page headers must add their own top padding. env() is correct on WebView 140+ (with
+   viewport-fit=cover); Capacitor's SystemBars plugin also publishes --safe-area-inset-top.
+   Both are 0px on desktop, iOS without a notch, and on older WebViews where Capacitor pads
+   the native view instead, so this is a no-op there. */
+:root {
+  --safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+}
+@utility safe-top {
+  padding-top: var(--safe-top);
+}
+
 @utility bg-gradient-hero {
   background-image: var(--gradient-hero);
 }

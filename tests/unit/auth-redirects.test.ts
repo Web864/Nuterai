@@ -47,4 +47,16 @@ describe("authentication redirect URLs", () => {
     expect(safeAuthNext("//evil.example")).toBe("/dashboard");
     expect(safeAuthNext("https://evil.example")).toBe("/dashboard");
   });
+  it("rejects backslash and control-character tricks that browsers turn into another host", () => {
+    expect(safeAuthNext("/\\evil.example")).toBe("/dashboard");
+    expect(safeAuthNext("/\\/evil.example")).toBe("/dashboard");
+    expect(safeAuthNext("/\t/evil.example")).toBe("/dashboard");
+    expect(safeAuthNext("/\n/evil.example")).toBe("/dashboard");
+    expect(safeAuthNext("javascript:alert(1)")).toBe("/dashboard");
+  });
+  it("keeps legitimate paths with queries, hashes and encoded characters", () => {
+    expect(safeAuthNext("/log?tab=water#top")).toBe("/log?tab=water#top");
+    expect(safeAuthNext("/u/some%20user")).toBe("/u/some%20user");
+    expect(safeAuthNext("/%5Cstays-local")).toBe("/%5Cstays-local");
+  });
 });

@@ -32,7 +32,7 @@ function SettingsPage() {
   const goals = useQuery(goalsQueryOptions(userId));
 
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-background safe-top">
       <div className="mx-auto max-w-3xl min-w-0 px-3 py-6 sm:px-6 sm:py-8">
         <Button asChild variant="ghost" size="sm" className="mb-4 rounded-full">
           <Link to="/dashboard">
@@ -288,4 +288,3 @@ function Field({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-

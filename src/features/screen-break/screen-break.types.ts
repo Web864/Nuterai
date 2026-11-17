@@ -10,7 +10,8 @@
   snoozeEnabled: boolean;
 };
 
-export type ScreenBreakMonitoringStatus = "disabled" | "unavailable" | "permission_required" | "ready" | "monitoring" | "failed";
+export type ScreenBreakMonitoringStatus =
+  "disabled" | "unavailable" | "permission_required" | "ready" | "monitoring" | "failed";
 
 export type ScreenBreakSessionState = {
   accumulatedActiveMs: number;
@@ -32,7 +33,10 @@ export type ScreenBreakSettingsPatch = Partial<ScreenBreakSettings>;
 export type ScreenBreakNativeBridge = {
   isUsageAccessGranted(): Promise<{ granted: boolean; unavailable?: boolean }>;
   openUsageAccessSettings(): Promise<void>;
-  getActiveUsageDuration(): Promise<{ activeUsageMs: number; source: "system" | "nutriai_foreground" | "unavailable" }>;
+  getActiveUsageDuration(): Promise<{
+    activeUsageMs: number;
+    source: "system" | "nutriai_foreground" | "unavailable";
+  }>;
   resetUsageSession(): Promise<void>;
   startUsageMonitoring(options: { intervalMinutes: number }): Promise<{ started: boolean }>;
   stopUsageMonitoring(): Promise<void>;

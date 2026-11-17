@@ -26,12 +26,17 @@ function PricingPage() {
   return (
     <div className="premium-shell min-h-dvh">
       <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
-        <Link to="/" className="mb-12 inline-flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-2 text-sm text-muted-foreground">
+        <Link
+          to="/"
+          className="mb-12 inline-flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-2 text-sm text-muted-foreground"
+        >
           <Leaf className="h-4 w-4 text-primary" /> NutriAI
         </Link>
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Pricing</p>
-          <h1 className="mt-3 text-balance font-display text-5xl sm:text-6xl">Simple, honest pricing.</h1>
+          <h1 className="mt-3 text-balance font-display text-5xl sm:text-6xl">
+            Simple, honest pricing.
+          </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
             Start free with everything you need. Upgrade to Pro when you want unlimited AI coaching
             and advanced insights.

@@ -3,9 +3,7 @@ import { parseTextFoodItems } from "@/features/logging/text-food-parser";
 
 describe("text food parser", () => {
   it("preserves quantity and a food-piece serving", () => {
-    expect(parseTextFoodItems("2 eggs")).toEqual([
-      { name: "eggs", quantity: 2, unit: "piece" },
-    ]);
+    expect(parseTextFoodItems("2 eggs")).toEqual([{ name: "eggs", quantity: 2, unit: "piece" }]);
   });
 
   it("separates natural-language meal items", () => {

@@ -5,7 +5,9 @@ import { getScreenBreakNativeBridge } from "./screen-break.native";
 // Phase 2: Screen Break Reminder
 // Dormant startup reconciliation. When the feature flag is false this performs
 // no permission checks, no monitoring, and no notification scheduling.
-export async function reconcileScreenBreakMonitoring(settings: ScreenBreakSettings | null): Promise<ScreenBreakMonitoringStatus> {
+export async function reconcileScreenBreakMonitoring(
+  settings: ScreenBreakSettings | null,
+): Promise<ScreenBreakMonitoringStatus> {
   if (!ENABLE_SCREEN_BREAK_REMINDERS || !settings?.enabled) return "disabled";
 
   const bridge = await getScreenBreakNativeBridge();

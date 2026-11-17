@@ -24,11 +24,16 @@ function AboutPage() {
   return (
     <div className="premium-shell min-h-dvh">
       <div className="mx-auto max-w-4xl px-5 py-14 sm:px-8 sm:py-20">
-        <Link to="/" className="mb-12 inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/60 px-3 py-2 text-sm text-muted-foreground">
+        <Link
+          to="/"
+          className="mb-12 inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/60 px-3 py-2 text-sm text-muted-foreground"
+        >
           <Leaf className="h-4 w-4 text-primary" /> NutriAI
         </Link>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">About</p>
-        <h1 className="mt-3 text-balance font-display text-5xl leading-tight sm:text-6xl">Smarter health, made personal.</h1>
+        <h1 className="mt-3 text-balance font-display text-5xl leading-tight sm:text-6xl">
+          Smarter health, made personal.
+        </h1>
         <div className="mt-10 max-w-3xl border-t border-border/60 pt-8 text-foreground">
           <p className="text-lg text-muted-foreground">
             Most health apps hand out one-size-fits-all plans and hope for the best. NutriAI is

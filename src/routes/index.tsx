@@ -348,7 +348,7 @@ function LandingPage() {
 
 function SiteHeader() {
   return (
-    <header className="landing-header sticky top-0 z-40 border-b border-border/60 bg-background/75 backdrop-blur-xl">
+    <header className="landing-header safe-top sticky top-0 z-40 border-b border-border/60 bg-background/75 backdrop-blur-xl">
       <div className="landing-header-inner mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
         <Link to="/" className="flex items-center gap-2.5 text-foreground">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_22px_oklch(0.77_0.18_153_/_0.3)]">

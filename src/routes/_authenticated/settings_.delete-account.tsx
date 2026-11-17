@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export const Route = createFileRoute("/_authenticated/settings/delete-account")({
+export const Route = createFileRoute("/_authenticated/settings_/delete-account")({
   head: () => ({
     meta: [{ title: "Delete account — NutriAI" }, { name: "robots", content: "noindex" }],
   }),
@@ -74,7 +74,7 @@ function DeleteAccountPage() {
   const s = summary.data;
 
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-background safe-top">
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
         <Button asChild variant="ghost" size="sm" className="mb-4 rounded-full">
           <Link to="/settings">

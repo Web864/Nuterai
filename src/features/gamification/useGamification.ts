@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { trackEvent, type TrackEvent, type TrackResult } from "./track";import { STREAK_LABELS } from "@/lib/gamification";
+import { trackEvent, type TrackEvent, type TrackResult } from "./track";
+import { STREAK_LABELS } from "@/lib/gamification";
 
 /**
  * Hook that exposes a `track` function for gamified actions and surfaces

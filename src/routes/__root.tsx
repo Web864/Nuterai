@@ -226,5 +226,16 @@ function RootComponent() {
  * resolvedTheme, success/error toasts would stay light-themed in dark mode. */
 function AppToaster() {
   const { resolvedTheme } = useTheme();
-  return <Toaster position="top-center" richColors closeButton theme={resolvedTheme} />;
+  // top offsets include the status-bar inset (--safe-top, see styles.css) so toasts are not
+  // drawn under the Android status bar; the extra gaps are sonner's defaults (24px / 16px).
+  return (
+    <Toaster
+      position="top-center"
+      richColors
+      closeButton
+      theme={resolvedTheme}
+      offset={{ top: "calc(var(--safe-top) + 24px)" }}
+      mobileOffset={{ top: "calc(var(--safe-top) + 16px)" }}
+    />
+  );
 }

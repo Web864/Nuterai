@@ -34,7 +34,7 @@ import { Route as AuthenticatedWorkoutRouteImport } from './routes/_authenticate
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-password'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
-import { Route as AuthenticatedSettingsDeleteAccountRouteImport } from './routes/_authenticated/settings.delete-account'
+import { Route as AuthenticatedSettingsDeleteAccountRouteImport } from './routes/_authenticated/settings_.delete-account'
 import { Route as AuthenticatedUUsernameRouteImport } from './routes/_authenticated/u.$username'
 
 const IndexRoute = IndexRouteImport.update({
@@ -164,9 +164,9 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
 } as any)
 const AuthenticatedSettingsDeleteAccountRoute =
   AuthenticatedSettingsDeleteAccountRouteImport.update({
-    id: '/delete-account',
-    path: '/delete-account',
-    getParentRoute: () => AuthenticatedSettingsRoute,
+    id: '/settings_/delete-account',
+    path: '/settings/delete-account',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedUUsernameRoute = AuthenticatedUUsernameRouteImport.update({
   id: '/u/$username',
@@ -194,7 +194,7 @@ export interface FileRoutesByFullPath {
   '/recipes': typeof AuthenticatedRecipesRoute
   '/reminders': typeof AuthenticatedRemindersRoute
   '/scan': typeof AuthenticatedScanRoute
-  '/settings': typeof AuthenticatedSettingsRouteWithChildren
+  '/settings': typeof AuthenticatedSettingsRoute
   '/workout': typeof AuthenticatedWorkoutRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -222,7 +222,7 @@ export interface FileRoutesByTo {
   '/recipes': typeof AuthenticatedRecipesRoute
   '/reminders': typeof AuthenticatedRemindersRoute
   '/scan': typeof AuthenticatedScanRoute
-  '/settings': typeof AuthenticatedSettingsRouteWithChildren
+  '/settings': typeof AuthenticatedSettingsRoute
   '/workout': typeof AuthenticatedWorkoutRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -252,12 +252,12 @@ export interface FileRoutesById {
   '/_authenticated/recipes': typeof AuthenticatedRecipesRoute
   '/_authenticated/reminders': typeof AuthenticatedRemindersRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
-  '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/workout': typeof AuthenticatedWorkoutRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth_/callback': typeof AuthCallbackRoute
-  '/_authenticated/settings/delete-account': typeof AuthenticatedSettingsDeleteAccountRoute
+  '/_authenticated/settings_/delete-account': typeof AuthenticatedSettingsDeleteAccountRoute
   '/_authenticated/u/$username': typeof AuthenticatedUUsernameRoute
 }
 export interface FileRouteTypes {
@@ -344,7 +344,7 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/auth_/callback'
-    | '/_authenticated/settings/delete-account'
+    | '/_authenticated/settings_/delete-account'
     | '/_authenticated/u/$username'
   fileRoutesById: FileRoutesById
 }
@@ -539,12 +539,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/settings/delete-account': {
-      id: '/_authenticated/settings/delete-account'
-      path: '/delete-account'
+    '/_authenticated/settings_/delete-account': {
+      id: '/_authenticated/settings_/delete-account'
+      path: '/settings/delete-account'
       fullPath: '/settings/delete-account'
       preLoaderRoute: typeof AuthenticatedSettingsDeleteAccountRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/u/$username': {
       id: '/_authenticated/u/$username'
@@ -555,20 +555,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface AuthenticatedSettingsRouteChildren {
-  AuthenticatedSettingsDeleteAccountRoute: typeof AuthenticatedSettingsDeleteAccountRoute
-}
-
-const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
-  AuthenticatedSettingsDeleteAccountRoute:
-    AuthenticatedSettingsDeleteAccountRoute,
-}
-
-const AuthenticatedSettingsRouteWithChildren =
-  AuthenticatedSettingsRoute._addFileChildren(
-    AuthenticatedSettingsRouteChildren,
-  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAchievementsRoute: typeof AuthenticatedAchievementsRoute
@@ -581,8 +567,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRecipesRoute: typeof AuthenticatedRecipesRoute
   AuthenticatedRemindersRoute: typeof AuthenticatedRemindersRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWorkoutRoute: typeof AuthenticatedWorkoutRoute
+  AuthenticatedSettingsDeleteAccountRoute: typeof AuthenticatedSettingsDeleteAccountRoute
   AuthenticatedUUsernameRoute: typeof AuthenticatedUUsernameRoute
 }
 
@@ -597,8 +584,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRecipesRoute: AuthenticatedRecipesRoute,
   AuthenticatedRemindersRoute: AuthenticatedRemindersRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWorkoutRoute: AuthenticatedWorkoutRoute,
+  AuthenticatedSettingsDeleteAccountRoute:
+    AuthenticatedSettingsDeleteAccountRoute,
   AuthenticatedUUsernameRoute: AuthenticatedUUsernameRoute,
 }
 

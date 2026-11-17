@@ -72,9 +72,7 @@ export async function enforceAiRateLimit(
       hint: error.hint,
     });
 
-    throw new RateLimitError(
-      "Couldn't verify usage limits right now. Please try again shortly.",
-    );
+    throw new RateLimitError("Couldn't verify usage limits right now. Please try again shortly.");
   }
 
   const result = data as {
