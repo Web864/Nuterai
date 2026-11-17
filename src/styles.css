@@ -2422,7 +2422,13 @@
     background: var(--nutrient-fat);
   }
   @media (pointer: coarse) {
-    .app-workspace :is(button, [role="tab"], input, select) {
+    .app-workspace
+      :is(
+        button:not([role="switch"], [role="checkbox"], [role="radio"]),
+        [role="tab"],
+        input:not([type="checkbox"], [type="radio"]),
+        select
+      ) {
       min-height: 2.75rem;
     }
   }
