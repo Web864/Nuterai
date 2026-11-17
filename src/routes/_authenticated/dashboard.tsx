@@ -186,7 +186,7 @@ function Dashboard() {
 
         {g ? (
           <>
-            <section className="dashboard-metrics dashboard-reference-metrics grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <section className="dashboard-metrics dashboard-reference-metrics grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
               <StatCard
                 icon={<Flame className="h-5 w-5" />}
                 label="Calories today"

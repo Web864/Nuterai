@@ -167,7 +167,7 @@ function RemindersPage() {
         )}
 
         {isNative && <ClosedAppReminderHelpCard />}
-        <div className="mb-6 grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="-mx-3 mb-6 flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-2 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 [&>*]:w-[85%] [&>*]:shrink-0 [&>*]:snap-center sm:[&>*]:w-auto">
           <AutoDietCard
             userId={userId}
             timezone={timezone}
@@ -204,7 +204,7 @@ function RemindersPage() {
           </Card>
         </div>
         <Tabs defaultValue="today" className="w-full">
-          <TabsList className="flex h-auto w-full min-w-0 flex-wrap rounded-2xl">
+          <TabsList className="flex h-auto w-full min-w-0 flex-nowrap justify-start gap-1 overflow-x-auto rounded-2xl sm:flex-wrap [&>*]:shrink-0">
             <TabsTrigger value="today" className="rounded-xl">
               Today
             </TabsTrigger>
@@ -595,9 +595,17 @@ function ReminderCard({
   return (
     <Card className="rounded-3xl">
       <CardContent className="p-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0 flex-1">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <p className="min-w-0 break-words font-medium [overflow-wrap:anywhere]">{r.title}</p>
+              <Switch
+                className="shrink-0 sm:hidden"
+                checked={enabled}
+                onCheckedChange={(v) => update.mutate({ id: r.id, patch: { enabled: v } })}
+              />
+            </div>
+            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
               <Badge variant="secondary" className="max-w-full rounded-full">
                 {typeLabel(r.type)}
               </Badge>
@@ -605,9 +613,8 @@ function ReminderCard({
                 {sourceLabel(r.source)}
               </Badge>
               {!enabled && <Badge variant="outline">Paused</Badge>}
-              <p className="min-w-0 break-words font-medium [overflow-wrap:anywhere]">{r.title}</p>
             </div>
-            {r.message && <p className="mt-1 text-sm text-muted-foreground">{r.message}</p>}
+            {r.message && <p className="mt-2 text-sm text-muted-foreground">{r.message}</p>}
             <p className="mt-2 text-xs text-muted-foreground">
               {next
                 ? `${formatWhen(next)} at ${next.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
@@ -615,8 +622,9 @@ function ReminderCard({
               - {r.scheduled_time ?? r.times?.[0] ?? "--:--"} - {recurrenceLabel(rule)}
             </p>
           </div>
-          <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-2 border-t pt-3 sm:w-auto sm:justify-end sm:border-t-0 sm:pt-0">
             <Switch
+              className="hidden sm:inline-flex"
               checked={enabled}
               onCheckedChange={(v) => update.mutate({ id: r.id, patch: { enabled: v } })}
             />
@@ -636,6 +644,7 @@ function ReminderCard({
                 <Link to="/workout">Start workout</Link>
               </Button>
             )}
+            <span className="text-xs text-muted-foreground sm:hidden">Snooze</span>
             {SNOOZE_OPTIONS.map((m) => (
               <Button
                 key={m}
@@ -652,18 +661,20 @@ function ReminderCard({
                 {m < 60 ? `${m}m` : "1h"}
               </Button>
             ))}
-            {editable && <EditReminderButton userId={userId} reminder={r} />}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                if (confirm("Delete this reminder?"))
-                  del.mutate(r.id, { onSuccess: () => toast.success("Reminder deleted") });
-              }}
-              aria-label={`Delete ${r.title}`}
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
+            <div className="ml-auto flex items-center gap-1">
+              {editable && <EditReminderButton userId={userId} reminder={r} />}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  if (confirm("Delete this reminder?"))
+                    del.mutate(r.id, { onSuccess: () => toast.success("Reminder deleted") });
+                }}
+                aria-label={`Delete ${r.title}`}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>
