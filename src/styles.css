@@ -2019,6 +2019,13 @@
   }
 
   @media (max-width: 760px) {
+    /* 4 stat cards sit 2x2 on phones instead of four tall full-width rows */
+    .dashboard-metric-card {
+      min-height: 0;
+    }
+    .dashboard-metric-card > div {
+      padding: 0.9rem;
+    }
     .dashboard-main {
       padding-right: 1rem;
       padding-left: 1rem;
