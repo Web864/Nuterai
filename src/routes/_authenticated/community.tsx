@@ -74,7 +74,7 @@ function CommunityPage() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <header className="border-b border-border/60 bg-background/80 backdrop-blur-xl">
+      <header className="safe-top border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-4xl items-center gap-3 px-4 py-4 sm:px-6">
           <Button asChild variant="ghost" size="icon" className="rounded-full">
             <Link to="/dashboard" aria-label="Back to dashboard">

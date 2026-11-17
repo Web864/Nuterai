@@ -66,7 +66,7 @@ function AchievementsPage() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+      <header className="safe-top sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-4 sm:px-6">
           <Button asChild variant="ghost" size="icon" className="rounded-full">
             <Link to="/dashboard" aria-label="Back to dashboard">

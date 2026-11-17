@@ -417,7 +417,7 @@ function Dashboard() {
 function TopBar({ onSignOut, name }: { onSignOut: () => void; name: string }) {
   const who = useQuery(adminWhoAmIQueryOptions());
   return (
-    <div className="dashboard-nav sticky top-0 z-30 border-b border-border/60 bg-background/75 backdrop-blur-xl">
+    <div className="dashboard-nav safe-top sticky top-0 z-30 border-b border-border/60 bg-background/75 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 py-4 sm:px-7 lg:px-10">
         <Link to="/dashboard" className="dashboard-brand flex items-center gap-2 text-foreground">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_22px_color-mix(in_oklch,var(--color-primary)_38%,transparent)]">

@@ -74,7 +74,7 @@ function DeleteAccountPage() {
   const s = summary.data;
 
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-background safe-top">
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
         <Button asChild variant="ghost" size="sm" className="mb-4 rounded-full">
           <Link to="/settings">
