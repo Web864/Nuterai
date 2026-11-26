@@ -1,61 +1,79 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Leaf } from "lucide-react";
+import { PageIntro, PublicLayout } from "@/components/site/PublicLayout";
+import { breadcrumbSchema, pageHead } from "@/lib/seo";
 import { canonicalUrl } from "@/lib/site";
 
+const crumbs = [
+  { name: "Home", path: "/" },
+  { name: "About", path: "/about" },
+];
+
 export const Route = createFileRoute("/about")({
-  head: () => ({
-    links: [{ rel: "canonical", href: canonicalUrl("/about") }],
-    meta: [
-      { title: "About NutriAI — Our mission for smarter health" },
-      {
-        name: "description",
-        content:
-          "NutriAI is on a mission to make personalized health coaching accessible to everyone.",
-      },
-      { property: "og:title", content: "About NutriAI" },
-      {
-        property: "og:description",
-        content: "Our mission for smarter, more personal health coaching.",
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: "About NutriAI: Personal AI Nutrition Coaching for Everyone",
+      description:
+        "Why we built NutriAI, an AI meal planner and fitness coach grounded in nutrition science and made for real food and real schedules, desi kitchens included.",
+      path: "/about",
+      jsonLd: [
+        breadcrumbSchema(crumbs),
+        {
+          "@context": "https://schema.org",
+          "@type": "AboutPage",
+          name: "About NutriAI",
+          url: canonicalUrl("/about"),
+          about: { "@type": "Organization", name: "NutriAI", founder: "Rabia Naz" },
+        },
+      ],
+    }),
   component: AboutPage,
 });
 
 function AboutPage() {
   return (
-    <div className="premium-shell min-h-dvh">
-      <div className="mx-auto max-w-4xl px-5 py-14 sm:px-8 sm:py-20">
-        <Link
-          to="/"
-          className="mb-12 inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/60 px-3 py-2 text-sm text-muted-foreground"
-        >
-          <Leaf className="h-4 w-4 text-primary" /> NutriAI
-        </Link>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">About</p>
-        <h1 className="mt-3 text-balance font-display text-5xl leading-tight sm:text-6xl">
-          Smarter health, made personal.
-        </h1>
-        <div className="mt-10 max-w-3xl border-t border-border/60 pt-8 text-foreground">
-          <p className="text-lg text-muted-foreground">
+    <PublicLayout>
+      <PageIntro
+        eyebrow="About"
+        title="Smarter health, made personal."
+        summary="NutriAI is an AI nutrition and fitness app that starts with you: your body, your goals, your culture and your schedule. It was built by Rabia Naz to make personal coaching affordable for everyone."
+        crumbs={crumbs}
+      />
+      <div className="mx-auto max-w-4xl px-5 py-14 sm:px-8">
+        <div className="max-w-3xl text-foreground">
+          <h2 className="font-display text-3xl sm:text-4xl">Why NutriAI exists</h2>
+          <p className="mt-4 text-lg text-muted-foreground">
             Most health apps hand out one-size-fits-all plans and hope for the best. NutriAI is
-            different: it starts with you — your body, your goals, your culture, your schedule — and
-            builds a plan that fits your life.
+            different: it starts with you and builds a plan that fits your life, including the food
+            you grew up with.
           </p>
-          <p className="mt-6 text-muted-foreground">
-            Under the hood, NutriAI combines evidence-based nutrition science (Mifflin–St Jeor for
-            metabolism, protein targets by goal, macro distributions from real research) with
-            adaptive AI that learns from your progress. Nothing here is medical advice — we're your
-            coach, not your doctor. But the guidance we give is grounded, safe, and personal.
-          </p>
-          <h2 className="mt-12 font-display text-3xl sm:text-4xl">Why "Fresh & Organic"</h2>
+          <h2 className="mt-12 font-display text-3xl sm:text-4xl">How the guidance is grounded</h2>
           <p className="mt-4 text-muted-foreground">
-            Health apps shouldn't feel clinical or intimidating. Our design leans into the warmth of
-            real food — the greens of fresh produce, the cream of a linen tablecloth. Because health
-            is human, not a spreadsheet.
+            NutriAI combines established nutrition science (the Mifflin-St Jeor equation for energy
+            needs, protein targets by goal and standard macro ranges) with adaptive AI that learns
+            from your logs. Nothing here is medical advice: we&apos;re your coach, not your doctor.
+            AI estimates are shown for you to review, and the coach has safety limits built in.
+          </p>
+          <h2 className="mt-12 font-display text-3xl sm:text-4xl">
+            Why &quot;Fresh &amp; Organic&quot;
+          </h2>
+          <p className="mt-4 text-muted-foreground">
+            Health apps shouldn&apos;t feel clinical or intimidating. Our design leans into the
+            warmth of real food: the greens of fresh produce, the cream of a linen tablecloth.
+            Because health is human, not a spreadsheet.
+          </p>
+          <p className="mt-10 text-muted-foreground">
+            Want the details? Read{" "}
+            <Link to="/how-it-works" className="text-primary hover:underline">
+              how NutriAI works
+            </Link>{" "}
+            or browse the{" "}
+            <Link to="/faq" className="text-primary hover:underline">
+              FAQ
+            </Link>
+            .
           </p>
         </div>
       </div>
-    </div>
+    </PublicLayout>
   );
 }

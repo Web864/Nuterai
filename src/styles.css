@@ -2439,3 +2439,10 @@
     outline-offset: 3px;
   }
 }
+
+/* Signed-in visitors are redirected from / to /dashboard; hide the
+   server-rendered marketing page before first paint so it never flashes.
+   See src/lib/session-hint.ts. */
+html.has-session .landing-session-gate {
+  visibility: hidden;
+}

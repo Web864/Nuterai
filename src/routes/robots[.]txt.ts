@@ -1,43 +1,35 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getRequest } from "@tanstack/react-start/server";
+import { PRIVATE_PATH_PREFIXES } from "@/lib/public-pages";
+import { SITE_ORIGIN } from "@/lib/site";
 
 /**
- * Served dynamically so the sitemap reference is an absolute URL on whatever
- * domain the app is deployed to (search engines reject relative sitemap paths).
+ * Served dynamically so the sitemap reference is an absolute URL (search
+ * engines reject relative sitemap paths). AI crawlers (GPTBot, ClaudeBot,
+ * PerplexityBot, Google-Extended...) are covered by the wildcard group and
+ * allowed on public pages on purpose: being readable by them is what makes
+ * NutriAI citable in AI answers (GEO).
  */
+export function robotsTxt(origin: string = SITE_ORIGIN): string {
+  return [
+    "User-agent: *",
+    "Allow: /",
+    ...PRIVATE_PATH_PREFIXES.map((p) => `Disallow: ${p}`),
+    "",
+    `Sitemap: ${origin}/sitemap.xml`,
+    "",
+  ].join("\n");
+}
+
 export const Route = createFileRoute("/robots.txt")({
   server: {
     handlers: {
-      GET: async () => {
-        const origin = new URL(getRequest().url).origin;
-        const body = [
-          "User-agent: *",
-          "Allow: /",
-          "Disallow: /auth",
-          "Disallow: /dashboard",
-          "Disallow: /onboarding",
-          "Disallow: /log",
-          "Disallow: /workout",
-          "Disallow: /coach",
-          "Disallow: /scan",
-          "Disallow: /reminders",
-          "Disallow: /community",
-          "Disallow: /achievements",
-          "Disallow: /settings",
-          "Disallow: /admin",
-          "Disallow: /u/",
-          "",
-          `Sitemap: ${origin}/sitemap.xml`,
-          "",
-        ].join("\n");
-
-        return new Response(body, {
+      GET: async () =>
+        new Response(robotsTxt(), {
           headers: {
             "Content-Type": "text/plain; charset=utf-8",
             "Cache-Control": "public, max-age=3600",
           },
-        });
-      },
+        }),
     },
   },
 });

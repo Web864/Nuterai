@@ -1,12 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { PhoneMockup, type PhoneMockupScreen } from "@/components/landing/PhoneMockup";
 import { useSession } from "@/features/auth/use-session";
 import heroImage from "@/assets/hero-food.jpg";
@@ -18,87 +12,75 @@ import {
   ChefHat,
   Dumbbell,
   Heart,
-  Github,
-  Linkedin,
   Leaf,
   MoonStar,
-  Menu,
   ScanLine,
   Sparkles,
   Utensils,
 } from "lucide-react";
-import { canonicalUrl } from "@/lib/site";
+import { FaqList, PublicLayout } from "@/components/site/PublicLayout";
+import { GENERAL_FAQS } from "@/content/marketing";
+import { PLANS } from "@/lib/billing/plans";
+import { faqPageSchema, pageHead, softwareApplicationSchema } from "@/lib/seo";
+import { clearSessionHint } from "@/lib/session-hint";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    links: [{ rel: "canonical", href: canonicalUrl("/") }],
-    meta: [
-      { title: "NutriAI - Personalized AI Meal Planner & Nutrition Coach" },
-      {
-        name: "description",
-        content:
-          "Create personalized meal plans around your goals, food preferences, budget, and lifestyle with NutriAI.",
-      },
-      { property: "og:title", content: "NutriAI - Personalized AI Meal Planner & Nutrition Coach" },
-      {
-        property: "og:description",
-        content:
-          "Personalized meal plans, food logging, and practical nutrition guidance for the food you actually eat.",
-      },
-    ],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "SoftwareApplication",
-          name: "NutriAI",
-          applicationCategory: "HealthApplication",
-          operatingSystem: "Web, iOS, Android",
-          description:
-            "Personalized meal planning and general-wellness nutrition guidance based on your goals, preferences, and lifestyle.",
-          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-        }),
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: "NutriAI: AI Meal Planner, Calorie Tracker & Fitness Coach",
+      description:
+        "Free AI nutrition app: personalized meal plans, photo and barcode calorie tracking, an AI coach and workouts. Built for the food you eat, desi meals included.",
+      path: "/",
+      jsonLd: [
+        softwareApplicationSchema({ proPrice: String(PLANS.pro.priceUsdMonthly) }),
+        faqPageSchema(HOME_FAQS),
+      ],
+    }),
   component: LandingPage,
 });
+
+const HOME_FAQS = GENERAL_FAQS.slice(0, 6);
 
 const features = [
   {
     icon: Utensils,
     title: "AI meal plans",
+    href: "/features/ai-meal-planner",
     description: "Personalized meals for your diet, budget, allergies, and culture.",
     visual: "meal",
   },
   {
     icon: Dumbbell,
     title: "Adaptive workouts",
+    href: "/features/ai-workout-planner",
     description: "Gym, home, or no-equipment sessions that adapt to your week.",
     visual: "workout",
   },
   {
     icon: Brain,
     title: "Smart AI coach",
+    href: "/features/ai-nutrition-coach",
     description: "Natural answers and timely adjustments when your day changes.",
     visual: "coach",
   },
   {
     icon: ScanLine,
     title: "Snap to log",
+    href: "/features/ai-calorie-tracker",
     description: "Photo or barcode logging with calorie and macro estimates.",
     visual: "scan",
   },
   {
     icon: MoonStar,
     title: "Sleep & recovery",
+    href: "/features",
     description: "Bring recovery into tomorrow's movement plan.",
     visual: "sleep",
   },
   {
     icon: Heart,
     title: "Habits & mood",
+    href: "/features",
     description: "See the patterns connecting food, movement, and how you feel.",
     visual: "habits",
   },
@@ -108,41 +90,37 @@ function LandingPage() {
   const session = useSession();
   const navigate = useNavigate();
 
+  // Always server-render the full page: crawlers have no session, and an
+  // empty "loading" shell here used to make the homepage invisible to search
+  // engines. Signed-in visitors are hidden pre-paint by the session hint
+  // (src/lib/session-hint.ts) and redirected once the session resolves.
   useEffect(() => {
     if (session.data) {
       void navigate({ to: "/dashboard", replace: true });
+    } else if (!session.isPending) {
+      clearSessionHint();
     }
-  }, [navigate, session.data]);
-
-  if (session.isPending || session.data) {
-    return <div className="min-h-dvh bg-background" aria-busy="true" />;
-  }
+  }, [navigate, session.data, session.isPending]);
 
   return (
-    <div className="landing-page premium-shell min-h-dvh">
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-background focus:px-4 focus:py-3 focus:text-foreground focus:outline-2 focus:outline-ring"
-      >
-        Skip to content
-      </a>
-      <SiteHeader />
-      <main id="main-content" tabIndex={-1}>
+    <div className="landing-session-gate">
+      <PublicLayout>
         <section className="landing-hero relative isolate overflow-hidden border-b border-border/60">
           <div className="absolute inset-0 -z-10 bg-gradient-glow" />
           <div className="landing-hero-grid mx-auto grid max-w-7xl lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div className="landing-hero-copy max-w-xl">
               <span className="premium-glass inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-medium text-foreground">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
-                Nutrition for the food you actually eat
+                Meal plans, calorie tracking and an AI coach
               </span>
               <h1 className="landing-hero-title mt-6 text-balance font-display">
-                Eat better without giving up the food you{" "}
+                The AI meal planner for the food you actually{" "}
                 <span className="emerald-text">love.</span>
               </h1>
               <p className="landing-hero-description mt-6 max-w-lg text-muted-foreground">
-                NutriAI creates personalized meal plans around your goals, budget, allergies,
-                preferences, and the foods you actually eat.
+                NutriAI builds personalized meal plans around your goals, budget, allergies and
+                favourite foods, counts calories from a photo, and adapts workouts to your week.
+                Desi meals included.
               </p>
               <div className="landing-hero-actions mt-8 flex flex-wrap gap-3">
                 <Button asChild size="lg" className="landing-primary-action rounded-full px-7">
@@ -156,7 +134,7 @@ function LandingPage() {
                   size="lg"
                   className="landing-secondary-action rounded-full px-7"
                 >
-                  <a href="#how-it-works">See how it works</a>
+                  <Link to="/how-it-works">See how it works</Link>
                 </Button>
               </div>
               <p className="mt-4 text-xs text-muted-foreground">
@@ -233,7 +211,7 @@ function LandingPage() {
               description="NutriAI keeps the daily loop focused: plan meals around your life, track what you ate, then make the next choice easier."
             />
             <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {features.slice(0, 3).map((feature) => (
+              {features.map((feature) => (
                 <FeatureCard key={feature.title} {...feature} />
               ))}
             </div>
@@ -315,6 +293,29 @@ function LandingPage() {
           </div>
         </section>
 
+        <section className="landing-section border-b border-border/60">
+          <div className="mx-auto max-w-3xl px-5 sm:px-8">
+            <SectionHeading
+              eyebrow="FAQ"
+              title="Questions people ask about NutriAI"
+              description="Straight answers about cost, accuracy and what NutriAI can and can't do."
+            />
+            <div className="mt-10">
+              <FaqList faqs={HOME_FAQS} />
+            </div>
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              <Link to="/faq" className="text-primary hover:underline">
+                See all questions
+              </Link>{" "}
+              or{" "}
+              <Link to="/features" className="text-primary hover:underline">
+                explore every feature
+              </Link>
+              .
+            </p>
+          </div>
+        </section>
+
         <section className="landing-final-cta px-5 pb-12 sm:px-8 sm:pb-20 lg:px-10">
           <div className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] border border-primary/35 bg-gradient-hero px-6 py-12 shadow-hero sm:rounded-[2.5rem] sm:px-12 md:grid-cols-[minmax(0,1fr)_220px] md:items-center md:py-14">
             <div
@@ -342,123 +343,8 @@ function LandingPage() {
             </div>
           </div>
         </section>
-      </main>
-      <SiteFooter />
+      </PublicLayout>
     </div>
-  );
-}
-
-function SiteHeader() {
-  return (
-    <header className="landing-header safe-top sticky top-0 z-40 border-b border-border/60 bg-background/75 backdrop-blur-xl">
-      <div className="landing-header-inner mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
-        <Link to="/" className="flex items-center gap-2.5 text-foreground">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_22px_oklch(0.77_0.18_153_/_0.3)]">
-            <Leaf className="h-4 w-4" />
-          </span>
-          <span className="font-display text-lg">NutriAI</span>
-        </Link>
-        <nav
-          aria-label="Main navigation"
-          className="hidden items-center gap-7 text-sm font-medium text-muted-foreground sm:flex"
-        >
-          <Link to="/about" className="hover:text-foreground">
-            About
-          </Link>
-          <Link to="/pricing" className="hover:text-foreground">
-            Pricing
-          </Link>
-        </nav>
-        <div className="landing-header-actions flex min-w-0 shrink items-center justify-end">
-          <Button asChild variant="ghost" size="sm" className="hidden rounded-full sm:inline-flex">
-            <Link to="/auth">Sign in</Link>
-          </Button>
-          <Button asChild size="sm" className="rounded-full px-4">
-            <Link to="/auth" search={{ mode: "signup" }}>
-              Start free
-            </Link>
-          </Button>
-          <div className="sm:hidden">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Open navigation menu"
-                  className="rounded-full"
-                >
-                  <Menu aria-hidden="true" className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-44 rounded-xl p-2">
-                <DropdownMenuItem asChild className="min-h-11 rounded-lg">
-                  <Link to="/about">About</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="min-h-11 rounded-lg">
-                  <Link to="/pricing">Pricing</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="min-h-11 rounded-lg">
-                  <Link to="/auth">Sign in</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function SiteFooter() {
-  return (
-    <footer className="landing-footer border-t border-border/60 bg-background/50">
-      <div className="mx-auto flex max-w-7xl min-w-0 flex-col items-center justify-between gap-5 px-5 py-9 text-sm text-muted-foreground sm:flex-row sm:px-8 lg:px-10">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Leaf className="h-3.5 w-3.5" />
-          </span>
-          <span className="font-display text-foreground">NutriAI</span>
-          <span>Copyright {new Date().getFullYear()}</span>
-        </div>
-        <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:gap-3">
-          <span>Built by Rabia Naz</span>
-          <div className="flex items-center gap-3">
-            <a
-              href="https://www.linkedin.com/in/rabia-naz-01263b339"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Rabia Naz on LinkedIn (opens in a new tab)"
-              className="rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              <Linkedin aria-hidden="true" className="h-4 w-4" />
-            </a>
-            <a
-              href="https://github.com/Web864"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Rabia Naz on GitHub (opens in a new tab)"
-              className="rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              <Github aria-hidden="true" className="h-4 w-4" />
-            </a>
-          </div>
-        </div>
-        <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
-          <Link to="/about" className="hover:text-foreground">
-            About
-          </Link>
-          <Link to="/pricing" className="hover:text-foreground">
-            Pricing
-          </Link>
-          <Link to="/privacy" className="hover:text-foreground">
-            Privacy
-          </Link>
-          <Link to="/terms" className="hover:text-foreground">
-            Terms
-          </Link>
-        </div>
-      </div>
-    </footer>
   );
 }
 
@@ -549,11 +435,13 @@ function FeatureCard({
   title,
   description,
   visual,
+  href,
 }: {
   icon: typeof Sparkles;
   title: string;
   description: string;
   visual: string;
+  href: string;
 }) {
   const visualContent =
     visual === "meal" || visual === "scan" ? (
@@ -572,7 +460,11 @@ function FeatureCard({
       >
         {visualContent}
       </span>
-      <h3 className="mt-5 font-display text-2xl">{title}</h3>
+      <h3 className="mt-5 font-display text-2xl">
+        <Link to={href} className="after:absolute after:inset-0 hover:text-primary">
+          {title}
+        </Link>
+      </h3>
       <p className="mt-2 max-w-[16rem] text-sm leading-6 text-muted-foreground">{description}</p>
     </div>
   );

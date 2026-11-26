@@ -19,6 +19,8 @@ import { DARK_THEME_COLOR, LIGHT_THEME_COLOR, THEME_INIT_SCRIPT } from "../lib/t
 
 import { supabase } from "@/integrations/supabase/client";
 import { canonicalUrl } from "@/lib/site";
+import { organizationSchema, websiteSchema } from "@/lib/seo";
+import { SESSION_HINT_SCRIPT } from "@/lib/session-hint";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider, useTheme } from "@/components/theme-provider";
 import { MotionProvider } from "@/components/motion/MotionProvider";
@@ -91,6 +93,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "NutriAI adapts to your body, goals, and lifestyle to create the perfect nutrition, fitness, and wellness plan — powered by AI.",
       },
       { name: "author", content: "NutriAI" },
+      { property: "og:site_name", content: "NutriAI" },
       { property: "og:title", content: "NutriAI — Your Personal AI Health & Lifestyle Coach" },
       {
         property: "og:description",
@@ -114,6 +117,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
+    // Site-wide entity schema (who publishes the site). Page-level schema
+    // (SoftwareApplication, FAQPage, BreadcrumbList...) lives in each route.
+    scripts: [organizationSchema(), websiteSchema()].map((data) => ({
+      type: "application/ld+json",
+      children: JSON.stringify(data),
+    })),
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -142,6 +151,10 @@ function RootShell({ children }: { children: ReactNode }) {
             storage key/resolution logic as ThemeProvider — prevents a
             flash of the wrong theme. Must run before body renders. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Hides marketing content before first paint for signed-in visitors
+            (the landing page redirects them to /dashboard), so crawlers get
+            the full server-rendered page without a flash for app users. */}
+        <script dangerouslySetInnerHTML={{ __html: SESSION_HINT_SCRIPT }} />
         {publicEnv.SUPABASE_URL && publicEnv.SUPABASE_PUBLISHABLE_KEY && (
           <script
             dangerouslySetInnerHTML={{
