@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StepHeader, OptionCard } from "./shared";
 import type { OnboardingData } from "../schemas";
+import { MIN_AGE } from "@/lib/legal";
 
 const SEX_OPTIONS = [
   { value: "female", label: "Female" },
@@ -18,6 +19,7 @@ export function StepBiometrics({
   onChange: (p: Partial<OnboardingData>) => void;
 }) {
   const isImperial = data.units === "imperial";
+  const underAge = typeof data.age === "number" && data.age > 0 && data.age < MIN_AGE;
 
   const heightDisplay =
     isImperial && data.height_cm ? Math.round(data.height_cm / 2.54) : (data.height_cm ?? "");
@@ -60,12 +62,19 @@ export function StepBiometrics({
               id="age"
               type="number"
               inputMode="numeric"
-              min={13}
+              min={MIN_AGE}
               max={100}
               className="h-12"
+              aria-describedby={underAge ? "age-error" : undefined}
+              aria-invalid={underAge || undefined}
               value={data.age ?? ""}
               onChange={(e) => onChange({ age: Number(e.target.value) })}
             />
+            {underAge && (
+              <p id="age-error" className="text-xs text-destructive">
+                NutriAI is for people aged {MIN_AGE} and over.
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="height">Height ({isImperial ? "in" : "cm"})</Label>

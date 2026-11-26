@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Leaf } from "lucide-react";
 import { canonicalUrl } from "@/lib/site";
+import { MIN_AGE } from "@/lib/legal";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -21,9 +22,15 @@ function TermsPage() {
           <Leaf className="h-4 w-4 text-primary" /> NutriAI
         </Link>
         <h1 className="font-display text-4xl">Terms of Service</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Last updated: September 19, 2026</p>
+        <p className="mt-2 text-sm text-muted-foreground">Last updated: November 26, 2026</p>
 
         <div className="mt-10 space-y-6 text-muted-foreground">
+          <section>
+            <h2 className="font-display text-2xl text-foreground">Eligibility</h2>
+            <p className="mt-2">
+              You must be at least {MIN_AGE} years old to create an account or use NutriAI.
+            </p>
+          </section>
           <section>
             <h2 className="font-display text-2xl text-foreground">General wellness only</h2>
             <p className="mt-2">

@@ -2,13 +2,19 @@ import { StepHeader } from "./shared";
 import type { OnboardingData } from "../schemas";
 import type { CalculatedTargets } from "@/lib/nutrition";
 import { Apple, Droplets, Flame, Utensils, Wheat } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export function StepReview({
   data,
   targets,
+  healthConsent,
+  onHealthConsentChange,
 }: {
   data: Partial<OnboardingData>;
   targets: CalculatedTargets | null;
+  healthConsent: boolean;
+  onHealthConsentChange: (value: boolean) => void;
 }) {
   if (!targets) {
     return (
@@ -88,6 +94,24 @@ export function StepReview({
         These targets are estimates using Mifflin–St Jeor. NutriAI will refine them based on your
         progress. Nothing here is medical advice.
       </p>
+
+      <div className="mt-6 flex items-start gap-3 rounded-2xl border border-border bg-card p-4">
+        <Checkbox
+          id="health-consent"
+          checked={healthConsent}
+          onCheckedChange={(value) => onHealthConsentChange(value === true)}
+          className="mt-0.5"
+        />
+        <label htmlFor="health-consent" className="text-sm leading-relaxed text-foreground">
+          I agree that NutriAI may use the health information I entered (body measurements, goals,
+          activity, diet and any medical conditions) to create and personalize my plan, as described
+          in the{" "}
+          <Link to="/privacy" target="_blank" className="underline underline-offset-2">
+            Privacy Policy
+          </Link>
+          . I can withdraw this by deleting my account at any time.
+        </label>
+      </div>
     </div>
   );
 }
