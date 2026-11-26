@@ -7,6 +7,8 @@ import { useScreenBreakSystem } from "@/features/screen-break/useScreenBreakSyst
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
+  // The signed-in app is private: keep every child page out of search results.
+  head: () => ({ meta: [{ name: "robots", content: "noindex, nofollow" }] }),
   beforeLoad: async ({ location }) => {
     const { data } = await supabase.auth.getSession();
     if (!data.session) {

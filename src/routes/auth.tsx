@@ -33,6 +33,7 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in - NutriAI" },
+      { name: "robots", content: "noindex, follow" },
       {
         name: "description",
         content: "Sign in to NutriAI to access your personalized AI health coach.",

@@ -14,6 +14,9 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DeleteAccountRouteImport } from './routes/delete-account'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
@@ -34,6 +37,12 @@ import { Route as AuthenticatedWorkoutRouteImport } from './routes/_authenticate
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-password'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
+import { Route as FeaturesIndexRouteImport } from './routes/features/index'
+import { Route as FeaturesAiCalorieTrackerRouteImport } from './routes/features/ai-calorie-tracker'
+import { Route as FeaturesAiMealPlannerRouteImport } from './routes/features/ai-meal-planner'
+import { Route as FeaturesAiNutritionCoachRouteImport } from './routes/features/ai-nutrition-coach'
+import { Route as FeaturesAiWorkoutPlannerRouteImport } from './routes/features/ai-workout-planner'
+import { Route as FeaturesDesiFoodCalorieTrackerRouteImport } from './routes/features/desi-food-calorie-tracker'
 import { Route as AuthenticatedSettingsDeleteAccountRouteImport } from './routes/_authenticated/settings_.delete-account'
 import { Route as AuthenticatedUUsernameRouteImport } from './routes/_authenticated/u.$username'
 
@@ -59,6 +68,21 @@ const AuthRoute = AuthRouteImport.update({
 const DeleteAccountRoute = DeleteAccountRouteImport.update({
   id: '/delete-account',
   path: '/delete-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -162,6 +186,40 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FeaturesIndexRoute = FeaturesIndexRouteImport.update({
+  id: '/features/',
+  path: '/features/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeaturesAiCalorieTrackerRoute =
+  FeaturesAiCalorieTrackerRouteImport.update({
+    id: '/features/ai-calorie-tracker',
+    path: '/features/ai-calorie-tracker',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const FeaturesAiMealPlannerRoute = FeaturesAiMealPlannerRouteImport.update({
+  id: '/features/ai-meal-planner',
+  path: '/features/ai-meal-planner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeaturesAiNutritionCoachRoute =
+  FeaturesAiNutritionCoachRouteImport.update({
+    id: '/features/ai-nutrition-coach',
+    path: '/features/ai-nutrition-coach',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const FeaturesAiWorkoutPlannerRoute =
+  FeaturesAiWorkoutPlannerRouteImport.update({
+    id: '/features/ai-workout-planner',
+    path: '/features/ai-workout-planner',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const FeaturesDesiFoodCalorieTrackerRoute =
+  FeaturesDesiFoodCalorieTrackerRouteImport.update({
+    id: '/features/desi-food-calorie-tracker',
+    path: '/features/desi-food-calorie-tracker',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedSettingsDeleteAccountRoute =
   AuthenticatedSettingsDeleteAccountRouteImport.update({
     id: '/settings_/delete-account',
@@ -179,6 +237,9 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRouteWithChildren
   '/delete-account': typeof DeleteAccountRoute
+  '/faq': typeof FaqRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -199,6 +260,12 @@ export interface FileRoutesByFullPath {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/features/ai-calorie-tracker': typeof FeaturesAiCalorieTrackerRoute
+  '/features/ai-meal-planner': typeof FeaturesAiMealPlannerRoute
+  '/features/ai-nutrition-coach': typeof FeaturesAiNutritionCoachRoute
+  '/features/ai-workout-planner': typeof FeaturesAiWorkoutPlannerRoute
+  '/features/desi-food-calorie-tracker': typeof FeaturesDesiFoodCalorieTrackerRoute
+  '/features/': typeof FeaturesIndexRoute
   '/settings/delete-account': typeof AuthenticatedSettingsDeleteAccountRoute
   '/u/$username': typeof AuthenticatedUUsernameRoute
 }
@@ -207,6 +274,9 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRouteWithChildren
   '/delete-account': typeof DeleteAccountRoute
+  '/faq': typeof FaqRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -227,6 +297,12 @@ export interface FileRoutesByTo {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/features/ai-calorie-tracker': typeof FeaturesAiCalorieTrackerRoute
+  '/features/ai-meal-planner': typeof FeaturesAiMealPlannerRoute
+  '/features/ai-nutrition-coach': typeof FeaturesAiNutritionCoachRoute
+  '/features/ai-workout-planner': typeof FeaturesAiWorkoutPlannerRoute
+  '/features/desi-food-calorie-tracker': typeof FeaturesDesiFoodCalorieTrackerRoute
+  '/features': typeof FeaturesIndexRoute
   '/settings/delete-account': typeof AuthenticatedSettingsDeleteAccountRoute
   '/u/$username': typeof AuthenticatedUUsernameRoute
 }
@@ -237,6 +313,9 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRouteWithChildren
   '/delete-account': typeof DeleteAccountRoute
+  '/faq': typeof FaqRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -257,6 +336,12 @@ export interface FileRoutesById {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth_/callback': typeof AuthCallbackRoute
+  '/features/ai-calorie-tracker': typeof FeaturesAiCalorieTrackerRoute
+  '/features/ai-meal-planner': typeof FeaturesAiMealPlannerRoute
+  '/features/ai-nutrition-coach': typeof FeaturesAiNutritionCoachRoute
+  '/features/ai-workout-planner': typeof FeaturesAiWorkoutPlannerRoute
+  '/features/desi-food-calorie-tracker': typeof FeaturesDesiFoodCalorieTrackerRoute
+  '/features/': typeof FeaturesIndexRoute
   '/_authenticated/settings_/delete-account': typeof AuthenticatedSettingsDeleteAccountRoute
   '/_authenticated/u/$username': typeof AuthenticatedUUsernameRoute
 }
@@ -267,6 +352,9 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/delete-account'
+    | '/faq'
+    | '/how-it-works'
+    | '/llms.txt'
     | '/pricing'
     | '/privacy'
     | '/robots.txt'
@@ -287,6 +375,12 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/auth/callback'
+    | '/features/ai-calorie-tracker'
+    | '/features/ai-meal-planner'
+    | '/features/ai-nutrition-coach'
+    | '/features/ai-workout-planner'
+    | '/features/desi-food-calorie-tracker'
+    | '/features/'
     | '/settings/delete-account'
     | '/u/$username'
   fileRoutesByTo: FileRoutesByTo
@@ -295,6 +389,9 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/delete-account'
+    | '/faq'
+    | '/how-it-works'
+    | '/llms.txt'
     | '/pricing'
     | '/privacy'
     | '/robots.txt'
@@ -315,6 +412,12 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/auth/callback'
+    | '/features/ai-calorie-tracker'
+    | '/features/ai-meal-planner'
+    | '/features/ai-nutrition-coach'
+    | '/features/ai-workout-planner'
+    | '/features/desi-food-calorie-tracker'
+    | '/features'
     | '/settings/delete-account'
     | '/u/$username'
   id:
@@ -324,6 +427,9 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/delete-account'
+    | '/faq'
+    | '/how-it-works'
+    | '/llms.txt'
     | '/pricing'
     | '/privacy'
     | '/robots.txt'
@@ -344,6 +450,12 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/auth_/callback'
+    | '/features/ai-calorie-tracker'
+    | '/features/ai-meal-planner'
+    | '/features/ai-nutrition-coach'
+    | '/features/ai-workout-planner'
+    | '/features/desi-food-calorie-tracker'
+    | '/features/'
     | '/_authenticated/settings_/delete-account'
     | '/_authenticated/u/$username'
   fileRoutesById: FileRoutesById
@@ -354,12 +466,21 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRouteWithChildren
   DeleteAccountRoute: typeof DeleteAccountRoute
+  FaqRoute: typeof FaqRoute
+  HowItWorksRoute: typeof HowItWorksRoute
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  FeaturesAiCalorieTrackerRoute: typeof FeaturesAiCalorieTrackerRoute
+  FeaturesAiMealPlannerRoute: typeof FeaturesAiMealPlannerRoute
+  FeaturesAiNutritionCoachRoute: typeof FeaturesAiNutritionCoachRoute
+  FeaturesAiWorkoutPlannerRoute: typeof FeaturesAiWorkoutPlannerRoute
+  FeaturesDesiFoodCalorieTrackerRoute: typeof FeaturesDesiFoodCalorieTrackerRoute
+  FeaturesIndexRoute: typeof FeaturesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -397,6 +518,27 @@ declare module '@tanstack/react-router' {
       path: '/delete-account'
       fullPath: '/delete-account'
       preLoaderRoute: typeof DeleteAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -539,6 +681,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/features/': {
+      id: '/features/'
+      path: '/features'
+      fullPath: '/features/'
+      preLoaderRoute: typeof FeaturesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features/ai-calorie-tracker': {
+      id: '/features/ai-calorie-tracker'
+      path: '/features/ai-calorie-tracker'
+      fullPath: '/features/ai-calorie-tracker'
+      preLoaderRoute: typeof FeaturesAiCalorieTrackerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features/ai-meal-planner': {
+      id: '/features/ai-meal-planner'
+      path: '/features/ai-meal-planner'
+      fullPath: '/features/ai-meal-planner'
+      preLoaderRoute: typeof FeaturesAiMealPlannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features/ai-nutrition-coach': {
+      id: '/features/ai-nutrition-coach'
+      path: '/features/ai-nutrition-coach'
+      fullPath: '/features/ai-nutrition-coach'
+      preLoaderRoute: typeof FeaturesAiNutritionCoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features/ai-workout-planner': {
+      id: '/features/ai-workout-planner'
+      path: '/features/ai-workout-planner'
+      fullPath: '/features/ai-workout-planner'
+      preLoaderRoute: typeof FeaturesAiWorkoutPlannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features/desi-food-calorie-tracker': {
+      id: '/features/desi-food-calorie-tracker'
+      path: '/features/desi-food-calorie-tracker'
+      fullPath: '/features/desi-food-calorie-tracker'
+      preLoaderRoute: typeof FeaturesDesiFoodCalorieTrackerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/settings_/delete-account': {
       id: '/_authenticated/settings_/delete-account'
       path: '/settings/delete-account'
@@ -612,12 +796,21 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AuthRoute: AuthRouteWithChildren,
   DeleteAccountRoute: DeleteAccountRoute,
+  FaqRoute: FaqRoute,
+  HowItWorksRoute: HowItWorksRoute,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  FeaturesAiCalorieTrackerRoute: FeaturesAiCalorieTrackerRoute,
+  FeaturesAiMealPlannerRoute: FeaturesAiMealPlannerRoute,
+  FeaturesAiNutritionCoachRoute: FeaturesAiNutritionCoachRoute,
+  FeaturesAiWorkoutPlannerRoute: FeaturesAiWorkoutPlannerRoute,
+  FeaturesDesiFoodCalorieTrackerRoute: FeaturesDesiFoodCalorieTrackerRoute,
+  FeaturesIndexRoute: FeaturesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

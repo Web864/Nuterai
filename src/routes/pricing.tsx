@@ -1,39 +1,54 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { PLANS } from "@/lib/billing/plans";
-import { Check, Leaf } from "lucide-react";
-import { canonicalUrl } from "@/lib/site";
+import { Check } from "lucide-react";
+import { Breadcrumbs, FaqList, PublicLayout } from "@/components/site/PublicLayout";
+import { breadcrumbSchema, faqPageSchema, pageHead, softwareApplicationSchema } from "@/lib/seo";
+
+const crumbs = [
+  { name: "Home", path: "/" },
+  { name: "Pricing", path: "/pricing" },
+];
+
+const PRICING_FAQS = [
+  {
+    question: "Is NutriAI really free?",
+    answer:
+      "Yes. The Free plan has no time limit and needs no credit card. It includes calorie and macro targets, daily meal and workout suggestions, habit tracking, 10 AI coach messages and 5 food scans per day.",
+  },
+  {
+    question: "When will NutriAI Pro be available?",
+    answer: `Pro is planned at $${PLANS.pro.priceUsdMonthly} per month and is not on sale yet. Checkout opens once payments are live; everything in the Free plan is available today.`,
+  },
+  {
+    question: "What does Pro add?",
+    answer:
+      "Unlimited AI coach conversations, unlimited photo and barcode scans, unlimited meal and workout plan regeneration, and advanced analytics.",
+  },
+];
 
 export const Route = createFileRoute("/pricing")({
-  head: () => ({
-    links: [{ rel: "canonical", href: canonicalUrl("/pricing") }],
-    meta: [
-      { title: "Pricing — NutriAI" },
-      {
-        name: "description",
-        content:
-          "Start free with NutriAI. Upgrade to Pro for unlimited AI coaching and advanced features.",
-      },
-      { property: "og:title", content: "NutriAI Pricing" },
-      {
-        property: "og:description",
-        content: "Simple pricing. Free forever. Pro when you're ready.",
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: "NutriAI Pricing: Free AI Meal Planner & Calorie Tracker",
+      description: `Start free with NutriAI: meal plans, calorie targets, an AI coach and food scans, no credit card. Pro ($${PLANS.pro.priceUsdMonthly}/month) is coming soon.`,
+      path: "/pricing",
+      jsonLd: [
+        softwareApplicationSchema({ proPrice: String(PLANS.pro.priceUsdMonthly) }),
+        breadcrumbSchema(crumbs),
+        faqPageSchema(PRICING_FAQS),
+      ],
+    }),
   component: PricingPage,
 });
 
 function PricingPage() {
   return (
-    <div className="premium-shell min-h-dvh">
-      <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
-        <Link
-          to="/"
-          className="mb-12 inline-flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-2 text-sm text-muted-foreground"
-        >
-          <Leaf className="h-4 w-4 text-primary" /> NutriAI
-        </Link>
+    <PublicLayout>
+      <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+        <div className="mb-10">
+          <Breadcrumbs crumbs={crumbs} />
+        </div>
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Pricing</p>
           <h1 className="mt-3 text-balance font-display text-5xl sm:text-6xl">
@@ -71,8 +86,15 @@ function PricingPage() {
           Pro isn&apos;t on sale yet — checkout opens once payments are live. Everything listed
           under Free is available today.
         </p>
+
+        <section className="mx-auto mt-16 max-w-3xl">
+          <h2 className="font-display text-3xl">Pricing questions</h2>
+          <div className="mt-6">
+            <FaqList faqs={PRICING_FAQS} />
+          </div>
+        </section>
       </div>
-    </div>
+    </PublicLayout>
   );
 }
 
