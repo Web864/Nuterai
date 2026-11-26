@@ -55,7 +55,7 @@ export const GENERAL_FAQS: Faq[] = [
   {
     question: "Is NutriAI free?",
     answer:
-      "Yes. The Free plan includes personalized calorie and macro targets, daily meal and workout suggestions, water, sleep, weight and mood tracking, 10 AI coach messages a day and 5 food scans a day. A Pro plan with unlimited coaching and scanning is planned and is not on sale yet.",
+      "Yes. The Free plan includes personalized calorie and macro targets, daily meal and workout suggestions, water, sleep, weight and mood tracking, 10 AI Coach messages a day, 5 AI photo food scans a day and barcode lookups with no daily cap. No credit card is needed. A Pro plan with much higher AI limits is planned and is not on sale yet.",
   },
   {
     question: "How does the AI meal planner work?",
@@ -85,7 +85,7 @@ export const GENERAL_FAQS: Faq[] = [
   {
     question: "Which devices does NutriAI work on?",
     answer:
-      "NutriAI works in any modern web browser on phone, tablet or computer, and there is an Android app. Your data syncs across devices when you sign in.",
+      "NutriAI works in any modern web browser on phone, tablet or computer, and an Android app is being prepared for Google Play. Your data syncs across devices when you sign in.",
   },
   {
     question: "Is my health data private?",

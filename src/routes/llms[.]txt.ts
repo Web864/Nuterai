@@ -24,8 +24,8 @@ ${pages}
 
 ## Key facts
 
-- Free plan: calorie and macro targets, daily meal and workout suggestions, water, sleep, weight and mood tracking, 10 AI coach messages and 5 food scans per day.
-- Pro plan (planned, not on sale yet): unlimited coaching, scanning and plan regeneration.
+- Free plan: calorie and macro targets, daily meal and workout suggestions, water, sleep, weight and mood tracking, 10 AI Coach messages and 5 AI photo food scans per day, barcode lookups with no daily cap.
+- Pro plan (planned, not on sale yet): fair-use AI limits of 150 Coach messages, 60 photo scans and 20 workout plans per day.
 - Calorie targets use the Mifflin-St Jeor equation; AI food estimates are approximate and editable.
 - Workout plans support full gym, home gym, basic equipment and no equipment.
 

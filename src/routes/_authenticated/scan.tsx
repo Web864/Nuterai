@@ -30,7 +30,7 @@ function ScanPage() {
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Leaf className="h-4 w-4" />
             </span>
-            <span className="font-display text-lg">Scan food</span>
+            <h1 className="font-display text-lg">Scan food</h1>
           </div>
           <div className="w-16" />
         </div>

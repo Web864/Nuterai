@@ -17,22 +17,32 @@ export type Entitlement =
   | "photo_scanner"
   | "barcode_scanner"
   | "plan_regeneration_unlimited"
-  | "advanced_analytics"
   | "data_export";
 
 export interface PlanLimits {
-  /** Coach messages per rolling day. `null` = unlimited. */
-  coachMessagesPerDay: number | null;
-  /** AI workout plan generations per rolling day. `null` = unlimited. */
-  planGenerationsPerDay: number | null;
-  /** Photo/barcode scans per rolling day. `null` = unlimited. */
-  scansPerDay: number | null;
+  // These mirror the caps enforced by public.check_ai_rate_limit()
+  // (supabase/migrations/20261126130000_plan_aware_ai_limits.sql). The
+  // database is the enforcer; tests/unit/plan-limits-sync.test.ts fails if
+  // the two drift apart. Every value is a number: AI calls cost money, so no
+  // plan is literally unlimited.
+  /** AI Coach messages per rolling 24 hours. */
+  coachMessagesPerDay: number;
+  /** AI workout plan generations per rolling 24 hours. */
+  planGenerationsPerDay: number;
+  /** AI photo food scans per rolling 24 hours. Barcode lookups are not AI calls and are not capped. */
+  scansPerDay: number;
+  /** AI text meal analyses ("2 rotis and daal") per rolling 24 hours. */
+  mealTextPerDay: number;
 }
 
 export interface PlanDefinition {
   id: PlanId;
   name: string;
   priceUsdMonthly: number;
+  /** Annual price in USD. 0 for Free. */
+  priceUsdAnnual: number;
+  /** Free-trial days on the annual plan. 0 = no trial. */
+  annualTrialDays: number;
   tagline: string;
   features: string[];
   entitlements: Entitlement[];
@@ -46,40 +56,57 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     id: "free",
     name: "Free",
     priceUsdMonthly: 0,
+    priceUsdAnnual: 0,
+    annualTrialDays: 0,
     tagline: "Everything to get started",
     features: [
       "Personalized calorie & macro targets",
       "Daily meal & workout suggestions",
       "Water, sleep, weight and mood tracking",
-      "AI coach (10 messages/day)",
-      "5 food scans/day",
+      "AI Coach: 10 messages a day",
+      "AI photo food scans: 5 a day",
+      "Barcode lookups with no daily cap",
       "Download all your data anytime",
     ],
     entitlements: ["photo_scanner", "barcode_scanner", "data_export"],
-    limits: { coachMessagesPerDay: 10, planGenerationsPerDay: 1, scansPerDay: 5 },
+    limits: {
+      coachMessagesPerDay: 10,
+      planGenerationsPerDay: 2,
+      scansPerDay: 5,
+      mealTextPerDay: 30,
+    },
     providerPriceIds: {},
   },
   pro: {
     id: "pro",
     name: "Pro",
+    // DRAFT launch pricing (Nov 2026). Not live: paid_plans_enabled stays
+    // false until the owner approves prices and a payment provider is wired.
     priceUsdMonthly: 9.99,
-    tagline: "per month · billed monthly",
+    priceUsdAnnual: 49.99,
+    annualTrialDays: 7,
+    tagline: "per month, or $49.99 a year",
     features: [
-      "Unlimited AI coach conversations",
-      "Unlimited photo + barcode scanning",
-      "Unlimited meal & workout plan regeneration",
-      "Advanced analytics",
-      "Priority model routing",
+      "Everything in Free",
+      "AI Coach: up to 150 messages a day",
+      "AI photo food scans: up to 60 a day",
+      "AI workout plans: up to 20 a day",
+      "AI text meal logging: up to 150 a day",
+      "7-day free trial on the annual plan",
     ],
     entitlements: [
       "ai_coach_unlimited",
       "photo_scanner",
       "barcode_scanner",
       "plan_regeneration_unlimited",
-      "advanced_analytics",
       "data_export",
     ],
-    limits: { coachMessagesPerDay: null, planGenerationsPerDay: null, scansPerDay: null },
+    limits: {
+      coachMessagesPerDay: 150,
+      planGenerationsPerDay: 20,
+      scansPerDay: 60,
+      mealTextPerDay: 150,
+    },
     providerPriceIds: {},
   },
 };
