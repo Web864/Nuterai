@@ -142,9 +142,10 @@ function RemindersPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <Link
             to="/dashboard"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            aria-label="Back to dashboard"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
           >
-            <ArrowLeft className="h-4 w-4" /> Dashboard
+            <ArrowLeft className="h-4 w-4" />
           </Link>
           <div className="flex items-center gap-2">
             <Bell className="h-4 w-4 text-accent" />
@@ -600,7 +601,7 @@ function ReminderCard({
             <div className="flex min-w-0 items-start justify-between gap-3">
               <p className="min-w-0 break-words font-medium [overflow-wrap:anywhere]">{r.title}</p>
               <Switch
-                className="shrink-0 sm:hidden"
+                className="mt-0.5 shrink-0"
                 checked={enabled}
                 onCheckedChange={(v) => update.mutate({ id: r.id, patch: { enabled: v } })}
               />
@@ -623,11 +624,6 @@ function ReminderCard({
             </p>
           </div>
           <div className="flex w-full min-w-0 flex-wrap items-center gap-2 border-t pt-3 sm:w-auto sm:justify-end sm:border-t-0 sm:pt-0">
-            <Switch
-              className="hidden sm:inline-flex"
-              checked={enabled}
-              onCheckedChange={(v) => update.mutate({ id: r.id, patch: { enabled: v } })}
-            />
             {isExerciseReminder(r.type) && (
               <Button
                 asChild
@@ -644,7 +640,6 @@ function ReminderCard({
                 <Link to="/workout">Start workout</Link>
               </Button>
             )}
-            <span className="text-xs text-muted-foreground sm:hidden">Snooze</span>
             {SNOOZE_OPTIONS.map((m) => (
               <Button
                 key={m}
