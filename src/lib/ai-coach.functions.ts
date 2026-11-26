@@ -45,7 +45,7 @@ const InputSchema = z.object({
 });
 const SYSTEM_PROMPT = `${AI_WELLNESS_SAFETY_POLICY}
 
-You are NutriAI's personal coach - a warm, evidence-based nutrition and fitness expert. You have concise context about this user (profile, goals, recent meals, workouts, weight, and reminders). Use it to give specific, personalized advice. NutriAI has its own reminder system: help the user review reminders and use NutriAI reminder actions for reminder requests. Do not send them to a phone Clock or external reminder app for requests NutriAI can handle.Style:- Be concise, actionable, and encouraging. Never lecture.- Default to 3-8 short paragraphs or bullets.- Use markdown: short paragraphs, bullet lists, bold for key numbers.- When giving nutrition or workout advice, tie back to THIS user's goals and recent data.- If asked for a meal or workout, give a concrete plan (foods, macros, sets/reps).- If user asks about medical conditions, medications, or eating disorders, recommend a licensed professional.- Never make up data you don't have. If context is missing, ask a quick clarifying question.`;
+You are NutriAI's personal coach - a warm, evidence-based nutrition and fitness expert. You have concise context about this user (profile, goals, recent meals, workouts, weight, and reminders). Use it to give specific, personalized advice. NutriAI has its own reminder system: help the user review reminders and use NutriAI reminder actions for reminder requests. Do not send them to a phone Clock or external reminder app for requests NutriAI can handle.Style:- Be concise, actionable, and encouraging. Never lecture.- Default to 3-8 short paragraphs or bullets.- Use markdown: short paragraphs, bullet lists, bold for key numbers.- When giving nutrition or workout advice, tie back to THIS user's goals and recent data.- If asked for a meal or workout, give a concrete plan (foods, macros, sets/reps).- Never suggest a food or ingredient that contains one of the user's listed allergies, and respect their diet preference (e.g. halal, vegetarian).- If user asks about medical conditions, medications, or eating disorders, recommend a licensed professional.- Never make up data you don't have. If context is missing, ask a quick clarifying question.`;
 async function buildUserContext(
   supabase: SupabaseClient<Database>,
   userId: string,
@@ -55,7 +55,7 @@ async function buildUserContext(
     supabase
       .from("user_goals")
       .select(
-        "fitness_goal, diet_preference, daily_calorie_target, protein_g, carbs_g, fat_g, fiber_g, water_target_ml, tdee_kcal, target_weight_kg, sex, age, height_cm, activity_level",
+        "fitness_goal, diet_preference, allergies, cooking_skill, daily_calorie_target, protein_g, carbs_g, fat_g, fiber_g, water_target_ml, tdee_kcal, target_weight_kg, sex, age, height_cm, activity_level",
       )
       .eq("user_id", userId)
       .maybeSingle(),
@@ -113,6 +113,7 @@ async function buildUserContext(
     parts.push(
       `Profile: sex:${goals.sex ?? "?"}; age:${goals.age ?? "?"}; height:${goals.height_cm ?? "?"}cm; activity:${goals.activity_level ?? "?"}`,
       `Goal: ${goals.fitness_goal ?? "?"}; diet:${goals.diet_preference ?? "?"}; target weight:${goals.target_weight_kg ?? "?"}kg`,
+      `Food allergies to avoid: ${goals.allergies?.length ? goals.allergies.join(", ") : "none listed"}; cooking skill:${goals.cooking_skill ?? "?"}`,
       `Daily targets: ${goals.daily_calorie_target ?? "?"} kcal; P:${goals.protein_g ?? "?"}g; C:${goals.carbs_g ?? "?"}g; F:${goals.fat_g ?? "?"}g; Fiber:${goals.fiber_g ?? "?"}g; Water:${goals.water_target_ml ?? "?"}ml; TDEE:${goals.tdee_kcal ?? "?"} kcal`,
     );
   }

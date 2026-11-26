@@ -1,6 +1,13 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-const PRODUCTION_URL = "https://nutriai-cyan.vercel.app";
+// The Android app is a shell around the live website. Set NUTRIAI_WEB_URL (or
+// VITE_SITE_URL) to the production domain before `npx cap sync android` when
+// the site moves; the fallback is the current production URL.
+const PRODUCTION_URL = (
+  process.env.NUTRIAI_WEB_URL ||
+  process.env.VITE_SITE_URL ||
+  "https://nutriai-cyan.vercel.app"
+).replace(/\/+$/, "");
 
 const config: CapacitorConfig = {
   appId: "com.nutriai.app",

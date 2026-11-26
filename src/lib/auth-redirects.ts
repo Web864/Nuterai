@@ -1,6 +1,8 @@
 import { isNative, OAUTH_REDIRECT_URL } from "@/lib/native";
+import { SITE_ORIGIN } from "@/lib/site";
 
-const PRODUCTION_ORIGIN = "https://nutriai-cyan.vercel.app";
+// One switch for the domain move: VITE_SITE_URL (see src/lib/site.ts).
+const PRODUCTION_ORIGIN = SITE_ORIGIN;
 const AUTH_CALLBACK_PATH = "/auth/callback";
 
 // Browsers treat "\" like "/" in URLs and silently drop tab/newline characters, so

@@ -18,7 +18,7 @@ const PRICING_FAQS = [
   {
     question: "Is NutriAI really free?",
     answer:
-      "Yes. The Free plan has no time limit and needs no credit card. It includes calorie and macro targets, daily meal and workout suggestions, habit tracking, 10 AI Coach messages and 5 AI photo food scans a day, and barcode lookups with no daily cap.",
+      "Yes. The Free plan has no time limit and needs no credit card. It includes calorie and macro targets, meal ideas from the AI Coach, AI workout plans, habit tracking, 10 AI Coach messages and 5 AI photo food scans a day, and barcode lookups with no daily cap.",
   },
   {
     question: "When will NutriAI Pro be available?",

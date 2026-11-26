@@ -61,7 +61,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     tagline: "Everything to get started",
     features: [
       "Personalized calorie & macro targets",
-      "Daily meal & workout suggestions",
+      "Meal ideas from the AI Coach & AI workout plans",
       "Water, sleep, weight and mood tracking",
       "AI Coach: 10 messages a day",
       "AI photo food scans: 5 a day",

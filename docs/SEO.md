@@ -6,24 +6,24 @@ Last updated 2026-11-26. Covers keyword targets, what is built into the site, an
 
 I couldn't get exact volume or difficulty numbers: there is no Ahrefs, Semrush or Google Ads account connected, and the free tools need sign-in. The tiers below come from reading the live search results (who ranks, and whether pages are app-store listings, listicles or real product pages). **Before spending money, check each keyword in Google Keyword Planner (free with a Google Ads account) and, after launch, in Search Console.**
 
-How to read it: *Head* terms have big volume but are dominated by Cal AI, MyFitnessPal, Lose It and large listicles. They are long-term goals. *Mid* terms have decent volume and the results are mostly small apps and blog listicles, so a focused page can break in. *Long tail* terms have lower volume, little competition and high intent. Win these first.
+How to read it: _Head_ terms have big volume but are dominated by Cal AI, MyFitnessPal, Lose It and large listicles. They are long-term goals. _Mid_ terms have decent volume and the results are mostly small apps and blog listicles, so a focused page can break in. _Long tail_ terms have lower volume, little competition and high intent. Win these first.
 
-| Keyword | Tier | Competition (from SERP) | Target page |
-|---|---|---|---|
-| ai calorie tracker / ai calorie counter | Head | High (Cal AI, SnapCalorie, many new apps) | /features/ai-calorie-tracker |
-| ai meal planner | Head | High (listicles, ChatGPT-style tools) | /features/ai-meal-planner |
-| ai nutritionist app | Mid | Medium | /features/ai-nutrition-coach |
-| ai diet planner / ai diet plan generator | Mid | Medium (listicles, small tools) | /features/ai-meal-planner |
-| ai workout planner / ai workout generator | Mid | Medium | /features/ai-workout-planner |
-| free ai meal planner | Mid | Medium | /features/ai-meal-planner, /pricing |
-| photo calorie counter / snap food calorie app | Mid | Medium | /features/ai-calorie-tracker |
-| ai nutrition coach / ai diet coach | Mid | Low to medium | /features/ai-nutrition-coach |
-| ai meal planner and workout app | Long tail | Low | / , /features |
-| home workout plan no equipment ai | Long tail | Low to medium | /features/ai-workout-planner |
-| calorie counter for pakistani food | Long tail | **Low: results are mostly app-store pages, almost no web pages** | /features/desi-food-calorie-tracker |
-| desi calorie tracker / indian food calorie tracker app | Long tail | Low | /features/desi-food-calorie-tracker |
-| roti calories / biryani calories / daal chawal calories | Long tail, informational | Low to medium, high volume in PK and IN | future blog posts |
-| desi diet plan for weight loss | Long tail, informational | Medium | future blog post |
+| Keyword                                                 | Tier                     | Competition (from SERP)                                          | Target page                         |
+| ------------------------------------------------------- | ------------------------ | ---------------------------------------------------------------- | ----------------------------------- |
+| ai calorie tracker / ai calorie counter                 | Head                     | High (Cal AI, SnapCalorie, many new apps)                        | /features/ai-calorie-tracker        |
+| ai meal planner                                         | Head                     | High (listicles, ChatGPT-style tools)                            | /features/ai-meal-planner           |
+| ai nutritionist app                                     | Mid                      | Medium                                                           | /features/ai-nutrition-coach        |
+| ai diet planner / ai diet plan generator                | Mid                      | Medium (listicles, small tools)                                  | /features/ai-meal-planner           |
+| ai workout planner / ai workout generator               | Mid                      | Medium                                                           | /features/ai-workout-planner        |
+| free ai meal planner                                    | Mid                      | Medium                                                           | /features/ai-meal-planner, /pricing |
+| photo calorie counter / snap food calorie app           | Mid                      | Medium                                                           | /features/ai-calorie-tracker        |
+| ai nutrition coach / ai diet coach                      | Mid                      | Low to medium                                                    | /features/ai-nutrition-coach        |
+| ai meal planner and workout app                         | Long tail                | Low                                                              | / , /features                       |
+| home workout plan no equipment ai                       | Long tail                | Low to medium                                                    | /features/ai-workout-planner        |
+| calorie counter for pakistani food                      | Long tail                | **Low: results are mostly app-store pages, almost no web pages** | /features/desi-food-calorie-tracker |
+| desi calorie tracker / indian food calorie tracker app  | Long tail                | Low                                                              | /features/desi-food-calorie-tracker |
+| roti calories / biryani calories / daal chawal calories | Long tail, informational | Low to medium, high volume in PK and IN                          | future blog posts                   |
+| desi diet plan for weight loss                          | Long tail, informational | Medium                                                           | future blog post                    |
 
 **Biggest opening:** desi food. Global apps target Western packaged food, and searches for Pakistani and Indian food calories return mostly app-store listings. That is where NutriAI can rank first.
 
@@ -60,6 +60,7 @@ In order of impact:
 A blog is the best way to win the informational desi-food searches (roti calories, biryani calories, desi diet plan). Recommendation: start with 8 to 10 posts as Markdown files in the repo rendered by a `/blog/$slug` route, no CMS and no new database. Add each post to `PUBLIC_PAGES` so it joins the sitemap and llms.txt, give it Article schema, and link it to the matching feature page. Have nutrition numbers checked by a qualified person and keep the general-wellness disclaimer.
 
 Starter topics:
+
 - How many calories in roti, paratha and naan?
 - Chicken biryani calories, and how to make a lighter plate
 - A sample 1,800-calorie desi meal plan (general wellness)

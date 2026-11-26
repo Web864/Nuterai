@@ -21,17 +21,17 @@ src/lib/*.server.ts         server-only helpers, blocked from client bundles
 
 ## Domains
 
-| Domain | Data | Server AI |
-| --- | --- | --- |
-| Goals & onboarding | `profiles`, `user_goals` | — (Mifflin-St Jeor in `lib/nutrition.ts`) |
-| Nutrition logging | `meal_entries`, `water_logs`, `weight_logs` | `ai-meal.functions.ts`, `ai-vision.functions.ts` |
-| Workouts | `workout_plans`, `workout_plan_days`, `workout_sessions`, `exercise_logs` | `ai-workout.functions.ts` |
-| Coach | `coach_threads`, `coach_messages` | `ai-coach.functions.ts` |
-| Reminders | `reminders`, `notifications` | client engine in `features/reminders` |
-| Community | `posts`, `post_likes`, `post_comments`, `friendships`, `post_reports` | — |
-| Gamification | `user_stats`, `xp_events`, `achievements`, `user_achievements`, `streak_history`, `activity_events` | — |
-| Admin | `audit_logs`, `app_settings` | — |
-| Billing | `subscriptions`, `billing_events` | see `docs/BILLING.md` |
+| Domain             | Data                                                                                                | Server AI                                        |
+| ------------------ | --------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Goals & onboarding | `profiles`, `user_goals`                                                                            | — (Mifflin-St Jeor in `lib/nutrition.ts`)        |
+| Nutrition logging  | `meal_entries`, `water_logs`, `weight_logs`                                                         | `ai-meal.functions.ts`, `ai-vision.functions.ts` |
+| Workouts           | `workout_plans`, `workout_plan_days`, `workout_sessions`, `exercise_logs`                           | `ai-workout.functions.ts`                        |
+| Coach              | `coach_threads`, `coach_messages`                                                                   | `ai-coach.functions.ts`                          |
+| Reminders          | `reminders`, `notifications`                                                                        | client engine in `features/reminders`            |
+| Community          | `posts`, `post_likes`, `post_comments`, `friendships`, `post_reports`                               | —                                                |
+| Gamification       | `user_stats`, `xp_events`, `achievements`, `user_achievements`, `streak_history`, `activity_events` | —                                                |
+| Admin              | `audit_logs`, `app_settings`                                                                        | —                                                |
+| Billing            | `subscriptions`, `billing_events`                                                                   | see `docs/BILLING.md`                            |
 
 ## Security model
 
@@ -40,7 +40,7 @@ src/lib/*.server.ts         server-only helpers, blocked from client bundles
 - Roles live in `user_roles` and are checked through the security-definer
   `has_role()` function — never from client state.
 - Admin server functions verify `has_role(admin)` with the caller's own
-  RLS-scoped client *before* escalating to the service-role client, and write an
+  RLS-scoped client _before_ escalating to the service-role client, and write an
   `audit_logs` entry for every mutation.
 - Subscription rows are readable by their owner (and admins) but writable only
   by the service role, so entitlements cannot be self-granted.

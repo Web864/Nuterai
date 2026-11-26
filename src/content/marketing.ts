@@ -30,7 +30,7 @@ export const HOW_IT_WORKS_STEPS = [
   },
   {
     name: "Get your personal targets and plan",
-    text: "NutriAI estimates daily calorie and macro targets with the Mifflin-St Jeor equation, then the AI meal planner suggests meals that fit your goal, budget and favourite foods.",
+    text: "NutriAI estimates daily calorie and macro targets with the Mifflin-St Jeor equation, then the AI Coach plans meals on request that fit your targets, diet preference and allergies.",
   },
   {
     name: "Log meals in seconds",
@@ -42,7 +42,7 @@ export const HOW_IT_WORKS_STEPS = [
   },
   {
     name: "Adjust as you go",
-    text: "Your dashboard shows progress and streaks, and you can regenerate meals or workouts whenever your goals or schedule change.",
+    text: "Your dashboard shows progress and streaks, and you can ask the coach for new meal ideas or generate a fresh workout plan whenever your goals or schedule change.",
   },
 ];
 
@@ -55,12 +55,12 @@ export const GENERAL_FAQS: Faq[] = [
   {
     question: "Is NutriAI free?",
     answer:
-      "Yes. The Free plan includes personalized calorie and macro targets, daily meal and workout suggestions, water, sleep, weight and mood tracking, 10 AI Coach messages a day, 5 AI photo food scans a day and barcode lookups with no daily cap. No credit card is needed. A Pro plan with much higher AI limits is planned and is not on sale yet.",
+      "Yes. The Free plan includes personalized calorie and macro targets, meal ideas from the AI Coach, AI workout plans, water, sleep, weight and mood tracking, 10 AI Coach messages a day, 5 AI photo food scans a day and barcode lookups with no daily cap. No credit card is needed. A Pro plan with much higher AI limits is planned and is not on sale yet.",
   },
   {
     question: "How does the AI meal planner work?",
     answer:
-      "You share your goal, activity level, diet preference, allergies and the foods you like. NutriAI calculates calorie and macro targets, then the AI suggests meals that fit those targets. You can swap or regenerate any meal.",
+      "You share your goal, activity level, diet preference and allergies during onboarding. NutriAI calculates calorie and macro targets. Then ask the AI Coach for a meal or a full day of meals and it plans them around those targets, your diet preference and your allergies. Ask again for a different option.",
   },
   {
     question: "Can NutriAI count calories from a photo?",
@@ -123,37 +123,37 @@ export const FEATURES: FeatureContent[] = [
     navLabel: "AI meal planner",
     title: "AI Meal Planner: Personalized Meal Plans | NutriAI",
     description:
-      "Free AI meal planner that builds daily meal plans around your calorie target, budget, allergies and the foods you love, including desi meals.",
+      "Free AI meal planner: ask NutriAI's coach for meals or a full day plan built around your calorie target, diet preference and allergies, including desi meals.",
     eyebrow: "AI meal planner",
     h1: "A free AI meal planner built around the food you actually eat",
     summary:
-      "NutriAI's AI meal planner estimates your daily calorie and macro targets, then suggests breakfast, lunch, dinner and snacks that fit your goal, diet preference, allergies and budget. Every meal can be swapped or regenerated.",
+      "NutriAI estimates your daily calorie and macro targets. Ask the AI Coach for breakfast, lunch, dinner, snacks or a whole day of meals and it plans them around your targets, diet preference and allergies. Not keen on a suggestion? Ask for another.",
     sections: [
       {
         heading: "How the AI meal planner personalizes your plan",
-        body: "During onboarding you share your age, height, weight, activity level and goal. NutriAI estimates your energy needs with the Mifflin-St Jeor equation and sets protein, carb and fat targets for your goal. The AI then plans meals that land close to those numbers.",
+        body: "During onboarding you share your age, height, weight, activity level and goal. NutriAI estimates your energy needs with the Mifflin-St Jeor equation and sets protein, carb and fat targets for your goal. When you ask the AI Coach for meals, it plans them to land close to those numbers.",
       },
       {
         heading: "Meal plans for any diet preference",
-        body: "Choose omnivore, vegetarian, vegan, pescatarian, halal, keto, low-carb, high-protein or another preference and mark allergies to avoid. The planner respects those choices in every suggestion.",
+        body: "Choose omnivore, vegetarian, vegan, pescatarian, halal, keto, low-carb, high-protein or another preference and mark allergies to avoid. The coach is instructed to respect those choices in every suggestion. Always check ingredients yourself if you have a serious allergy.",
       },
       {
         heading: "Familiar foods, not a generic diet",
-        body: "Plans can include everyday meals like roti, daal, rice, chicken karahi or a simple omelette, so you are not forced into foods you would never cook.",
+        body: "Ask for everyday meals like roti, daal, rice, chicken karahi or a simple omelette, so you are not forced into foods you would never cook.",
       },
     ],
     bullets: [
       "Daily calorie and macro targets",
-      "Breakfast, lunch, dinner and snack ideas",
+      "Meal and full-day plans on request in the AI Coach",
       "Diet preference and allergy aware",
-      "Swap or regenerate any meal",
-      "Log a planned meal in one tap",
+      "Ask again for a different option",
+      "Log what you ate by photo, barcode or text",
     ],
     faqs: [
       {
         question: "Is the NutriAI meal planner free?",
         answer:
-          "Yes. The Free plan includes daily meal suggestions and personalized calorie and macro targets.",
+          "Yes. The Free plan includes personalized calorie and macro targets and 10 AI Coach messages a day, which you can use to plan meals.",
       },
       {
         question: "Can the AI meal planner help with weight loss?",
@@ -163,7 +163,7 @@ export const FEATURES: FeatureContent[] = [
       {
         question: "Can I make a vegetarian or high-protein meal plan?",
         answer:
-          "Yes. Pick your diet preference during onboarding or in settings and the planner uses it for every meal.",
+          "Yes. Pick your diet preference during onboarding or in settings, then ask the coach for a vegetarian or high-protein day of meals.",
       },
     ],
   },

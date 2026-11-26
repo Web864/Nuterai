@@ -35,7 +35,12 @@ UI  ──▶ features/billing/queries.ts ──▶ lib/billing.functions.ts (se
                              subscriptions + billing_events tables
 ```
 
-Entitlements are read from `plans.ts` only. Adding a paid capability means
+Entitlements are read from `plans.ts` only. Daily AI limits per plan are
+enforced in Postgres by `check_ai_rate_limit()` (migration
+`20261126130000_plan_aware_ai_limits.sql`), which reads `subscriptions`; the
+numbers in `plans.ts` mirror it and `tests/unit/plan-limits-sync.test.ts` keeps
+them in sync. A provider webhook only has to write `subscriptions` through
+`applySubscriptionChange()` for the limits to change. Adding a paid capability means
 adding an `Entitlement` string and listing it on the plan — no other change.
 
 ## Plugging in Stripe later
@@ -75,7 +80,7 @@ Each one becomes a `BillingProvider`. Its webhook or server notification
 `applySubscriptionChange()`. That keeps the `subscriptions` table as the single
 source of entitlements on every platform.
 
-**Recommended prices** (from competitor research, Nov 2026):
+**Recommended prices** (full research, launch vs standard prices and unit economics: docs/PRICING.md):
 
 - Pro monthly: $9.99
 - Pro annual: $49.99 (about 58% off monthly). Make it the default choice on
