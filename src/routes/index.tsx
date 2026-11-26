@@ -27,9 +27,11 @@ import {
   Sparkles,
   Utensils,
 } from "lucide-react";
+import { canonicalUrl } from "@/lib/site";
 
 export const Route = createFileRoute("/")({
   head: () => ({
+    links: [{ rel: "canonical", href: canonicalUrl("/") }],
     meta: [
       { title: "NutriAI - Personalized AI Meal Planner & Nutrition Coach" },
       {

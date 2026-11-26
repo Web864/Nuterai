@@ -572,6 +572,41 @@ async function generateWorkoutWithGemini({
   throw lastFailure ?? new WorkoutProviderError("Workout generation failed.", false);
 }
 
+/**
+ * Gemini first; if it fails and an OpenAI key is configured, try OpenAI once
+ * (same tool schema and PlanSchema validation). Without an OpenAI key the
+ * Gemini failure surfaces exactly as before.
+ */
+export async function generateWorkoutWithFallback({
+  requestId,
+  geminiApiKey,
+  openAiApiKey,
+  userPrompt,
+  requestStarted,
+}: {
+  requestId: number;
+  geminiApiKey?: string;
+  openAiApiKey?: string;
+  userPrompt: string;
+  requestStarted: number;
+}): Promise<ProviderGeneration> {
+  try {
+    return await generateWorkoutWithGemini({ requestId, geminiApiKey, userPrompt, requestStarted });
+  } catch (geminiError) {
+    if (!openAiApiKey) throw geminiError;
+    return generateFromProvider({
+      requestId,
+      provider: "openai",
+      apiKey: openAiApiKey,
+      model: OPENAI_MODEL,
+      userPrompt,
+      timeoutMs: OPENAI_TIMEOUT_MS,
+      fallbackUsed: true,
+      requestStarted,
+    });
+  }
+}
+
 export const generateWorkoutPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
@@ -599,9 +634,10 @@ Target session length: ${data.minutes_per_session} minutes
 ${data.focus_notes ? `Preferences: ${data.focus_notes}` : ""}`;
 
     try {
-      const generation = await generateWorkoutWithGemini({
+      const generation = await generateWorkoutWithFallback({
         requestId,
         geminiApiKey,
+        openAiApiKey: process.env.OPENAI_API_KEY,
         userPrompt,
         requestStarted,
       });

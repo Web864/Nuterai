@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Leaf } from "lucide-react";
+import { canonicalUrl } from "@/lib/site";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
+    links: [{ rel: "canonical", href: canonicalUrl("/about") }],
     meta: [
       { title: "About NutriAI — Our mission for smarter health" },
       {

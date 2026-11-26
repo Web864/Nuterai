@@ -18,6 +18,7 @@ import { initializeNative } from "../lib/native";
 import { DARK_THEME_COLOR, LIGHT_THEME_COLOR, THEME_INIT_SCRIPT } from "../lib/theme";
 
 import { supabase } from "@/integrations/supabase/client";
+import { canonicalUrl } from "@/lib/site";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider, useTheme } from "@/components/theme-provider";
 import { MotionProvider } from "@/components/motion/MotionProvider";
@@ -104,8 +105,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "NutriAI adapts to your body, goals, and lifestyle to create the perfect nutrition, fitness, and wellness plan — powered by AI.",
       },
-      { property: "og:image", content: "/og-image.jpg" },
-      { name: "twitter:image", content: "/og-image.jpg" },
+      { property: "og:image", content: canonicalUrl("/og-image.jpg") },
+      { name: "twitter:image", content: canonicalUrl("/og-image.jpg") },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
