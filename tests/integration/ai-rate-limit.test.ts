@@ -64,18 +64,49 @@ async function seedUsageRows(
 }
 
 describe("check_ai_rate_limit", () => {
-  it("enforces the real server-side burst limit for 'coach' (8) without the caller ever supplying it", async (ctx) => {
+  it("gives an active Pro subscriber the higher Pro cap, and a canceled one the Free cap", async (ctx) => {
+    if (!schemaDeployed) return ctx.skip();
+    const user = await createTestUser(admin, "rl-pro");
+    try {
+      const client = await userClient(user.email, user.password);
+      await seedUsageRows(user.id, "meal_vision", 5, new Date(Date.now() - 60 * 60 * 1000));
+
+      const { data: freeBlocked } = await client.rpc("check_ai_rate_limit", {
+        p_endpoint: "meal_vision",
+      });
+      expect(freeBlocked).toMatchObject({ allowed: false, reason: "daily", plan: "free" });
+
+      const { error: subErr } = await admin
+        .from("subscriptions")
+        .upsert({ user_id: user.id, plan: "pro", status: "active" }, { onConflict: "user_id" });
+      expect(subErr).toBeNull();
+      const { data: proAllowed } = await client.rpc("check_ai_rate_limit", {
+        p_endpoint: "meal_vision",
+      });
+      expect(proAllowed).toMatchObject({ allowed: true, plan: "pro" });
+
+      await admin.from("subscriptions").update({ status: "canceled" }).eq("user_id", user.id);
+      const { data: lapsed } = await client.rpc("check_ai_rate_limit", {
+        p_endpoint: "meal_vision",
+      });
+      expect(lapsed).toMatchObject({ allowed: false, plan: "free" });
+    } finally {
+      await deleteTestUser(admin, user.id);
+    }
+  });
+
+  it("enforces the Free plan burst limit for 'coach' (5) without the caller ever supplying it", async (ctx) => {
     if (!schemaDeployed) return ctx.skip();
     const user = await createTestUser(admin, "rl-burst");
     try {
       const client = await userClient(user.email, user.password);
-      await seedUsageRows(user.id, "coach", 7);
+      await seedUsageRows(user.id, "coach", 4);
 
       const { data: eighth, error: eighthErr } = await client.rpc("check_ai_rate_limit", {
         p_endpoint: "coach",
       });
       expect(eighthErr).toBeNull();
-      expect((eighth as { allowed: boolean }).allowed).toBe(true); // 8th of 8 admitted
+      expect((eighth as { allowed: boolean }).allowed).toBe(true); // 5th of 5 admitted
 
       const { data: ninth } = await client.rpc("check_ai_rate_limit", { p_endpoint: "coach" });
       expect((ninth as { allowed: boolean; reason?: string }).allowed).toBe(false);
@@ -85,19 +116,19 @@ describe("check_ai_rate_limit", () => {
     }
   });
 
-  it("enforces the real daily limit for 'meal_text' (50) independently of the burst window", async (ctx) => {
+  it("enforces the Free plan daily limit for 'meal_text' (30) independently of the burst window", async (ctx) => {
     if (!schemaDeployed) return ctx.skip();
     const user = await createTestUser(admin, "rl-daily");
     try {
       const client = await userClient(user.email, user.password);
-      // 49 rows an hour old: outside the 5-minute burst window, inside the
+      // 29 rows an hour old: outside the 5-minute burst window, inside the
       // 24-hour daily window.
-      await seedUsageRows(user.id, "meal_text", 49, new Date(Date.now() - 60 * 60 * 1000));
+      await seedUsageRows(user.id, "meal_text", 29, new Date(Date.now() - 60 * 60 * 1000));
 
       const { data: fiftieth } = await client.rpc("check_ai_rate_limit", {
         p_endpoint: "meal_text",
       });
-      expect((fiftieth as { allowed: boolean }).allowed).toBe(true); // 50th of 50 admitted
+      expect((fiftieth as { allowed: boolean }).allowed).toBe(true); // 30th of 30 admitted
 
       const { data: blocked } = await client.rpc("check_ai_rate_limit", {
         p_endpoint: "meal_text",

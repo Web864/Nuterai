@@ -78,13 +78,16 @@ export async function enforceAiRateLimit(
   const result = data as {
     allowed: boolean;
     reason?: "burst" | "daily";
+    plan?: "free" | "pro";
   };
 
   if (!result.allowed) {
     throw new RateLimitError(
       result.reason === "burst"
         ? "You're sending requests too quickly. Please wait a few minutes and try again."
-        : "You've reached today's usage limit for this feature. Please try again tomorrow.",
+        : result.plan === "free"
+          ? "You've used today's Free plan limit for this feature. It resets within 24 hours."
+          : "You've reached today's usage limit for this feature. Please try again tomorrow.",
     );
   }
 }

@@ -119,7 +119,7 @@ function LogPage() {
                   day: "numeric",
                 })}
               </p>
-              <p className="font-display text-base leading-tight">Today's log</p>
+              <h1 className="font-display text-base leading-tight">Today's log</h1>
             </div>
           </div>
         </div>

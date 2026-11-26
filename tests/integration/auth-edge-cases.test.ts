@@ -75,7 +75,7 @@ describe("auth edge cases", () => {
     } else {
       expect(data.session).toBeNull();
     }
-    const { data: list } = await admin.auth.admin.listUsers();
+    const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });
     const matches = list.users.filter((u) => u.email === user.email);
     expect(matches.length).toBe(1);
   });

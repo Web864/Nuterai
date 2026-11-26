@@ -10,20 +10,33 @@ const crumbs = [
   { name: "Pricing", path: "/pricing" },
 ];
 
+const pro = PLANS.pro;
+const proMonthlyFromAnnual = (pro.priceUsdAnnual / 12).toFixed(2);
+const annualSavingPct = Math.round((1 - pro.priceUsdAnnual / (pro.priceUsdMonthly * 12)) * 100);
+
 const PRICING_FAQS = [
   {
     question: "Is NutriAI really free?",
     answer:
-      "Yes. The Free plan has no time limit and needs no credit card. It includes calorie and macro targets, daily meal and workout suggestions, habit tracking, 10 AI coach messages and 5 food scans per day.",
+      "Yes. The Free plan has no time limit and needs no credit card. It includes calorie and macro targets, meal ideas from the AI Coach, AI workout plans, habit tracking, 10 AI Coach messages and 5 AI photo food scans a day, and barcode lookups with no daily cap.",
   },
   {
     question: "When will NutriAI Pro be available?",
-    answer: `Pro is planned at $${PLANS.pro.priceUsdMonthly} per month and is not on sale yet. Checkout opens once payments are live; everything in the Free plan is available today.`,
+    answer: `Pro is planned at $${pro.priceUsdMonthly} a month or $${pro.priceUsdAnnual} a year, with a ${pro.annualTrialDays}-day free trial on the annual plan. It is not on sale yet. Checkout opens once payments are live; everything in the Free plan is available today.`,
   },
   {
     question: "What does Pro add?",
+    answer: `Much higher daily AI limits: up to ${pro.limits.coachMessagesPerDay} AI Coach messages, ${pro.limits.scansPerDay} photo food scans, ${pro.limits.mealTextPerDay} text meal analyses and ${pro.limits.planGenerationsPerDay} AI workout plans a day. Every Free feature stays included.`,
+  },
+  {
+    question: "Why are there daily limits at all?",
     answer:
-      "Unlimited AI coach conversations, unlimited photo and barcode scans, unlimited meal and workout plan regeneration, and advanced analytics.",
+      "Every AI Coach reply and photo scan is processed by a paid AI model. Daily fair-use limits keep the Free plan free and keep Pro affordable. Limits reset on a rolling 24-hour window.",
+  },
+  {
+    question: "Can I cancel Pro?",
+    answer:
+      "Yes. When Pro launches you will be able to cancel at any time and keep Pro until the end of the period you paid for. Purchases made in the Android app are managed through your Google Play subscriptions.",
   },
 ];
 
@@ -31,10 +44,12 @@ export const Route = createFileRoute("/pricing")({
   head: () =>
     pageHead({
       title: "NutriAI Pricing: Free AI Meal Planner & Calorie Tracker",
-      description: `Start free with NutriAI: meal plans, calorie targets, an AI coach and food scans, no credit card. Pro ($${PLANS.pro.priceUsdMonthly}/month) is coming soon.`,
+      description: `Start free with NutriAI: meal plans, calorie targets, an AI coach and food scans, no credit card. Pro ($${pro.priceUsdMonthly}/month or $${pro.priceUsdAnnual}/year) is planned.`,
       path: "/pricing",
       jsonLd: [
-        softwareApplicationSchema({ proPrice: String(PLANS.pro.priceUsdMonthly) }),
+        // No Pro Offer in structured data until Pro can actually be bought:
+        // search engines treat an Offer as something on sale now.
+        softwareApplicationSchema(),
         breadcrumbSchema(crumbs),
         faqPageSchema(PRICING_FAQS),
       ],
@@ -55,8 +70,8 @@ function PricingPage() {
             Simple, honest pricing.
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            Start free with everything you need. Upgrade to Pro when you want unlimited AI coaching
-            and advanced insights.
+            Start free with everything you need. Pro, coming soon, raises your daily AI limits for
+            coaching, photo scans and workout plans.
           </p>
         </div>
 
@@ -75,16 +90,17 @@ function PricingPage() {
           <Plan
             highlight
             name={PLANS.pro.name}
-            price={`$${PLANS.pro.priceUsdMonthly}`}
-            tagline={PLANS.pro.tagline}
-            features={PLANS.pro.features}
+            price={`$${pro.priceUsdMonthly}`}
+            tagline={`per month, or $${pro.priceUsdAnnual} a year ($${proMonthlyFromAnnual}/mo, save ${annualSavingPct}%)`}
+            features={pro.features}
             cta={<span>Not yet available</span>}
           />
         </div>
 
         <p className="mt-8 text-center text-sm text-muted-foreground">
-          Pro isn&apos;t on sale yet — checkout opens once payments are live. Everything listed
-          under Free is available today.
+          Pro isn&apos;t on sale yet. Checkout opens once payments are live. Everything listed under
+          Free is available today. Prices are in US dollars; local prices may apply in some
+          countries.
         </p>
 
         <section className="mx-auto mt-16 max-w-3xl">

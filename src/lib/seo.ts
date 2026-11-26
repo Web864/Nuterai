@@ -118,7 +118,8 @@ export function softwareApplicationSchema({
     url: SITE_ORIGIN,
     applicationCategory: "HealthApplication",
     applicationSubCategory: "Nutrition and fitness",
-    operatingSystem: "Web, Android",
+    // Add "Android" once the Google Play listing is live.
+    operatingSystem: "Web",
     description:
       "AI meal planner, photo and barcode calorie tracker, AI nutrition coach and workout planner for general wellness.",
     featureList: [

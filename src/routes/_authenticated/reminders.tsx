@@ -148,7 +148,7 @@ function RemindersPage() {
           </Link>
           <div className="flex items-center gap-2">
             <Bell className="h-4 w-4 text-accent" />
-            <span className="font-display text-lg">Reminder Center</span>
+            <h1 className="font-display text-lg">Reminder Center</h1>
             {unread > 0 && (
               <Badge variant="destructive" className="rounded-full">
                 {unread}

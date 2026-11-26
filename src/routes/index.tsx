@@ -46,7 +46,7 @@ const features = [
     icon: Utensils,
     title: "AI meal plans",
     href: "/features/ai-meal-planner",
-    description: "Personalized meals for your diet, budget, allergies, and culture.",
+    description: "Meal plans on request, built for your targets, diet, allergies and culture.",
     visual: "meal",
   },
   {
@@ -118,9 +118,9 @@ function LandingPage() {
                 <span className="emerald-text">love.</span>
               </h1>
               <p className="landing-hero-description mt-6 max-w-lg text-muted-foreground">
-                NutriAI builds personalized meal plans around your goals, budget, allergies and
-                favourite foods, counts calories from a photo, and adapts workouts to your week.
-                Desi meals included.
+                NutriAI sets your calorie and macro targets, plans meals around your diet and
+                allergies when you ask its AI coach, counts calories from a photo, and builds
+                workouts for your equipment. Desi meals included.
               </p>
               <div className="landing-hero-actions mt-8 flex flex-wrap gap-3">
                 <Button asChild size="lg" className="landing-primary-action rounded-full px-7">
@@ -228,7 +228,7 @@ function LandingPage() {
                     Plan around <span className="emerald-text">your table.</span>
                   </>
                 }
-                description="Plan around your preferences, budget, allergies, and familiar foods. Log meals in everyday portions where available, then review the nutrition estimate before saving."
+                description="Plan around your diet preference, allergies and familiar foods. Log meals in everyday portions where available, then review the nutrition estimate before saving."
               />
             </div>
             <div className="landing-food-grid grid gap-3">

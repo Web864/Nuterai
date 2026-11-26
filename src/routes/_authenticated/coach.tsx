@@ -91,7 +91,7 @@ function CoachPage() {
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Leaf className="h-4 w-4" />
             </span>
-            <span className="font-display text-lg">AI Coach</span>
+            <h1 className="font-display text-lg">AI Coach</h1>
           </div>
           <Button
             size="sm"
