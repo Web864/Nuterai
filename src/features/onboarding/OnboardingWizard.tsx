@@ -13,6 +13,8 @@ import {
   useUpsertGoals,
 } from "@/features/goals/queries";
 import { calculateTargets } from "@/lib/nutrition";
+import { HEALTH_CONSENT_VERSION, MIN_AGE } from "@/lib/legal";
+import { supabase } from "@/integrations/supabase/client";
 import type { OnboardingData } from "./schemas";
 
 import { StepBasics } from "./steps/StepBasics";
@@ -110,6 +112,7 @@ export function OnboardingWizard({
   const [data, setData] = useState<Partial<OnboardingData>>(initial);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [healthConsent, setHealthConsent] = useState(false);
 
   // Merge server data once it arrives
   const [hydrated, setHydrated] = useState(false);
@@ -158,9 +161,22 @@ export function OnboardingWizard({
   }, [data]);
 
   async function finish() {
-    if (!targets) return;
+    if (!targets || !healthConsent) return;
     setSaving(true);
     try {
+      // Record explicit consent for processing health information (GDPR
+      // Art. 9-style). Stored on the auth user's own metadata so no schema
+      // migration is needed; it travels with the account and is deleted
+      // with it.
+      const { error: consentError } = await supabase.auth.updateUser({
+        data: {
+          health_data_consent: {
+            version: HEALTH_CONSENT_VERSION,
+            given_at: new Date().toISOString(),
+          },
+        },
+      });
+      if (consentError) throw new Error("Couldn't save your consent. Please try again.");
       await updateProfile.mutateAsync({
         full_name: data.full_name,
         display_name: data.full_name?.split(" ")[0] ?? data.full_name,
@@ -237,7 +253,14 @@ export function OnboardingWizard({
             {step === 3 && <StepGoal data={data} onChange={patch} />}
             {step === 4 && <StepDiet data={data} onChange={patch} />}
             {step === 5 && <StepLifestyle data={data} onChange={patch} />}
-            {step === 6 && <StepReview data={data} targets={targets} />}
+            {step === 6 && (
+              <StepReview
+                data={data}
+                targets={targets}
+                healthConsent={healthConsent}
+                onHealthConsentChange={setHealthConsent}
+              />
+            )}
           </CardContent>
         </Card>
 
@@ -256,7 +279,7 @@ export function OnboardingWizard({
               size="lg"
               className="rounded-full"
               onClick={finish}
-              disabled={!targets || saving}
+              disabled={!targets || !healthConsent || saving}
             >
               {saving ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -282,7 +305,14 @@ function validateStep(step: number, d: Partial<OnboardingData>): boolean {
     case 0:
       return !!d.full_name && d.full_name.trim().length > 0 && !!d.units;
     case 1:
-      return !!d.sex && !!d.age && !!d.height_cm && !!d.current_weight_kg && !!d.target_weight_kg;
+      return (
+        !!d.sex &&
+        !!d.age &&
+        d.age >= MIN_AGE &&
+        !!d.height_cm &&
+        !!d.current_weight_kg &&
+        !!d.target_weight_kg
+      );
     case 2:
       return !!d.activity_level;
     case 3:

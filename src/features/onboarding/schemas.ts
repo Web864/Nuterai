@@ -1,3 +1,4 @@
+import { MIN_AGE } from "@/lib/legal";
 import { z } from "zod";
 
 export const step1Schema = z.object({
@@ -8,7 +9,7 @@ export const step1Schema = z.object({
 
 export const step2Schema = z.object({
   sex: z.enum(["male", "female", "other", "prefer_not_to_say"]),
-  age: z.number().int().min(13, "Must be at least 13").max(100),
+  age: z.number().int().min(MIN_AGE, `You must be at least ${MIN_AGE} to use NutriAI`).max(100),
   height_cm: z.number().min(100).max(230),
   current_weight_kg: z.number().min(30).max(300),
   target_weight_kg: z.number().min(30).max(300),

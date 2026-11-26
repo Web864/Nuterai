@@ -58,6 +58,43 @@ adding an `Entitlement` string and listing it on the plan — no other change.
 
 No UI, query, or entitlement file needs to change.
 
+## Launch plan (Nov 2026)
+
+**Which processor for which surface.** Google Play requires Google Play
+Billing for digital subscriptions bought inside the Android app. Stripe alone
+is only allowed for purchases made on the website. So:
+
+| Surface      | Processor                                                                    | Provider id   |
+| ------------ | ---------------------------------------------------------------------------- | ------------- |
+| Website      | Stripe Checkout + Billing Portal                                             | `stripe`      |
+| Android app  | Google Play Billing (a Capacitor plugin, or RevenueCat to cover both stores) | `google_play` |
+| iOS (future) | Apple StoreKit                                                               | `app_store`   |
+
+Each one becomes a `BillingProvider`. Its webhook or server notification
+(Stripe webhooks, Google Play Real-time Developer Notifications) calls
+`applySubscriptionChange()`. That keeps the `subscriptions` table as the single
+source of entitlements on every platform.
+
+**Recommended prices** (from competitor research, Nov 2026):
+
+- Pro monthly: $9.99
+- Pro annual: $49.99 (about 58% off monthly). Make it the default choice on
+  the paywall.
+- 7-day free trial on annual only
+- Regional prices for PK, IN and the Gulf, set in Play Console and Stripe
+  (for example, PKR 999/month or PKR 4,999/year). Treat these as a starting
+  point to test, not final numbers.
+
+**Needs the owner (cannot be done in code):**
+
+1. A Stripe account (business details, bank payout), with keys stored as
+   server secrets.
+2. A Google Play Console payments profile and a subscription product, such as
+   `nutriai_pro` with `monthly` and `annual` base plans.
+3. A Google Cloud service account for the Play Developer API, used to verify
+   purchases and receive RTDN.
+4. Signed-off refund, cancellation and auto-renewal wording in the Terms.
+
 ## Mock provider rules
 
 - Refuses to run when `NODE_ENV === "production"`.

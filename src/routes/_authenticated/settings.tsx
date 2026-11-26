@@ -18,6 +18,9 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Loader2, Pencil } from "lucide-react";
 import { BillingPanel } from "@/features/billing/BillingPanel";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { exportMyData } from "@/lib/account.functions";
+import { isNative } from "@/lib/native";
+import { SITE_ORIGIN } from "@/lib/site";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -122,6 +125,8 @@ function SettingsPage() {
               <BillingPanel userId={userId} />
             </CardContent>
           </Card>
+
+          <DataExportCard />
 
           <Card className="rounded-3xl border-destructive/40 shadow-soft">
             <CardHeader>
@@ -286,5 +291,59 @@ function Field({ label, value }: { label: string; value: string }) {
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium text-foreground">{value}</span>
     </div>
+  );
+}
+
+function DataExportCard() {
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    if (isNative) {
+      // Android's WebView can't save a downloaded file, so point to the web app.
+      toast.info(`To download your data, sign in at ${SITE_ORIGIN} and open Settings.`);
+      return;
+    }
+    setExporting(true);
+    try {
+      const { json, exportedAt } = await exportMyData();
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `nutriai-data-${exportedAt.slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Your data export has downloaded.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't export your data.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  return (
+    <Card className="rounded-3xl border-border/60 shadow-soft">
+      <CardHeader>
+        <CardTitle className="font-display text-xl">Your data</CardTitle>
+      </CardHeader>
+      <CardContent className="flex min-w-0 flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <p className="text-sm text-muted-foreground">
+          Download a copy of everything NutriAI stores about you (profile, goals, logs, plans, Coach
+          conversations, reminders) as a JSON file. Free on every plan.
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 rounded-full"
+          onClick={handleExport}
+          disabled={exporting}
+        >
+          {exporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Download my data
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
