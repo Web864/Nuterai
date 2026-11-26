@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Leaf } from "lucide-react";
+import { canonicalUrl } from "@/lib/site";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
+    links: [{ rel: "canonical", href: canonicalUrl("/privacy") }],
     meta: [
       { title: "Privacy Policy - NutriAI" },
       {

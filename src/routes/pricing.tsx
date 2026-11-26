@@ -2,9 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { PLANS } from "@/lib/billing/plans";
 import { Check, Leaf } from "lucide-react";
+import { canonicalUrl } from "@/lib/site";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
+    links: [{ rel: "canonical", href: canonicalUrl("/pricing") }],
     meta: [
       { title: "Pricing — NutriAI" },
       {

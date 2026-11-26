@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Leaf } from "lucide-react";
+import { canonicalUrl } from "@/lib/site";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
+    links: [{ rel: "canonical", href: canonicalUrl("/terms") }],
     meta: [
       { title: "Terms of Service - NutriAI" },
       { name: "description", content: "Terms and general wellness disclaimer for NutriAI." },

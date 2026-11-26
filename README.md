@@ -30,7 +30,7 @@
 | UI | Tailwind CSS v4, Radix UI / shadcn components, Recharts, dark mode |
 | Forms and validation | React Hook Form, Zod |
 | Backend | Supabase (Postgres, Auth, Row Level Security), server functions |
-| AI | Gemini API, with OpenAI and LongCat as fallback providers |
+| AI | Gemini API, with OpenAI as the fallback provider (meal analysis, coach, workouts) |
 | Mobile | PWA (vite-plugin-pwa), Capacitor (Android) |
 | Testing | Vitest (unit and integration), Postman collections |
 

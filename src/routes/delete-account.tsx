@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { canonicalUrl } from "@/lib/site";
 
 export const Route = createFileRoute("/delete-account")({
   head: () => ({
+    links: [{ rel: "canonical", href: canonicalUrl("/delete-account") }],
     meta: [
       { title: "Delete your account — NutriAI" },
       {

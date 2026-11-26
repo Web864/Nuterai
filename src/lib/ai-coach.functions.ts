@@ -254,10 +254,11 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
           estimatedInputTokens: estimateTokens(estimateMessagesSize(messages)),
         });
       }
-      const generation = await generateCoachResponse({
+      const generation = await generateCoachWithFallback({
         requestId,
         messages,
         geminiApiKey,
+        openAiApiKey,
         supabaseContextDurationMs,
         requestStarted,
       });
@@ -339,6 +340,57 @@ class CoachProviderError extends Error {
     readonly code?: string | number,
   ) {
     super(message);
+  }
+}
+/**
+ * Gemini is the primary provider. When it fails (503/429/timeouts were seen
+ * in production) and an OpenAI key is configured, retry once on OpenAI so a
+ * Gemini outage doesn't take the Coach down. With no OpenAI key, behaviour is
+ * unchanged: the Gemini error surfaces as before.
+ */
+export async function generateCoachWithFallback({
+  requestId,
+  messages,
+  geminiApiKey,
+  openAiApiKey,
+  supabaseContextDurationMs,
+  requestStarted,
+}: {
+  requestId: number;
+  messages: CoachMessage[];
+  geminiApiKey?: string;
+  openAiApiKey?: string;
+  supabaseContextDurationMs: number;
+  requestStarted: number;
+}): Promise<CoachGeneration> {
+  try {
+    return await generateCoachResponse({
+      requestId,
+      messages,
+      geminiApiKey,
+      supabaseContextDurationMs,
+      requestStarted,
+    });
+  } catch (geminiError) {
+    if (!openAiApiKey) throw geminiError;
+    try {
+      return await generateFromProvider({
+        requestId,
+        provider: "openai",
+        model: OPENAI_MODEL,
+        apiKey: openAiApiKey,
+        messages,
+        timeoutMs: OPENAI_TIMEOUT_MS,
+        fallbackUsed: true,
+        attempt: 1,
+        promptChars: estimateMessagesSize(messages),
+        promptMessages: messages.length,
+        supabaseContextDurationMs,
+        requestStarted,
+      });
+    } catch {
+      throw new Error("AI Coach is temporarily unavailable. Please try again.");
+    }
   }
 }
 async function generateCoachResponse({

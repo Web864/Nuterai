@@ -50,6 +50,39 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   });
 }
 
+// Baseline security headers for every SSR/server-function response. Static
+// assets are served by the host's CDN and don't need these. Deliberately no
+// full script CSP yet (inline theme/env scripts would need nonces); only
+// frame-ancestors, which blocks clickjacking without affecting the app. The
+// Capacitor WebView loads the site top-level, so denying framing is safe.
+const SECURITY_HEADERS: Record<string, string> = {
+  "Strict-Transport-Security": "max-age=63072000",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Content-Security-Policy": "frame-ancestors 'none'",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  // camera=(self) keeps the barcode/photo scanner working.
+  "Permissions-Policy": "camera=(self), microphone=(), geolocation=(), payment=()",
+};
+
+function applySecurityHeaders(headers: Headers): void {
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    if (!headers.has(name)) headers.set(name, value);
+  }
+}
+
+export function withSecurityHeaders(response: Response): Response {
+  try {
+    applySecurityHeaders(response.headers);
+    return response;
+  } catch {
+    // Immutable headers (e.g. a Response passed through from fetch): copy.
+    const copy = new Response(response.body, response);
+    applySecurityHeaders(copy.headers);
+    return copy;
+  }
+}
+
 function isH3SwallowedErrorBody(body: string): boolean {
   try {
     const payload = JSON.parse(body) as { unhandled?: unknown; message?: unknown };
@@ -65,13 +98,15 @@ export default {
       applyAiRuntimeEnv(env);
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
       console.error(error);
-      return new Response(renderErrorPage(), {
-        status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
+      return withSecurityHeaders(
+        new Response(renderErrorPage(), {
+          status: 500,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+      );
     }
   },
 };
