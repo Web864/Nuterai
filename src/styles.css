@@ -2452,3 +2452,188 @@
 html.has-session .landing-session-gate {
   visibility: hidden;
 }
+
+/* =========================================================
+   Primary app navigation (src/components/app/AppNav.tsx).
+   Below lg (mobile + tablet): icon-only bottom bar.
+   lg and up (desktop): left sidebar. Only one is ever visible.
+   ========================================================= */
+:root {
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+}
+@media (max-width: 1023.98px) {
+  /* Reserve room so no page content sits behind the bar. Only while the bar is mounted. */
+  .app-workspace:has(> .app-bottom-nav) {
+    --app-bottom-nav-space: calc(4.75rem + var(--safe-bottom));
+    padding-bottom: var(--app-bottom-nav-space);
+  }
+}
+.app-bottom-nav {
+  position: fixed;
+  inset-inline: 0;
+  /* body already pads for env(); the fixed bar must add its own gesture-bar clearance. */
+  bottom: 0;
+  z-index: 40;
+  padding: 0 0.75rem calc(0.5rem + var(--safe-bottom));
+  pointer-events: none;
+}
+.app-bottom-nav-bar {
+  pointer-events: auto;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
+  max-width: 28rem;
+  height: 3.75rem;
+  padding: 0 0.375rem;
+  border-radius: 1.25rem;
+  background: color-mix(in oklch, var(--color-background) 86%, transparent);
+  border: 1px solid color-mix(in oklch, var(--color-border) 70%, transparent);
+  box-shadow: 0 6px 24px -12px color-mix(in oklch, var(--color-foreground) 28%, transparent);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+}
+.app-bottom-nav-item {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-muted-foreground);
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  border-radius: 1rem;
+  outline: none;
+  transition: color 180ms ease;
+}
+.app-bottom-nav-icon {
+  display: inline-flex;
+  height: 2.5rem;
+  width: 3rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.875rem;
+  transition:
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+.app-bottom-nav-item:hover {
+  color: var(--color-foreground);
+}
+.app-bottom-nav-item:active .app-bottom-nav-icon {
+  transform: scale(0.94);
+}
+.app-bottom-nav-item:focus-visible .app-bottom-nav-icon {
+  box-shadow: 0 0 0 2px var(--color-ring);
+}
+.app-bottom-nav-item.is-active {
+  color: var(--color-primary);
+}
+.app-bottom-nav-item.is-active .app-bottom-nav-icon {
+  background: color-mix(in oklch, var(--color-primary) 13%, transparent);
+}
+.dark .app-bottom-nav-item.is-active .app-bottom-nav-icon {
+  background: color-mix(in oklch, var(--color-primary) 20%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-bottom-nav-item,
+  .app-bottom-nav-icon {
+    transition: none;
+  }
+}
+.app-action-sheet {
+  border-top-left-radius: 1.5rem;
+  border-top-right-radius: 1.5rem;
+  padding: 0.75rem 1rem calc(1.25rem + var(--safe-bottom));
+  max-width: 32rem;
+  margin-inline: auto;
+}
+.app-action-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.625rem 0.625rem;
+  border-radius: 1rem;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+.app-action-row:hover,
+.app-action-row:focus-visible {
+  background: var(--color-secondary);
+  outline: none;
+}
+@media (min-width: 1024px) {
+  .app-workspace:has(> .app-sidebar) {
+    --app-sidebar-width: 15rem;
+    padding-left: var(--app-sidebar-width);
+  }
+  .app-action-sheet {
+    bottom: 1.5rem;
+    left: var(--app-sidebar-width, 0px);
+    border: 1px solid var(--color-border);
+    border-radius: 1.5rem;
+    padding-bottom: 1.25rem;
+  }
+}
+.app-sidebar {
+  position: fixed;
+  inset-block: 0;
+  left: 0;
+  z-index: 40;
+  width: var(--app-sidebar-width, 15rem);
+  flex-direction: column;
+  padding: calc(1.25rem + var(--safe-top)) 0.875rem 1.25rem;
+  background: color-mix(in oklch, var(--color-background) 92%, transparent);
+  border-right: 1px solid color-mix(in oklch, var(--color-border) 70%, transparent);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+}
+.app-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.25rem 0.625rem;
+  color: var(--color-foreground);
+}
+.app-sidebar-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  height: 2.75rem;
+  padding: 0 0.75rem;
+  border-radius: 0.875rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-muted-foreground);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+.app-sidebar-item:hover {
+  color: var(--color-foreground);
+  background: var(--color-secondary);
+}
+.app-sidebar-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-ring);
+}
+.app-sidebar-item.is-active {
+  color: var(--color-primary);
+  background: color-mix(in oklch, var(--color-primary) 12%, transparent);
+}
+.dark .app-sidebar-item.is-active {
+  background: color-mix(in oklch, var(--color-primary) 18%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar-item {
+    transition: none;
+  }
+}
+
+/* Hash targets (Profile → Your plan / Weekly summary) clear the sticky header. */
+.app-anchor {
+  scroll-margin-top: calc(5rem + var(--safe-top));
+}
