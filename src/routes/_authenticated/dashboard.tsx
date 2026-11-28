@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { profileQueryOptions, goalsQueryOptions } from "@/features/goals/queries";
@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { adminWhoAmIQueryOptions } from "@/features/admin/queries";
 import { summarizeNutritionWeek } from "@/features/logging/nutrition-summary";
+import { ReminderBell } from "@/components/app/ReminderBell";
 
 import { toast } from "sonner";
 
@@ -113,6 +114,19 @@ function Dashboard() {
 
   const g = goals.data;
 
+  // Profile menu links to the "Your plan" / "Weekly summary" cards by hash; those cards
+  // only render once goals have loaded, so scroll to them after that.
+  const hash = useRouterState({ select: (s) => s.location.hash });
+  const hasGoals = Boolean(g);
+  useEffect(() => {
+    if (!hasGoals || (hash !== "your-plan" && hash !== "weekly-summary")) return;
+    // Defer one tick so the router's own scroll restoration doesn't override this.
+    const id = window.setTimeout(() => {
+      document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+    return () => window.clearTimeout(id);
+  }, [hash, hasGoals]);
+
   async function handleSignOut() {
     await qc.cancelQueries();
     qc.clear();
@@ -123,7 +137,7 @@ function Dashboard() {
 
   return (
     <div className="dashboard-shell min-h-dvh">
-      <TopBar onSignOut={handleSignOut} name={firstName} />
+      <TopBar onSignOut={handleSignOut} name={firstName} userId={userId} />
 
       <main className="dashboard-main mx-auto w-full max-w-[var(--workspace-width)] px-4 pb-16 pt-6 sm:px-6 lg:px-10">
         <header className="dashboard-hero dashboard-reference-hero mb-7 flex min-w-0 flex-wrap items-end justify-between gap-5">
@@ -332,7 +346,7 @@ function Dashboard() {
             </section>
 
             <section className="dashboard-bottom-grid mt-5 grid gap-4 sm:grid-cols-2">
-              <Card className="dashboard-panel dashboard-plan-panel">
+              <Card id="your-plan" className="dashboard-panel dashboard-plan-panel app-anchor">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 font-display text-lg">
                     <ClipboardList className="h-5 w-5 text-accent" />
@@ -347,7 +361,10 @@ function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="dashboard-panel dashboard-plan-panel dashboard-weekly-panel">
+              <Card
+                id="weekly-summary"
+                className="dashboard-panel dashboard-plan-panel dashboard-weekly-panel app-anchor"
+              >
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 font-display text-lg">
                     <BarChart3 className="h-5 w-5 text-accent" />
@@ -414,12 +431,23 @@ function Dashboard() {
   );
 }
 
-function TopBar({ onSignOut, name }: { onSignOut: () => void; name: string }) {
+function TopBar({
+  onSignOut,
+  name,
+  userId,
+}: {
+  onSignOut: () => void;
+  name: string;
+  userId: string;
+}) {
   const who = useQuery(adminWhoAmIQueryOptions());
   return (
     <div className="dashboard-nav safe-top sticky top-0 z-30 border-b border-border/60 bg-background/75 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 py-4 sm:px-7 lg:px-10">
-        <Link to="/dashboard" className="dashboard-brand flex items-center gap-2 text-foreground">
+        <Link
+          to="/dashboard"
+          className="dashboard-brand flex items-center gap-2 text-foreground lg:invisible"
+        >
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_22px_color-mix(in_oklch,var(--color-primary)_38%,transparent)]">
             <Leaf className="h-4 w-4" />
           </span>
@@ -434,6 +462,7 @@ function TopBar({ onSignOut, name }: { onSignOut: () => void; name: string }) {
               </Link>
             </Button>
           )}
+          <ReminderBell userId={userId} />
           <Button asChild variant="ghost" size="sm" className="rounded-xl">
             <Link to="/settings">
               <Settings className="h-4 w-4" />

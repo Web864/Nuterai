@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useReminderEngine } from "@/features/reminders/useReminderEngine";
 import { useDailyCheckIn } from "@/features/gamification/useGamification";
 import { useScreenBreakSystem } from "@/features/screen-break/useScreenBreakSystem";
+import { AppNav } from "@/components/app/AppNav";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -20,13 +21,14 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthedLayout() {
-  const { userId } = Route.useRouteContext();
+  const { userId, user } = Route.useRouteContext();
   useReminderEngine(userId);
   useDailyCheckIn(userId);
   useScreenBreakSystem(userId);
   return (
     <div className="app-workspace">
       <Outlet />
+      <AppNav email={user.email} />
     </div>
   );
 }

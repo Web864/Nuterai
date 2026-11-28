@@ -388,7 +388,7 @@ function ChatPanel({
   }
 
   return (
-    <Card className="flex h-[calc(100dvh-160px-var(--safe-top))] min-w-0 flex-col overflow-hidden rounded-3xl border-border/60 shadow-soft">
+    <Card className="flex h-[calc(100dvh-160px-var(--safe-top)-var(--app-bottom-nav-space,0px))] min-w-0 flex-col overflow-hidden rounded-3xl border-border/60 shadow-soft">
       <div ref={scrollRef} className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6">
         {isEmpty ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
